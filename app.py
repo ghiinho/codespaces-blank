@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import database_utils as db_utils
 
 # Configurazione della pagina
@@ -79,39 +80,46 @@ if st.session_state.pagina_corrente == "Home":
 # ==========================================
 # 2. SEZIONE: ANAGRAFICHE ISCRITTI
 # ==========================================
-# ==========================================
-# 2. SEZIONE: ANAGRAFICHE ISCRITTI
-# ==========================================
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     st.title("👤 Ricerca Schede Anagrafiche")
-    st.write("Inserisci il cognome dell'iscritto per visualizzare i dati dedicati (Colonne H-R).")
+    st.write("Inserisci il cognome dell'iscritto per visualizzare i dati anagrafici e sanitari (Colonne H-R).")
     st.markdown("---")
     
     if not df_iscritti.empty:
-        # Recuperiamo la colonna del cognome (ipotizzando sia la seconda colonna, indice 1, se non si chiama "Cognome")
+        # Recuperiamo le colonne reali dal tuo file Excel usando la mappatura precisa che mi hai dato
         colonne_reali = list(df_iscritti.columns)
-        colonne_pulite = [c.strip().lower() for c in colonne_reali]
-        col_cognome = colonne_reali[colonne_pulite.index('cognome')] if 'cognome' in colonne_pulite else colonne_reali[1]
         
-        # --- MOTORE DI RICERCA CON BOTTONE ---
-        # Creiamo una riga con due colonne: una larga per il testo e una stretta per il bottone
+        # Le colonne da H a R corrispondono esattamente agli indici da 7 a 17 in Python (partendo da 0)
+        # Mappatura esatta:
+        col_cognome = colonne_reali[7]   # H
+        col_nome = colonne_reali[8]      # I
+        col_nascita = colonne_reali[9]   # J
+        col_luogo = colonne_reali[10]    # K
+        col_via = colonne_reali[11]      # L
+        col_civico = colonne_reali[12]   # M
+        col_cap = colonne_reali[13]      # N
+        col_citta = colonne_reali[14]    # O
+        col_cf = colonne_reali[15]       # P
+        col_allergie = colonne_reali[16] # Q
+        col_quali = colonne_reali[17]    # R
+
+        # --- MOTORE DI RICERCA ---
         col_ricerca, col_bottone = st.columns([4, 1])
         
         with col_ricerca:
             cognome_input = st.text_input("🔍 Inserisci il Cognome da cercare:", placeholder="Es. Rossi...")
             
         with col_bottone:
-            st.write("##") # Spazio per allineare il bottone alla casella di testo
+            st.write("##") # Allineamento verticale del bottone
             avvia_ricerca = st.button("Avvia Ricerca 🚀", use_container_width=True)
             
-        # Stato della ricerca (mantiene i risultati a schermo anche dopo l'interazione)
         if "risultato_ricerca" not in st.session_state:
             st.session_state.risultato_ricerca = None
 
         if avvia_ricerca and cognome_input:
-            # Filtro parziale: trova tutti i bambini il cui cognome contiene il testo cercato (ignorando maiuscole/minuscole)
+            # Ricerca parziale senza distinzione tra maiuscole e minuscole
             risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
-            st.session_state.risultato_ricerca = risultati
+            st.session_state.risultato_ricerca = resultados = risultati
         
         # --- MOSTRA I RISULTATI TROVATI ---
         if st.session_state.risultato_ricerca is not None:
@@ -122,42 +130,91 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
             else:
                 st.success(f"📋 Trovati {len(df_filtrato)} iscritti corrispondenti.")
                 
-                # Se ci sono più iscritti con lo stesso cognome, permettiamo di selezionare quello corretto
+                # Selezione in caso di omonimia o più risultati
                 if len(df_filtrato) > 1:
-                    col_nome_fallback = colonne_reali[colonne_pulite.index('nome')] if 'nome' in colonne_pulite else colonne_reali[2]
-                    scelte = df_filtrato[col_cognome].astype(str) + " " + df_filtrato[col_nome_fallback].astype(str)
+                    scelte = df_filtrato[col_cognome].astype(str) + " " + df_filtrato[col_nome].astype(str)
                     bambino_scelto = st.radio("Seleziona l'iscritto specifico da visualizzare:", scelte)
-                    # Estraiamo la riga specifica
                     indice_scelto = scelte[scelte == bambino_scelto].index[0]
                     riga_bambino = df_filtrato.loc[indice_scelto]
                 else:
-                    # Se è solo uno, lo prendiamo direttamente
                     riga_bambino = df_filtrato.iloc[0]
                 
                 st.markdown("##")
-                st.markdown(f"### 📋 Dati Estratti (Colonne H - R)")
                 
-                # --- VISUALIZZAZIONE DELLE COLONNE DA H A R ---
-                # In Python gli indici partono da 0. La colonna H corrisponde all'indice 7, la colonna R all'indice 17.
-                # Prendiamo in sicurezza le colonne in quel range presenti nel tuo file Excel
-                colonne_da_mostrare = colonne_reali[7:18] # Prende gli indici da 7 a 17 inclusi
+                # --- LAYOUT SCHEDA ANAGRAFICA DIGITALE ---
+                nome_completo = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
+                st.markdown(f"### 📋 Scheda Personale: {nome_completo}")
                 
-                # Layout pulito a riquadri per incolonnare le informazioni da H a R
-                st.markdown("<div style='background-color: white; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
+                # Dividiamo la visualizzazione in 3 riquadri logici
+                box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
-                # Dividiamo le informazioni in due colonne visive all'interno del riquadro per dare ordine
-                sub_col1, sub_col2 = st.columns(2)
+                # 1. Riquadro Dati Personali
+                with box_anagrafica:
+                    st.markdown("#### 👤 Identità")
+                    st.markdown(
+                        f"""
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
+                            <p style="margin-bottom: 8px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
+                            <p style="margin-bottom: 8px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
+                            <p style="margin-bottom: 0;"><b>Codice Fiscale:</b><br><code style="color: #0369a1;">{riga_bambino[col_cf]}</code></p>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
                 
-                for i, colonna in enumerate(colonne_da_mostrare):
-                    # Distribuiamo i campi un po' a sinistra e un po' a destra
-                    if i % 2 == 0:
-                        with sub_col1:
-                            st.write(f"📌 **{colonna}:** {riga_bambino[colonna]}")
+                # 2. Riquadro Nascita e Residenza
+                with box_residenza:
+                    st.markdown("#### 📍 Nascita e Residenza")
+                    # Formattiamo la data di nascita se è in formato datetime
+                    data_nascita_val = riga_bambino[col_nascita]
+                    if pd.notnull(data_nascita_val):
+                        try:
+                            data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y')
+                        except:
+                            data_nascita_str = str(data_nascita_val)
                     else:
-                        with sub_col2:
-                            st.write(f"📌 **{colonna}:** {riga_bambino[colonna]}")
-                            
-                st.markdown("</div>", unsafe_allow_html=True)
+                        data_nascita_str = "Dato mancante"
+                        
+                    indirizzo_completo = f"{riga_bambino[col_via]}, {riga_bambino[col_civico]}"
+                    citta_completa = f"{riga_bambino[col_cap]} - {riga_bambino[col_citta]}"
+                    
+                    st.markdown(
+                        f"""
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
+                            <p style="margin-bottom: 8px;"><b>Nato/a il:</b> {data_nascita_str}<br><b>a:</b> {riga_bambino[col_luogo]}</p>
+                            <p style="margin-bottom: 8px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
+                            <p style="margin-bottom: 0;"><b>Città:</b><br>{citta_completa}</p>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
+                
+                # 3. Riquadro Sanitario (Allergie/Intolleranze) con colorazione d'impatto visivo
+                with box_sanitario:
+                    st.markdown("#### ⚠️ Informazioni Sanitarie")
+                    ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
+                    
+                    # Se ha allergie, facciamo il box rosso d'allarme, altrimenti verde e rilassante
+                    if ha_allergie in ["SÌ", "SI", "YES", "Vero", "TRUE"]:
+                        colore_sfondo = "#fef2f2"
+                        colore_bordo = "#f87171"
+                        icona_stato = "🚨"
+                        dettaglio_allergie = f"<b>Quali:</b><br><span style='color: #b91c1c; font-weight: bold;'>{riga_bambino[col_quali]}</span>"
+                    else:
+                        colore_sfondo = "#f0fdf4"
+                        colore_bordo = "#4ade80"
+                        icona_stato = "✅"
+                        dettaglio_allergie = "<i>Nessuna allergia o intolleranza segnalata.</i>"
+                    
+                    st.markdown(
+                        f"""
+                        <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 220px;">
+                            <p style="font-size: 16px; margin-bottom: 12px;"><b>Stato:</b> {icona_stato} {ha_allergie}</p>
+                            <p style="margin-bottom: 0; font-size: 14px;">{dettaglio_allergie}</p>
+                        </div>
+                        """, 
+                        unsafe_allow_html=True
+                    )
 
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
