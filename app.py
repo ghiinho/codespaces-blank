@@ -151,12 +151,15 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                 # 1. Riquadro Dati Personali
                 with box_anagrafica:
                     st.markdown("#### 👤 Identità")
+                    # Puliamo il codice fiscale rendendolo maiuscolo ed evitando spazi strani
+                    cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
+                    
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
-                            <p style="margin-bottom: 8px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
-                            <p style="margin-bottom: 8px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
-                            <p style="margin-bottom: 0;"><b>Codice Fiscale:</b><br><code style="color: #0369a1;">{riga_bambino[col_cf]}</code></p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
+                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
                         </div>
                         """, 
                         unsafe_allow_html=True
