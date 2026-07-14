@@ -82,15 +82,14 @@ if st.session_state.pagina_corrente == "Home":
 # ==========================================
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     st.title("👤 Ricerca Schede Anagrafiche")
-    st.write("Inserisci il cognome dell'iscritto per visualizzare i dati anagrafici e sanitari (Colonne H-R).")
+    st.write("Inserisci il cognome dell'iscritto per visualizzare i dati anagrafici, sanitari e i contatti dei genitori.")
     st.markdown("---")
     
     if not df_iscritti.empty:
-        # Recuperiamo le colonne reali dal tuo file Excel usando la mappatura precisa che mi hai dato
+        # Recuperiamo le colonne reali dal tuo file Excel
         colonne_reali = list(df_iscritti.columns)
         
-        # Le colonne da H a R corrispondono esattamente agli indici da 7 a 17 in Python (partendo da 0)
-        # Mappatura esatta:
+        # Mappatura colonne H-R (indici 7-17)
         col_cognome = colonne_reali[7]   # H
         col_nome = colonne_reali[8]      # I
         col_nascita = colonne_reali[9]   # J
@@ -117,9 +116,8 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
             st.session_state.risultato_ricerca = None
 
         if avvia_ricerca and cognome_input:
-            # Ricerca parziale senza distinzione tra maiuscole e minuscole
             risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
-            st.session_state.risultato_ricerca = resultados = risultati
+            st.session_state.risultato_ricerca = risultati
         
         # --- MOSTRA I RISULTATI TROVATI ---
         if st.session_state.risultato_ricerca is not None:
@@ -130,7 +128,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
             else:
                 st.success(f"📋 Trovati {len(df_filtrato)} iscritti corrispondenti.")
                 
-                # Selezione in caso di omonimia o più risultati
+                # Selezione in caso di omonimia
                 if len(df_filtrato) > 1:
                     scelte = df_filtrato[col_cognome].astype(str) + " " + df_filtrato[col_nome].astype(str)
                     bambino_scelto = st.radio("Seleziona l'iscritto specifico da visualizzare:", scelte)
@@ -140,84 +138,107 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     riga_bambino = df_filtrato.iloc[0]
                 
                 st.markdown("##")
-                
-                # --- LAYOUT SCHEDA ANAGRAFICA DIGITALE ---
                 nome_completo = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
-                st.markdown(f"### 📋 Scheda Personale: {nome_completo}")
                 
-                # Dividiamo la visualizzazione in 3 riquadri logici
-                box_anagrafica, box_residenza, box_sanitario = st.columns(3)
+                # --- STRUTTURA A TAB PER BAMBINO / GENITORE ---
+                tab_bambino, tab_genitore = st.tabs(["👦 Dati Bambino", "👨‍👩‍👧 Contatti Genitore"])
                 
-                # 1. Riquadro Dati Personali
-                with box_anagrafica:
-                    st.markdown("#### 👤 Identità")
-                    # Puliamo il codice fiscale rendendolo maiuscolo ed evitando spazi strani
-                    cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
+                # --- TAB 1: DATI BAMBINO ---
+                with tab_bambino:
+                    st.markdown(f"### Scheda Personale: {nome_completo}")
+                    box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                     
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
-                        </div>
-                        """, 
-                        unsafe_allow_html=True
-                    )
-                
-                # 2. Riquadro Nascita e Residenza
-                with box_residenza:
-                    st.markdown("#### 📍 Nascita e Residenza")
-                    # Formattiamo la data di nascita se è in formato datetime
-                    data_nascita_val = riga_bambino[col_nascita]
-                    if pd.notnull(data_nascita_val):
-                        try:
-                            data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y')
-                        except:
-                            data_nascita_str = str(data_nascita_val)
-                    else:
-                        data_nascita_str = "Dato mancante"
+                    with box_anagrafica:
+                        st.markdown("#### 👤 Identità")
+                        cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
+                                <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
+                                <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
+                            </div>
+                            """, 
+                            unsafe_allow_html=True
+                        )
+                    
+                    with box_residenza:
+                        st.markdown("#### 📍 Nascita e Residenza")
+                        data_nascita_val = riga_bambino[col_nascita]
+                        if pd.notnull(data_nascita_val):
+                            try:
+                                data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y')
+                            except:
+                                data_nascita_str = str(data_nascita_val)
+                        else:
+                            data_nascita_str = "Dato mancante"
+                            
+                        indirizzo_completo = f"{riga_bambino[col_via]}, {riga_bambino[col_civico]}"
+                        citta_completa = f"{riga_bambino[col_cap]} - {riga_bambino[col_citta]}"
                         
-                    indirizzo_completo = f"{riga_bambino[col_via]}, {riga_bambino[col_civico]}"
-                    citta_completa = f"{riga_bambino[col_cap]} - {riga_bambino[col_citta]}"
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
+                                <p style="margin-bottom: 8px;"><b>Nato/a il:</b> {data_nascita_str}<br><b>a:</b> {riga_bambino[col_luogo]}</p>
+                                <p style="margin-bottom: 8px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
+                                <p style="margin-bottom: 0;"><b>Città:</b><br>{citta_completa}</p>
+                            </div>
+                            """, 
+                            unsafe_allow_html=True
+                        )
                     
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
-                            <p style="margin-bottom: 8px;"><b>Nato/a il:</b> {data_nascita_str}<br><b>a:</b> {riga_bambino[col_luogo]}</p>
-                            <p style="margin-bottom: 8px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
-                            <p style="margin-bottom: 0;"><b>Città:</b><br>{citta_completa}</p>
-                        </div>
-                        """, 
-                        unsafe_allow_html=True
-                    )
-                
-                # 3. Riquadro Sanitario (Allergie/Intolleranze) con colorazione d'impatto visivo
-                with box_sanitario:
-                    st.markdown("#### ⚠️ Informazioni Sanitarie")
-                    ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
+                    with box_sanitario:
+                        st.markdown("#### ⚠️ Informazioni Sanitarie")
+                        ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
+                        
+                        if ha_allergie in ["SÌ", "SI", "YES", "Vero", "TRUE"]:
+                            colore_sfondo = "#fef2f2"
+                            colore_bordo = "#f87171"
+                            icona_stato = "🚨"
+                            dettaglio_allergie = f"<b>Quali:</b><br><span style='color: #b91c1c; font-weight: bold;'>{riga_bambino[col_quali]}</span>"
+                        else:
+                            colore_sfondo = "#f0fdf4"
+                            colore_bordo = "#4ade80"
+                            icona_stato = "✅"
+                            dettaglio_allergie = "<i>Nessuna allergia o intolleranza segnalata.</i>"
+                        
+                        st.markdown(
+                            f"""
+                            <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 220px;">
+                                <p style="font-size: 16px; margin-bottom: 12px;"><b>Stato:</b> {icona_stato} {ha_allergie}</p>
+                                <p style="margin-bottom: 0; font-size: 14px;">{dettaglio_allergie}</p>
+                            </div>
+                            """, 
+                            unsafe_allow_html=True
+                        )
+
+                # --- TAB 2: DATI GENITORE ---
+                with tab_genitore:
+                    st.markdown(f"### 👨‍👩‍👧 Riferimenti Familiari per: {nome_completo}")
                     
-                    # Se ha allergie, facciamo il box rosso d'allarme, altrimenti verde e rilassante
-                    if ha_allergie in ["SÌ", "SI", "YES", "Vero", "TRUE"]:
-                        colore_sfondo = "#fef2f2"
-                        colore_bordo = "#f87171"
-                        icona_stato = "🚨"
-                        dettaglio_allergie = f"<b>Quali:</b><br><span style='color: #b91c1c; font-weight: bold;'>{riga_bambino[col_quali]}</span>"
-                    else:
-                        colore_sfondo = "#f0fdf4"
-                        colore_bordo = "#4ade80"
-                        icona_stato = "✅"
-                        dettaglio_allergie = "<i>Nessuna allergia o intolleranza segnalata.</i>"
+                    # Layout organizzato in due colonne per i dati di contatto
+                    g_col1, g_col2 = st.columns(2)
                     
-                    st.markdown(
-                        f"""
-                        <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 220px;">
-                            <p style="font-size: 16px; margin-bottom: 12px;"><b>Stato:</b> {icona_stato} {ha_allergie}</p>
-                            <p style="margin-bottom: 0; font-size: 14px;">{dettaglio_allergie}</p>
-                        </div>
-                        """, 
-                        unsafe_allow_html=True
-                    )
+                    with g_col1:
+                        st.markdown("#### 👤 Dati di Contatto")
+                        # Qui andremo ad inserire i riferimenti reali del tuo file Excel.
+                        # Per ora inserisco dei dati fittizi leggendo alcune colonne di esempio
+                        # (es. colonne da A a G o le ultimissime del file)
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
+                                <p style="font-size: 16px; margin-bottom: 8px;"><b>Genitore / Tutore di Riferimento:</b></p>
+                                <p style="font-size: 15px; color: #0369a1; font-weight: bold; margin-bottom: 12px;">Da collegare alle tue colonne Excel</p>
+                                <p style="margin-bottom: 6px;"><b>📞 Telefono Primario:</b> [Colonna da definire]</p>
+                                <p style="margin-bottom: 0;"><b>✉️ Email:</b> [Colonna da definire]</p>
+                            </div>
+                            """, 
+                            unsafe_allow_html=True
+                        )
+                        
+                    with g_col2:
+                        st.markdown("#### 📝 Informazioni Aggiuntive")
+                        st.info("Qui possiamo mostrare note sul ritiro (es. deleghe, chi è autorizzato a prendere il bambino) o contatti di emergenza secondari.")
 
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
