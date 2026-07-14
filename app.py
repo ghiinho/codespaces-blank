@@ -89,7 +89,15 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
         # Recuperiamo le colonne reali dal tuo file Excel
         colonne_reali = list(df_iscritti.columns)
         
-        # Mappatura colonne H-R (indici 7-17)
+        # --- MAPPATURA COLONNE GENITORE (B - G) ---
+        col_g_email = colonne_reali[1]    # B (Indice 1)
+        col_g_cognome = colonne_reali[2]  # C (Indice 2)
+        col_g_nome = colonne_reali[3]     # D (Indice 3)
+        col_g_tel = colonne_reali[4]      # E (Indice 4)
+        col_g_nascita = colonne_reali[5]  # F (Indice 5)
+        col_g_cf = colonne_reali[6]       # G (Indice 6)
+
+        # --- MAPPATURA COLONNE BAMBINO (H - R) ---
         col_cognome = colonne_reali[7]   # H
         col_nome = colonne_reali[8]      # I
         col_nascita = colonne_reali[9]   # J
@@ -106,7 +114,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
         col_ricerca, col_bottone = st.columns([4, 1])
         
         with col_ricerca:
-            cognome_input = st.text_input("🔍 Inserisci il Cognome da cercare:", placeholder="Es. Rossi...")
+            cognome_input = st.text_input("🔍 Inserisci il Cognome del bambino da cercare:", placeholder="Es. Rossi...")
             
         with col_bottone:
             st.write("##") # Allineamento verticale del bottone
@@ -116,6 +124,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
             st.session_state.risultato_ricerca = None
 
         if avvia_ricerca and cognome_input:
+            # Ricerca sul cognome del bambino (colonna H)
             risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
             st.session_state.risultato_ricerca = risultati
         
@@ -138,14 +147,15 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     riga_bambino = df_filtrato.iloc[0]
                 
                 st.markdown("##")
-                nome_completo = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
+                nome_completo_bambino = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
+                nome_completo_genitore = f"{riga_bambino[col_g_cognome]} {riga_bambino[col_g_nome]}".upper()
                 
                 # --- STRUTTURA A TAB PER BAMBINO / GENITORE ---
                 tab_bambino, tab_genitore = st.tabs(["👦 Dati Bambino", "👨‍👩‍👧 Contatti Genitore"])
                 
                 # --- TAB 1: DATI BAMBINO ---
                 with tab_bambino:
-                    st.markdown(f"### Scheda Personale: {nome_completo}")
+                    st.markdown(f"### Scheda Personale: {nome_completo_bambino}")
                     box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                     
                     with box_anagrafica:
@@ -214,31 +224,55 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
 
                 # --- TAB 2: DATI GENITORE ---
                 with tab_genitore:
-                    st.markdown(f"### 👨‍👩‍👧 Riferimenti Familiari per: {nome_completo}")
+                    st.markdown(f"### Riferimenti Familiari: {nome_completo_genitore}")
                     
-                    # Layout organizzato in due colonne per i dati di contatto
+                    # Formattazione Telefono (rimozione di spazi, trattini e slash)
+                    tel_g_grezzo = str(riga_bambino[col_g_tel])
+                    tel_g_pulito = tel_g_grezzo.replace(" ", "").replace("/", "").replace("-", "").strip()
+                    # Rimuoviamo l'eventuale decimale ".0" se l'Excel lo ha letto come numero decimale
+                    if tel_g_pulito.endswith(".0"):
+                        tel_g_pulito = tel_g_pulito[:-2]
+
+                    # Formattazione Data di Nascita Genitore
+                    data_n_g_val = riga_bambino[col_g_nascita]
+                    if pd.notnull(data_n_g_val):
+                        try:
+                            data_n_g_str = pd.to_datetime(data_n_g_val).strftime('%d/%m/%Y')
+                        except:
+                            data_n_g_str = str(data_n_g_val)
+                    else:
+                        data_n_g_str = "Dato mancante"
+
+                    # Formattazione Codice Fiscale Genitore
+                    cf_g_pulito = str(riga_bambino[col_g_cf]).strip().upper() if pd.notnull(riga_bambino[col_g_cf]) else "Dato mancante"
+                    
                     g_col1, g_col2 = st.columns(2)
                     
                     with g_col1:
-                        st.markdown("#### 👤 Dati di Contatto")
-                        # Qui andremo ad inserire i riferimenti reali del tuo file Excel.
-                        # Per ora inserisco dei dati fittizi leggendo alcune colonne di esempio
-                        # (es. colonne da A a G o le ultimissime del file)
+                        st.markdown("#### 👤 Dati Personali Genitore")
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
-                                <p style="font-size: 16px; margin-bottom: 8px;"><b>Genitore / Tutore di Riferimento:</b></p>
-                                <p style="font-size: 15px; color: #0369a1; font-weight: bold; margin-bottom: 12px;">Da collegare alle tue colonne Excel</p>
-                                <p style="margin-bottom: 6px;"><b>📞 Telefono Primario:</b> [Colonna da definire]</p>
-                                <p style="margin-bottom: 0;"><b>✉️ Email:</b> [Colonna da definire]</p>
+                                <p style="margin-bottom: 10px; font-size: 15px;"><b>Nominativo:</b> {nome_completo_genitore}</p>
+                                <p style="margin-bottom: 10px; font-size: 15px;"><b>Data di Nascita:</b> {data_n_g_str}</p>
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b> <span style="font-weight: 600;">{cf_g_pulito}</span></p>
                             </div>
                             """, 
                             unsafe_allow_html=True
                         )
                         
                     with g_col2:
-                        st.markdown("#### 📝 Informazioni Aggiuntive")
-                        st.info("Qui possiamo mostrare note sul ritiro (es. deleghe, chi è autorizzato a prendere il bambino) o contatti di emergenza secondari.")
+                        st.markdown("#### 📞 Contatti Rapidi")
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4; min-height: 180px;">
+                                <p style="margin-bottom: 12px; font-size: 16px; color: #0d9488;"><b>Riferimenti di Emergenza:</b></p>
+                                <p style="margin-bottom: 10px; font-size: 15px;"><b>📞 Telefono:</b> <a href="tel:{tel_g_pulito}" style="font-weight: bold; color: #0f172a; text-decoration: none;">{tel_g_pulito}</a></p>
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0d9488;">{riga_bambino[col_g_email]}</a></p>
+                            </div>
+                            """, 
+                            unsafe_allow_html=True
+                        )
 
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
