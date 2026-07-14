@@ -18,31 +18,13 @@ def naviga_a(nome_pagina):
     st.session_state.pagina_corrente = nome_pagina
     st.rerun()
 
-# --- GESTIONE DELLA NAVIGAZIONE CON RESET AUTOMATICO ---
-
-# 1. Definiamo la pagina selezionata nella sidebar
-pagina_selezionata = st.sidebar.radio(
-    "Vai a:",
-    ["Home Page", "Anagrafiche Iscritti", "Carica File"] # Metti qui l'elenco esatto delle tue pagine
-)
-
-# 2. Controlliamo se l'utente ha effettivamente cambiato pagina rispetto a prima
-if "pagina_precedente" not in st.session_state:
-    st.session_state.pagina_precedente = pagina_selezionata
-
-if pagina_selezionata != st.session_state.pagina_precedente:
-    # Se l'utente si sta spostando DA un'altra pagina VERSO "Anagrafiche Iscritti"
-    if pagina_selezionata == "Anagrafiche Iscritti":
-        # AZZERIAMO tutte le variabili di stato della ricerca
-        st.session_state.id_bambino_corrente = None
-        st.session_state.risultato_ricerca = None
-        st.session_state.scheda_attiva = "bambino"
-    
-    # Aggiorniamo la traccia della pagina precedente
-    st.session_state.pagina_precedente = pagina_selezionata
-
-# 3. Assegniamo la pagina corrente per far girare il resto del tuo codice
-st.session_state.pagina_corrente = pagina_selezionata
+# --- BARRA LATERALE PER TORNARE SEMPRE ALLA HOME ---
+with st.sidebar:
+    st.markdown("### ☀️ Centro Estivo")
+    if st.button("🏠 Torna alla Home Page", use_container_width=True):
+        naviga_a("Home")
+    st.markdown("---")
+    st.caption("Fatto con ❤️ per la simulazione del gestionale")
 
 # ==========================================
 # 1. PAGINA PRINCIPALE: HOME PAGE A RIQUADRI
