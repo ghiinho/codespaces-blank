@@ -79,81 +79,88 @@ if st.session_state.pagina_corrente == "Home":
 # ==========================================
 # 2. SEZIONE: ANAGRAFICHE ISCRITTI
 # ==========================================
+# ==========================================
+# 2. SEZIONE: ANAGRAFICHE ISCRITTI
+# ==========================================
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
-    st.title("👤 Sezione: Anagrafiche Iscritti")
-    st.write("Seleziona un bambino per visualizzare, ordinare o modificare la sua scheda personale in tempo reale.")
+    st.title("👤 Ricerca Schede Anagrafiche")
+    st.write("Inserisci il cognome dell'iscritto per visualizzare i dati dedicati (Colonne H-R).")
     st.markdown("---")
     
     if not df_iscritti.empty:
-        # --- 1. MOTORE DI RICERCA INTELLIGENTE ---
-        # Tentiamo di creare il nominativo combinando Cognome e Nome (gestendo maiuscole/minuscole delle colonne)
-        colonne_pulite = [c.strip().lower() for c in df_iscritti.columns]
+        # Recuperiamo la colonna del cognome (ipotizzando sia la seconda colonna, indice 1, se non si chiama "Cognome")
+        colonne_reali = list(df_iscritti.columns)
+        colonne_pulite = [c.strip().lower() for c in colonne_reali]
+        col_cognome = colonne_reali[colonne_pulite.index('cognome')] if 'cognome' in colonne_pulite else colonne_reali[1]
         
-        col_cognome = df_iscritti.columns[colonne_pulite.index('cognome')] if 'cognome' in colonne_pulite else df_iscritti.columns[1]
-        col_nome = df_iscritti.columns[colonne_pulite.index('nome')] if 'nome' in colonne_pulite else df_iscritti.columns[2]
+        # --- MOTORE DI RICERCA CON BOTTONE ---
+        # Creiamo una riga con due colonne: una larga per il testo e una stretta per il bottone
+        col_ricerca, col_bottone = st.columns([4, 1])
         
-        # Creiamo la colonna virtuale per la ricerca
-        df_iscritti['Nominativo_Cerca'] = df_iscritti[col_cognome].astype(str) + " " + df_iscritti[col_nome].astype(str)
-        lista_bambini = sorted(df_iscritti['Nominativo_Cerca'].unique())
-        
-        # Barra di ricerca/selezione in alto
-        bambino_selezionato = st.selectbox(
-            "🔍 Digita o seleziona il cognome/nome del bambino:",
-            lista_bambini
-        )
-        
-        # Estraiamo i dati del bambino scelto
-        riga_bambino = df_iscritti[df_iscritti['Nominativo_Cerca'] == bambino_selezionato].iloc[0]
-        
-        st.markdown("##")
-        
-        # --- 2. INTERFACCIA GRAFICA DELLA SCHEDA ANAGRAFICA ---
-        # Dividiamo la scheda in 3 macro-aree visive (Colonne)
-        scheda_col1, scheda_col2, scheda_col3 = st.columns(3)
-        
-        with scheda_col1:
-            st.markdown("### 📝 Dati Anagrafici e Personali")
-            # Mostriamo in modo pulito le prime informazioni fondamentali del file Excel
-            # (Qui agganceremo i tuoi campi specifici come Telefono, intolleranze, classe...)
-            st.markdown("<div style='background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        with col_ricerca:
+            cognome_input = st.text_input("🔍 Inserisci il Cognome da cercare:", placeholder="Es. Rossi...")
             
-            # Recuperiamo e stampiamo le prime 6 colonne reali del tuo file in modo ordinato
-            for colonna in df_iscritti.columns[:6]:
-                if colonna != 'Nominativo_Cerca':
-                    st.write(f"**{colonna}:** {riga_bambino[colonna]}")
-            st.markdown("</div>", unsafe_allow_html=True)
+        with col_bottone:
+            st.write("##") # Spazio per allineare il bottone alla casella di testo
+            avvia_ricerca = st.button("Avvia Ricerca 🚀", use_container_width=True)
             
-        with scheda_col2:
-            st.markdown("### 📅 Presenze e Settimane")
-            st.markdown("<div style='background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-            st.write("Qui collegheremo i selettori per mettere o togliere i 'Sì/No' alle tue settimane reali.")
+        # Stato della ricerca (mantiene i risultati a schermo anche dopo l'interazione)
+        if "risultato_ricerca" not in st.session_state:
+            st.session_state.risultato_ricerca = None
+
+        if avvia_ricerca and cognome_input:
+            # Filtro parziale: trova tutti i bambini il cui cognome contiene il testo cercato (ignorando maiuscole/minuscole)
+            risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
+            st.session_state.risultato_ricerca = risultati
+        
+        # --- MOSTRA I RISULTATI TROVATI ---
+        if st.session_state.risultato_ricerca is not None:
+            df_filtrato = st.session_state.risultato_ricerca
             
-            # Esempio visivo: prende un blocco centrale di colonne (es. da colonna 7 a 15) dove di solito risiedono le settimane
-            for colonna in df_iscritti.columns[6:14]:
-                if colonna != 'Nominativo_Cerca':
-                    st.write(f"🔹 **{colonna}:** {riga_bambino[colonna]}")
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-        with scheda_col3:
-            st.markdown("### 💰 Riepilogo Contabile")
-            st.markdown("<div style='background-color: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-            st.write("Qui estrarremo la situazione dei pagamenti, acconti e il calcolo automatico.")
-            
-            # Esempio visivo: prende le colonne finali del tuo Excel
-            for colonna in df_iscritti.columns[14:22]:
-                if colonna != 'Nominativo_Cerca':
-                    st.write(f"💵 **{colonna}:** {riga_bambino[colonna]}")
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-        # --- 3. TABELLA COMPLETA DI SUPPORTO IN BASSO ---
-        st.markdown("---")
-        st.subheader("📋 Vista Tabella Completa (Solo per questo iscritto)")
-        st.write("Se preferisci una visualizzazione tabellare vecchio stile di tutte le sue 34 colonne contemporaneamente:")
-        # Mostriamo l'intera riga del bambino con tutte le sue colonne da A ad AH in formato orizzontale
-        st.dataframe(df_iscritti[df_iscritti['Nominativo_Cerca'] == bambino_selezionato].drop(columns=['Nominativo_Cerca']), use_container_width=True)
+            if df_filtrato.empty:
+                st.warning(f"❌ Nessun iscritto trovato con il cognome '{cognome_input}'. Riprova.")
+            else:
+                st.success(f"📋 Trovati {len(df_filtrato)} iscritti corrispondenti.")
+                
+                # Se ci sono più iscritti con lo stesso cognome, permettiamo di selezionare quello corretto
+                if len(df_filtrato) > 1:
+                    col_nome_fallback = colonne_reali[colonne_pulite.index('nome')] if 'nome' in colonne_pulite else colonne_reali[2]
+                    scelte = df_filtrato[col_cognome].astype(str) + " " + df_filtrato[col_nome_fallback].astype(str)
+                    bambino_scelto = st.radio("Seleziona l'iscritto specifico da visualizzare:", scelte)
+                    # Estraiamo la riga specifica
+                    indice_scelto = scelte[scelte == bambino_scelto].index[0]
+                    riga_bambino = df_filtrato.loc[indice_scelto]
+                else:
+                    # Se è solo uno, lo prendiamo direttamente
+                    riga_bambino = df_filtrato.iloc[0]
+                
+                st.markdown("##")
+                st.markdown(f"### 📋 Dati Estratti (Colonne H - R)")
+                
+                # --- VISUALIZZAZIONE DELLE COLONNE DA H A R ---
+                # In Python gli indici partono da 0. La colonna H corrisponde all'indice 7, la colonna R all'indice 17.
+                # Prendiamo in sicurezza le colonne in quel range presenti nel tuo file Excel
+                colonne_da_mostrare = colonne_reali[7:18] # Prende gli indici da 7 a 17 inclusi
+                
+                # Layout pulito a riquadri per incolonnare le informazioni da H a R
+                st.markdown("<div style='background-color: white; padding: 20px; border-radius: 10px; border: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
+                
+                # Dividiamo le informazioni in due colonne visive all'interno del riquadro per dare ordine
+                sub_col1, sub_col2 = st.columns(2)
+                
+                for i, colonna in enumerate(colonne_da_mostrare):
+                    # Distribuiamo i campi un po' a sinistra e un po' a destra
+                    if i % 2 == 0:
+                        with sub_col1:
+                            st.write(f"📌 **{colonna}:** {riga_bambino[colonna]}")
+                    else:
+                        with sub_col2:
+                            st.write(f"📌 **{colonna}:** {riga_bambino[colonna]}")
+                            
+                st.markdown("</div>", unsafe_allow_html=True)
 
     else:
-        st.info("Carica il file Excel per visualizzare le anagrafiche.")
+        st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
 
 
 # ==========================================
