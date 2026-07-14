@@ -110,8 +110,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
         col_allergie = colonne_reali[16] # Q
         col_quali = colonne_reali[17]    # R
 
-        # --- STATO DELLA RICERCA ---
-        # Definiamo uno stato persistente per il bambino attualmente visualizzato
+        # --- STATO DELLA RICERCA E TAB ATTIVA ---
         if "id_bambino_corrente" not in st.session_state:
             st.session_state.id_bambino_corrente = None
         if "risultato_ricerca" not in st.session_state:
@@ -131,7 +130,6 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
             # Ricerca sul cognome del bambino (colonna H)
             risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
             st.session_state.risultato_ricerca = risultati
-            # Resettiamo la selezione al primo risultato trovato
             if not risultati.empty:
                 st.session_state.id_bambino_corrente = risultati.index[0]
         
@@ -147,7 +145,6 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     st.success(f"📋 Trovati {len(df_filtrato)} iscritti corrispondenti.")
                     scelte = df_filtrato[col_cognome].astype(str) + " " + df_filtrato[col_nome].astype(str)
                     
-                    # Troviamo l'indice corretto per il radio button basandoci sullo stato corrente
                     default_index = 0
                     if st.session_state.id_bambino_corrente in df_filtrato.index:
                         default_index = list(df_filtrato.index).index(st.session_state.id_bambino_corrente)
@@ -155,7 +152,6 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     bambino_scelto = st.radio("Seleziona l'iscritto specifico da visualizzare:", scelte, index=default_index)
                     st.session_state.id_bambino_corrente = scelte[scelte == bambino_scelto].index[0]
                 
-                # Se c'è un solo risultato ed è la prima ricerca, impostiamo l'indice fisso
                 elif len(df_filtrato) == 1 and st.session_state.id_bambino_corrente not in df_filtrato.index:
                     st.session_state.id_bambino_corrente = df_filtrato.index[0]
 
@@ -167,7 +163,6 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                 nome_completo_genitore = f"{riga_bambino[col_g_cognome]} {riga_bambino[col_g_nome]}".upper()
                 
                 # --- LOGICA COLLEGAMENTO FRATELLI/SORELLE ---
-                # Cerchiamo nel dataframe se ci sono altri bambini legati allo stesso codice fiscale o email del genitore
                 cf_genitore_corrente = riga_bambino[col_g_cf]
                 email_genitore_corrente = riga_bambino[col_g_email]
                 
@@ -175,10 +170,9 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     ((df_iscritti[col_g_cf] == cf_genitore_corrente) & (pd.notnull(df_iscritti[col_g_cf]))) |
                     ((df_iscritti[col_g_email] == email_genitore_corrente) & (pd.notnull(df_iscritti[col_g_email])))
                 ]
-                # Escludiamo il bambino correntemente visualizzato dalla lista dei fratelli
                 fratelli = fratelli.drop(st.session_state.id_bambino_corrente, errors='ignore')
                 
-                # --- STRUTTURA A TAB ---
+                # --- STRUTTURA TAB CON GESTIONE STATO ATTIVO ---
                 tab_bambino, tab_genitore = st.tabs(["👦 Dati Bambino", "👨‍👩‍👧 Contatti Genitore"])
                 
                 # --- TAB 1: DATI BAMBINO ---
@@ -254,7 +248,6 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                 with tab_genitore:
                     st.markdown(f"### Riferimenti Familiari: {nome_completo_genitore}")
                     
-                    # Formattazione contatti genitore
                     tel_g_grezzo = str(riga_bambino[col_g_tel])
                     tel_g_pulito = tel_g_grezzo.replace(" ", "").replace("/", "").replace("-", "").strip()
                     if tel_g_pulito.endswith(".0"):
@@ -292,25 +285,20 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                             unsafe_allow_html=True
                         )
                     
-                    # --- BLOCCO DINAMICO FRATELLI (Se presenti) ---
+                    # --- BLOCCO DINAMICO FRATELLI ---
                     if not fratelli.empty:
                         st.markdown("---")
                         st.markdown("### 👦 Altri figli iscritti a carico di questo genitore:")
+                        st.info("Abbiamo rilevato altri iscritti registrati con gli stessi contatti familiari. Clicca per aprire la loro scheda anagrafica:")
                         
-                        # Mostriamo i pulsanti rapidi per i fratelli
-                        st.info("Abbiamo rilevato altri iscritti registrati con gli stessi contatti familiari. Clicca per saltare direttamente alla loro scheda:")
-                        
-                        # Generiamo una riga per ogni fratello trovato con un pulsante rapido
                         for idx_fratello, riga_fratello in fratelli.iterrows():
                             nome_fratello = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
                             
-                            # Layout a colonne strette per i pulsanti
                             btn_col1, btn_col2 = st.columns([3, 1])
                             with btn_col1:
                                 st.write(f"🧑‍🤝‍🧑 **{nome_fratello}** (Codice Fiscale: `{riga_fratello[col_cf]}`)")
                             with btn_col2:
-                                # Il pulsante aggiorna lo stato del bambino corrente e ricarica la pagina
-                                if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
+                                if st.button(f"Apri scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
                                     st.session_state.id_bambino_corrente = idx_fratello
                                     st.rerun()
 
