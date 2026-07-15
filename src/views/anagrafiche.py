@@ -61,11 +61,11 @@ def mostra_anagrafiche(df_iscritti):
     lista_selectbox = list(opzioni_ricerca)
 
     # ==========================================
-    # 2. INTERFACCIA GRAFICA COMPATTA
+    # 2. INTERFACCIA GRAFICA COMPATTA & CSS
     # ==========================================
-    st.markdown("### 👤 Ricerca Iscritti")
+    st.markdown("### 👤 Ricerca Rapida Iscritto")
     
-    # CSS per ingrandire il testo e dare risalto visivo
+    # CSS per lo stile visivo
     st.markdown(
         """
         <style>
@@ -84,9 +84,6 @@ def mostra_anagrafiche(df_iscritti):
     col_ricerca, col_vuota = st.columns([3, 2])
     
     with col_ricerca:
-        # La selectbox legge lo stato corrente per mostrare l'eventuale selezione attiva.
-        # Se l'utente clicca sulla "x" a destra del box, 'scelta_utente' diventerà None,
-        # permettendo di digitare subito un nuovo nome.
         scelta_utente = st.selectbox(
             "Cerca un iscritto:",
             options=lista_selectbox,
@@ -95,30 +92,57 @@ def mostra_anagrafiche(df_iscritti):
             key="ricerca_dinamica_selectbox"
         )
 
+    # ==========================================
+    # 💡 L'ASSO NELLA MANICA: JAVASCRIPT INJECTION
+    # ==========================================
+    # Questo script trova l'input di ricerca della selectbox di Streamlit nel DOM del browser
+    # e forza la selezione totale del testo al click, permettendo la sovrascrittura istantanea.
+    st.components.v1.html(
+        """
+        <script>
+        // Funzione che aggancia l'evento di focus all'input di Streamlit
+        function attenuaInput() {
+            // Cerchiamo l'elemento input generato da Streamlit per la selectbox
+            const inputs = window.parent.document.querySelectorAll('div[data-testid="stSelectbox"] input');
+            inputs.forEach(input => {
+                if (!input.dataset.hasAutoSelectListener) {
+                    input.dataset.hasAutoSelectListener = "true";
+                    
+                    // Al click o al focus, selezioniamo tutto il testo contenuto
+                    const selectText = () => {
+                        setTimeout(() => {
+                            input.select();
+                        }, 50); // Piccolo delay per attendere il rendering di Streamlit
+                    };
+                    
+                    input.addEventListener('focus', selectText);
+                    input.addEventListener('click', selectText);
+                }
+            });
+        }
+
+        // Monitoriamo continuamente la pagina (necessario perché Streamlit ridisegna spesso i componenti)
+        setInterval(attenuaInput, 500);
+        </script>
+        """,
+        height=0, # Invisibile all'utente, non occupa spazio a schermo
+    )
+
     st.markdown("---")
 
     # ==========================================
     # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
     # ==========================================
-    # Se l'utente ha selezionato attivamente una voce valida dalla lista,
-    # aggiorniamo subito lo stato con il nuovo bambino.
     if scelta_utente is not None and scelta_utente in mappa_opzioni:
         id_selezionato = mappa_opzioni.get(scelta_utente)
         st.session_state.id_bambino_corrente = id_selezionato
         st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
-
-    # 💡 NOTA: Se 'scelta_utente' è None (perché l'utente ha cliccato sul box per cancellare 
-    # o ha premuto la "x" di reset per fare una nuova ricerca), NON azzeriamo 
-    # st.session_state.id_bambino_corrente! 
-    # In questo modo la vecchia scheda rimane visibile a schermo finché non viene scelto il nuovo nome.
 
     # ==========================================
     # 4. CARICAMENTO E VISUALIZZAZIONE DELLA SCHEDA
     # ==========================================
     if st.session_state.id_bambino_corrente is not None:
         bambino_selezionato = df_iscritti.loc[st.session_state.id_bambino_corrente]
-        
-        # ... (Mostra i tuoi tab e dettagli del bambino come facevi prima) ...
 
         # Estrazione della riga corrente
         riga_bambino = df_iscritti.loc[st.session_state.id_bambino_corrente]
