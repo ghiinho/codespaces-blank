@@ -8,6 +8,10 @@ from src.views.anagrafiche import mostra_anagrafiche
 from src.utils.config_manager import carica_configurazione
 from src.views.impostazioni import mostra_impostazioni
 
+# --- INIZIALIZZAZIONE STATO ---
+if "pagina_corrente" not in st.session_state:
+    st.session_state.pagina_corrente = "Home Page"
+
 # 1. Configurazione della pagina Streamlit
 st.set_page_config(page_title="Gestionale Camp", layout="wide")
 
