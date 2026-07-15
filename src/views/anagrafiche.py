@@ -363,16 +363,21 @@ def mostra_anagrafiche(df_iscritti):
                             df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
                             df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
 
-                            # Se ci sono fratelli, allineiamo i recapiti come nella form genitore
-                            se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
-                            if len(se_fratelli) > 1:
-                                for idx_f in se_fratelli:
-                                    df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome.strip()
-                                    df_iscritti.at[idx_f, col_g_nome] = e_g_nome.strip()
-                                    df_iscritti.at[idx_f, col_g_cf] = e_g_cf.strip().upper()
-                                    df_iscritti.at[idx_f, col_g_tel] = e_g_tel.strip()
-                                    df_iscritti.at[idx_f, col_g_email] = e_g_email.strip()
-                                    df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita.strip()
+                                # Se ci sono fratelli, chiediamo conferma di applicare le modifiche a tutti
+                                se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
+                                if len(se_fratelli) > 1:
+                                    applica_a_tutti_b = st.checkbox(f"Applica le modifiche anche agli altri {len(se_fratelli)} figli dello stesso genitore", value=False, key=f"chk_applica_bambino_{riga_index}")
+                                else:
+                                    applica_a_tutti_b = False
+
+                                if applica_a_tutti_b:
+                                    for idx_f in se_fratelli:
+                                        df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome.strip()
+                                        df_iscritti.at[idx_f, col_g_nome] = e_g_nome.strip()
+                                        df_iscritti.at[idx_f, col_g_cf] = e_g_cf.strip().upper()
+                                        df_iscritti.at[idx_f, col_g_tel] = e_g_tel.strip()
+                                        df_iscritti.at[idx_f, col_g_email] = e_g_email.strip()
+                                        df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita.strip()
                             
                             try:
                                 df_iscritti.to_excel("gestionale.xlsx", index=False)
@@ -486,6 +491,13 @@ def mostra_anagrafiche(df_iscritti):
                     
                     e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
                     
+                    # Se ci sono altri figli, chiediamo conferma prima di applicare le modifiche a tutti
+                    se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
+                    if len(se_fratelli) > 1:
+                        applica_a_tutti = st.checkbox(f"Applica le modifiche anche agli altri {len(se_fratelli)} figli dello stesso genitore", value=False, key=f"chk_applica_gen_{riga_index}")
+                    else:
+                        applica_a_tutti = False
+
                     salva_genitore = st.form_submit_button("💾 Salva Modifiche Genitore", use_container_width=True, type="primary")
                     
                     if salva_genitore:
@@ -498,15 +510,16 @@ def mostra_anagrafiche(df_iscritti):
                         df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita
                         
                         # Se ha altri figli, opzione comoda di aggiornare i contatti per tutti i fratelli automaticamente!
-                        se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
-                        if len(se_fratelli) > 1:
-                            for idx_f in se_fratelli:
-                                df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome
-                                df_iscritti.at[idx_f, col_g_nome] = e_g_nome
-                                df_iscritti.at[idx_f, col_g_cf] = e_g_cf
-                                df_iscritti.at[idx_f, col_g_tel] = e_g_tel
-                                df_iscritti.at[idx_f, col_g_email] = e_g_email
-                                df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita
+                        if applica_a_tutti:
+                            se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
+                            if len(se_fratelli) > 1:
+                                for idx_f in se_fratelli:
+                                    df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome
+                                    df_iscritti.at[idx_f, col_g_nome] = e_g_nome
+                                    df_iscritti.at[idx_f, col_g_cf] = e_g_cf
+                                    df_iscritti.at[idx_f, col_g_tel] = e_g_tel
+                                    df_iscritti.at[idx_f, col_g_email] = e_g_email
+                                    df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita
                         
                         try:
                             df_iscritti.to_excel("gestionale.xlsx", index=False)
