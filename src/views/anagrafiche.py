@@ -321,14 +321,15 @@ def mostra_anagrafiche(df_iscritti):
                             except Exception as e:
                                 st.error(f"Errore durante il salvataggio: {e}")
             else:
-                # VISTA STATICA
+                # VISTA STATICA (I 3 Box Dati rimessi in riga)
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
                 data_nascita_val = riga_bambino[col_nascita]
                 data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
                 
-                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 220px; box-sizing: border-box;"
+                # Stile standardizzato per altezza, spaziatura interna e allineamento di tutti i box
+                stile_box = "display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border-radius: 8px; min-height: 180px; box-sizing: border-box; height: 100%;"
 
                 # ==========================================
                 # 1. BOX IDENTITÀ
@@ -338,13 +339,16 @@ def mostra_anagrafiche(df_iscritti):
                     cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_flex}">
-                            <div>
-                                <p style="margin-bottom: 12px; font-size: 15px;"><b>Data di nascita:</b><br>{data_nascita_str}</p>
-                                <p style="margin-bottom: 0; font-size: 15px;"><b>Luogo di nascita:</b><br>{riga_bambino[col_luogo]}</p>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
+                            <div style="margin-bottom: 12px;">
+                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">DATA DI NASCITA</p>
+                                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: #0f172a;">{data_nascita_str}</p>
+                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">LUOGO DI NASCITA</p>
+                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">{riga_bambino[col_luogo]}</p>
                             </div>
-                            <div>
-                                <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
+                            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: auto;">
+                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">CODICE FISCALE</p>
+                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #0f172a; font-family: monospace;">{cf_pulito}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
@@ -359,13 +363,16 @@ def mostra_anagrafiche(df_iscritti):
                     citta_completa = f"{riga_bambino[col_citta]} - {riga_bambino[col_cap]}"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_flex}">
-                            <div>
-                                <p style="margin-bottom: 12px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
-                                <p style="margin-bottom: 0; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
+                            <div style="margin-bottom: 12px;">
+                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">INDIRIZZO</p>
+                                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: #0f172a;">{indirizzo_completo}</p>
+                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">CITTÀ e CAP</p>
+                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">{citta_completa}</p>
                             </div>
-                            <div>
-                                <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
+                            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: auto;">
+                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">TELEFONO REFERENTE</p>
+                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #0f172a;">{contatto_genitore}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
@@ -378,19 +385,21 @@ def mostra_anagrafiche(df_iscritti):
                     st.markdown("#### ⚠️ Informazioni Sanitarie")
                     ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
                     if ha_allergie in ["SÌ", "SI", "YES", "Vero", "TRUE"]:
-                        colore_sfondo, colore_bordo, icona = "#fef2f2", "#f87171", "🚨"
-                        dettaglio = f"<b>Allergie o Intolleranze:</b><br><span style='color: #b91c1c; font-weight: bold;'>{riga_bambino[col_quali]}</span>"
+                        colore_sfondo, colore_bordo, icona, colore_testo = "#fef2f2", "#fee2e2", "🚨", "#991b1b"
+                        dettaglio = f"<span style='color: {colore_testo}; font-weight: 500;'>{riga_bambino[col_quali]}</span>"
                     else:
-                        colore_sfondo, colore_bordo, icona = "#f0fdf4", "#4ade80", "✅"
-                        dettaglio = "<i>Nessuna allergia o intolleranza segnalata.</i>"
+                        colore_sfondo, colore_bordo, icona, colore_testo = "#f0fdf4", "#dcfce7", "✅", "#166534"
+                        dettaglio = "<span style='color: #64748b; font-style: italic;'>Nessuna allergia o intolleranza segnalata.</span>"
                     st.markdown(
                         f"""
-                        <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_flex}">
-                            <div>
-                                <p style="font-size: 16px; margin-bottom: 0;"><b>Stato:</b> {icona} {ha_allergie}</p>
+                        <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_box}">
+                            <div style="margin-bottom: 12px;">
+                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">PRESENZA ALLERGIE</p>
+                                <p style="margin: 0; font-size: 18px; font-weight: 700; color: {colore_testo};">{icona} {ha_allergie}</p>
                             </div>
-                            <div>
-                                <p style="margin-bottom: 0; font-size: 14px;">{dettaglio}</p>
+                            <div style="border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 12px; margin-top: auto;">
+                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">DETTAGLIO ALLERGIE / FARMACI</p>
+                                <p style="margin: 0; font-size: 14px; line-height: 1.4;">{dettaglio}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
