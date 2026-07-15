@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 def inizializza_stato():
     if "id_selezionato" not in st.session_state:
@@ -7,40 +6,34 @@ def inizializza_stato():
     if "scheda_attiva" not in st.session_state:
         st.session_state.scheda_attiva = "bambino"
 
-def barra_ricerca(df):
-    # Ordiniamo il dataframe per Cognome, poi Nome
-    df_ordinato = df.sort_values(by=["Cognome", "Nome"])
+def mostra_anagrafiche(df):
+    inizializza_stato()
     
-    # Creiamo una lista leggibile: "COGNOME Nome (Codice Fiscale)"
+    st.title("Gestione Anagrafiche")
+    
+    # Logica di ricerca (come definita prima)
+    df_ordinato = df.sort_values(by=["Cognome", "Nome"])
     lista_opzioni = (
         df_ordinato["Cognome"].astype(str).str.upper() + " " + 
         df_ordinato["Nome"].astype(str).str.title() + " (" + 
         df_ordinato["Codice Fiscale"].astype(str).str.upper() + ")"
     ).tolist()
-    
-    # Mappiamo la stringa visualizzata all'indice originale del dataframe
     mappa = dict(zip(lista_opzioni, df_ordinato.index))
     
-    # Determiniamo l'indice di default per la selectbox
     indice_default = None
-    if st.session_state.id_selezionato is not None:
-        # Troviamo la posizione dell'id corrente nella lista ordinata
-        valore_corrente = lista_opzioni[list(mappa.values()).index(st.session_state.id_selezionato)]
-        indice_default = lista_opzioni.index(valore_corrente)
+    if st.session_state.id_selezionato in mappa.values():
+        valore = [k for k, v in mappa.items() if v == st.session_state.id_selezionato][0]
+        indice_default = lista_opzioni.index(valore)
 
-    # Widget di ricerca
-    scelta = st.selectbox(
-        "Cerca un iscritto:",
-        options=lista_opzioni,
-        index=indice_default,
-        placeholder="Digita il cognome...",
-        key="input_ricerca"
-    )
+    scelta = st.selectbox("Cerca un iscritto:", options=lista_opzioni, index=indice_default, key="input_ricerca")
     
-    # Logica di aggiornamento sicura
-    if scelta:
-        nuovo_id = mappa[scelta]
-        if nuovo_id != st.session_state.id_selezionato:
-            st.session_state.id_selezionato = nuovo_id
-            st.session_state.scheda_attiva = "bambino" # Reset tab ad ogni nuova ricerca
-            st.rerun()
+    if scelta and mappa[scelta] != st.session_state.id_selezionato:
+        st.session_state.id_selezionato = mappa[scelta]
+        st.session_state.scheda_attiva = "bambino"
+        st.rerun()
+
+    # Visualizzazione scheda se un iscritto è selezionato
+    if st.session_state.id_selezionato is not None:
+        dati_bambino = df.loc[st.session_state.id_selezionato]
+        st.write(f"### Dati di {dati_bambino['Nome']}")
+        # Qui continueresti con i tuoi tab...
