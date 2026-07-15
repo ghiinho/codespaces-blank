@@ -65,8 +65,7 @@ def mostra_anagrafiche(df_iscritti):
     # ==========================================
     # 2. INTERFACCIA GRAFICA COMPATTA & CSS
     # ==========================================
-    st.markdown("### 👤 Ricerca Rapida Iscritto")
-    
+   
     # CSS per lo stile visivo
     st.markdown(
         """
