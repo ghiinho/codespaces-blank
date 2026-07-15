@@ -106,15 +106,14 @@ def mostra_anagrafiche(df_iscritti):
     # 3. CARICAMENTO AUTOMATICO DEI DATI
     # ==========================================
     # Se l'utente ha selezionato un iscritto reale (e non l'invito iniziale)
-    if scelta_utente != "🔍 Inizia a digitare il cognome o nome...":
-        # Recuperiamo l'ID reale dell'iscritto selezionato dal nostro dizionario di mappa
-        id_selezionato = mappa_opzioni[scelta_utente]
+    if scelta_utente is not None and scelta_utente in mappa_opzioni:
+        id_selezionato = mappa_opzioni.get(scelta_utente)
         
-        # Salviamo la selezione nel session_state per far felice il resto del tuo codice
-        st.session_state.id_bambino_corrente = id_selezionato
-        st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]] # Simuliamo il df_filtrato
+        if id_selezionato is not None:
+            st.session_state.id_bambino_corrente = id_selezionato
+            st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
     else:
-        # Se non è selezionato nulla, puliamo lo stato
+        # Se il campo è vuoto o la chiave non esiste nella mappa (es. durante un reset), puliamo lo stato
         st.session_state.id_bambino_corrente = None
         st.session_state.risultato_ricerca = None
 
