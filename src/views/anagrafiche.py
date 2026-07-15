@@ -213,7 +213,7 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- 🌟 BANNER BLU COMPATTO (HTML Singolo e Sicuro al 100%) ---
+            # --- 🌟 BANNER BLU COMPATTO IN CIMA ---
             nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
             
             st.markdown(
@@ -223,7 +223,7 @@ def mostra_anagrafiche(df_iscritti):
                     padding: 20px 25px;
                     border-radius: 10px;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                    margin-bottom: 15px;
+                    margin-bottom: 25px;
                 ">
                     <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
                         Scheda Anagrafica Iscritto
@@ -235,21 +235,6 @@ def mostra_anagrafiche(df_iscritti):
                 """,
                 unsafe_allow_html=True
             )
-            
-            # --- 🌟 PULSANTE DI MODIFICA (Posizionato subito sotto, pulito e nativo) ---
-            col_spazio, col_pulsante = st.columns([3, 1])
-            with col_pulsante:
-                if not st.session_state.modalita_modifica:
-                    if st.button("✏️ Modifica Dati", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
-                        st.session_state.modalita_modifica = True
-                        st.rerun()
-                else:
-                    if st.button("❌ Annulla Modifica", key="btn_annulla_modifica", use_container_width=True, type="primary"):
-                        st.session_state.modalita_modifica = False
-                        st.rerun()
-
-            # Spazio di separazione prima del corpo
-            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
             # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
@@ -336,7 +321,7 @@ def mostra_anagrafiche(df_iscritti):
                             except Exception as e:
                                 st.error(f"Errore durante il salvataggio: {e}")
             else:
-                # VISTA STATICA
+                # VISTA STATICA (I 3 Box Dati)
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
                 data_nascita_val = riga_bambino[col_nascita]
@@ -346,7 +331,7 @@ def mostra_anagrafiche(df_iscritti):
                 stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 220px; box-sizing: border-box;"
 
                 # ==========================================
-                # 1. BOX IDENTITÀ (Allineato in verticale con Flexbox)
+                # 1. BOX IDENTITÀ
                 # ==========================================
                 with box_anagrafica:
                     st.markdown("#### 👤 Dati anagrafici")
@@ -410,6 +395,18 @@ def mostra_anagrafiche(df_iscritti):
                         </div>
                         """, unsafe_allow_html=True
                     )
+
+                # ==========================================
+                # 🌟 PULSANTE DI MODIFICA IN FONDO A DESTRA
+                # ==========================================
+                # Un piccolo spazio di stacco dai box soprastanti
+                st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+                
+                col_spazio_inf, col_pulsante_inf = st.columns([3, 1])
+                with col_pulsante_inf:
+                    if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
+                        st.session_state.modalita_modifica = True
+                        st.rerun()
 
         # ==========================================
         # 2. TAB: GENITORE & FAMIGLIA
