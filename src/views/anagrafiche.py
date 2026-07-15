@@ -314,16 +314,16 @@ def mostra_anagrafiche(df_iscritti):
                 # 1. BOX IDENTITÀ (Con Nascita)
                 # ==========================================
                 with box_anagrafica:
-                    st.markdown("#### 👤 Identità")
+                    st.markdown("#### 👤 Dati anagrafici")
                     cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b> {riga_bambino[col_cognome]}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b> {riga_bambino[col_nome]}</p>
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Data di nascita:</b> {data_nascita_str}</p>
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Luogo di nascita:</b> {riga_bambino[col_luogo]}</p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
+                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><span style="color: #0f172a; font-weight: 600;"> {cf_pulito}</span></p>
                         </div>
                         """, unsafe_allow_html=True
                     )
@@ -334,7 +334,7 @@ def mostra_anagrafiche(df_iscritti):
                 with box_residenza:
                     st.markdown("#### 📍 Residenza e Contatti")
                     indirizzo_completo = f"{riga_bambino[col_via]}, {riga_bambino[col_civico]}"
-                    citta_completa = f"{riga_bambino[col_cap]} - {riga_bambino[col_citta]}"
+                    citta_completa = f"{riga_bambino[col_citta]} - {riga_bambino[col_cap]}"
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
