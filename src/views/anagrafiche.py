@@ -397,11 +397,12 @@ def mostra_anagrafiche(df_iscritti):
 
                 # --- PULSANTE DI MODIFICA IN FONDO AL TAB BAMBINO ---
                 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
-                col_spazio_inf, col_pulsante_inf = st.columns([1, 3])
-                with col_pulsante_inf:
-                    if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
-                        st.session_state.modalita_modifica = True
-                        st.rerun()
+
+                # Nessuna colonna: inserito direttamente nel container/tab principale
+                # use_container_width=False impedisce al pulsante di espandersi fino a destra
+                if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica", use_container_width=False, type="secondary"):
+                    st.session_state.modalita_modifica = True
+                    st.rerun()
 
         # ==========================================
         # 2. TAB: GENITORE & FAMIGLIA
