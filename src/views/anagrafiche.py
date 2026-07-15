@@ -363,7 +363,7 @@ def mostra_anagrafiche(df_iscritti):
                             <div style="margin-bottom: 12px;">
                                 <p style="margin: 0 0 12px 0; font-size: 17px; color: #0f172a;">Indirizzo: <span style="font-weight: 600;">{indirizzo_completo}</span></p>
                                 <p style="margin: 0 0 12px 0; font-size: 17px; color: #0f172a;">Città e CAP: <span style="font-weight: 600;">{citta_completa}</span></p>
-                                <p style="margin: 0; font-size: 17px; color: #0f172a;">Numero di contatto: <span style="font-weight: 600;">{contatto_genitore}</span></p>
+                                <p style="margin: 0 0 12px 0; font-size: 17px; color: #0f172a;">Numero di contatto: <span style="font-weight: 600;">{contatto_genitore}</span></p>
                                 <p style="margin: 0; font-size: 17px; color: #0f172a;">Nome genitore: <span style="font-weight: 600;">{nome_completo_genitore}</span></p>
                             </div>
                         </div>
