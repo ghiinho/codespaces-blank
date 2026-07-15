@@ -38,15 +38,24 @@ def mostra_anagrafiche(df_iscritti):
     # Settimane (Dinamica)
     colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
-    # --- STATO DELLA RICERCA ---
-    if "id_bambino_corrente" not in st.session_state:
-        st.session_state.id_bambino_corrente = None
-    if "risultato_ricerca" not in st.session_state:
-        st.session_state.risultato_ricerca = None
-    if "scheda_attiva" not in st.session_state:
-        st.session_state.scheda_attiva = "bambino"
-    if "modalita_modifica" not in st.session_state:
-        st.session_state.modalita_modifica = False
+    # --- RESET AUTOMATICO AL CAMBIO PAGINA ---
+    # 1. Teniamo traccia di dove si trova l'utente
+    if "ultima_pagina_vista" not in st.session_state:
+        st.session_state.ultima_pagina_vista = "Home Page"
+
+    # 2. Se l'utente è appena arrivato qui da un'altra pagina, azzeriamo tutto!
+    if st.session_state.ultima_pagina_vista != "Anagrafiche Iscritti":
+    # Svuota il testo digitato nella barra
+        st.session_state["ricerca_cognome"] = ""
+    # Svuota i risultati salvati della ricerca precedente
+    if "risultato_ricerca" in st.session_state:
+        del st.session_state.risultato_ricerca
+    # Resetta anche la scheda attiva se necessario
+    if "scheda_attiva" in st.session_state:
+        st.session_state.scheda_attiva = None
+
+    # 3. Aggiorniamo la pagina corrente come ultima vista per il prossimo giro
+    st.session_state.ultima_pagina_vista = "Anagrafiche Iscritti"
 
     # --- MOTORE DI RICERCA ---
     col_ricerca, col_bottone = st.columns([4, 1])
