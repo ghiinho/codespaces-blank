@@ -33,7 +33,7 @@ def barra_ricerca(df):
         "Cerca un iscritto:",
         options=lista_opzioni,
         index=indice_default,
-        placeholder="Digita cognome o nome...",
+        placeholder="Digita il cognome...",
         key="input_ricerca"
     )
     
