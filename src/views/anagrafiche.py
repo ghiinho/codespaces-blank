@@ -366,7 +366,7 @@ def mostra_anagrafiche(df_iscritti):
                                 <p style="margin-bottom: 12px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
                                 <p style="margin-bottom: 0; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
                             </div>
-                            <div style="border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: 10px;">
+                            <div>
                                 <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
                             </div>
                         </div>
@@ -391,7 +391,7 @@ def mostra_anagrafiche(df_iscritti):
                             <div>
                                 <p style="font-size: 16px; margin-bottom: 0;"><b>Stato:</b> {icona} {ha_allergie}</p>
                             </div>
-                            <div style="border-top: 1px solid rgba(0, 0, 0, 0.04); padding-top: 10px; margin-top: 10px;">
+                            <div>
                                 <p style="margin-bottom: 0; font-size: 14px;">{dettaglio}</p>
                             </div>
                         </div>
