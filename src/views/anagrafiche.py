@@ -313,7 +313,7 @@ def mostra_anagrafiche(df_iscritti):
                             df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
                             
                             try:
-                                df_iscritti.to_excel("iscritti.xlsx", index=False)
+                                df_iscritti.to_excel("gestionale.xlsx", index=False)
                                 st.success("✅ Dati del bambino aggiornati con successo!")
                                 st.session_state.modalita_modifica = False
                                 st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
