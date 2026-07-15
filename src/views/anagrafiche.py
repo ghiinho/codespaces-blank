@@ -462,7 +462,7 @@ def mostra_anagrafiche(df_iscritti):
                 
                 g_col1, g_col2 = st.columns(2)
                 with g_col1:
-                    st.markdown("#### 👤 Dati anagrafici genitore")
+                    st.markdown("#### 👤 Dati genitore")
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
