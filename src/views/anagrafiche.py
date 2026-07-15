@@ -443,7 +443,7 @@ def mostra_anagrafiche(df_iscritti):
                                 df_iscritti.at[idx_f, col_g_email] = e_g_email
                         
                         try:
-                            df_iscritti.to_excel("iscritti.xlsx", index=False)
+                            df_iscritti.to_excel("gestionale.xlsx", index=False)
                             st.success("✅ Contatti della famiglia aggiornati (e allineati per eventuali fratelli)!")
                             st.session_state.modalita_modifica = False
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
@@ -462,25 +462,24 @@ def mostra_anagrafiche(df_iscritti):
                 
                 g_col1, g_col2 = st.columns(2)
                 with g_col1:
-                    st.markdown("#### 👤 Dati Personali Genitore")
+                    st.markdown("#### 👤 Dati anagrafici genitore")
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
-                            <p style="margin-bottom: 10px; font-size: 15px;"><b>Nominativo:</b> {nome_completo_genitore}</p>
-                            <p style="margin-bottom: 10px; font-size: 15px;"><b>Data di Nascita:</b> {data_n_g_str}</p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b> <span style="font-weight: 600;">{cf_g_pulito}</span></p>
+                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Nominativo:</b> {nome_completo_genitore}</p>
+                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Data di Nascita:</b> {data_n_g_str}</p>
+                            <p style="margin-bottom: 0; font-size: 17px;"><b>Codice Fiscale:</b> {cf_g_pulito}</p>
                         </div>
                         """, unsafe_allow_html=True
                     )
                     
                 with g_col2:
-                    st.markdown("#### 📞 Contatti Rapidi")
+                    st.markdown("#### 📞 Recapiti")
                     st.markdown(
                         f"""
                         <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4; min-height: 180px;">
-                            <p style="margin-bottom: 12px; font-size: 16px; color: #0d9488;"><b>Riferimenti di Emergenza:</b></p>
-                            <p style="margin-bottom: 10px; font-size: 15px;"><b>📞 Telefono:</b> <a href="tel:{tel_g_pulito}" style="font-weight: bold; color: #0f172a; text-decoration: none;">{tel_g_pulito}</a></p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0d9488;">{riga_bambino[col_g_email]}</a></p>
+                            <p style="margin-bottom: 10px; font-size: 17px;"><b>📞 Telefono:</b> <a href="tel:{tel_g_pulito}" style="font-weight: bold; color: #0f172a; text-decoration: none;">{tel_g_pulito}</a></p>
+                            <p style="margin-bottom: 0; font-size: 17px;"><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0d9488;">{riga_bambino[col_g_email]}</a></p>
                         </div>
                         """, unsafe_allow_html=True
                     )
