@@ -308,7 +308,7 @@ def mostra_anagrafiche(df_iscritti):
                 data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
                 
                 # Recuperiamo il contatto del genitore (sostituisci 'col_contatto' con la tua colonna reale se diversa)
-                contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_contatto' in locals() else "Dato mancante"
+                contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
 
                 # ==========================================
                 # 1. BOX IDENTITÀ (Con Nascita)
@@ -321,7 +321,8 @@ def mostra_anagrafiche(df_iscritti):
                         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nato/a il:</b> {data_nascita_str} <b>a:</b> {riga_bambino[col_luogo]}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nato/a il:</b> {data_nascita_str}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>a:</b> {riga_bambino[col_luogo]}</p>
                             <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
                         </div>
                         """, unsafe_allow_html=True
