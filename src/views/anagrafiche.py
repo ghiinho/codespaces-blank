@@ -1,6 +1,33 @@
 import streamlit as st
 import pandas as pd
 
+# Riduciamo gli spazi verticali nativi di Streamlit per compattare la pagina
+st.markdown(
+    """
+    <style>
+        /* Riduce il margine superiore dell'intera pagina */
+        .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+        }
+        /* Riduce lo spazio tra i singoli blocchi/elementi di Streamlit */
+        .stVerticalBlock {
+            gap: 0.5rem !important;
+        }
+        /* Riduce la distanza sopra e sotto i divisori (---) */
+        hr {
+            margin: 0.8rem 0 !important;
+        }
+        /* Riduce il margine sotto i titoli */
+        h1, h2, h3, h4 {
+            margin-bottom: 0.2rem !important;
+            padding-bottom: 0 !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
     st.write("Visualizza, modifica o aggiorna i dati personali, sanitari e i contatti di ciascun iscritto.")
@@ -204,29 +231,86 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # 🌟 INTESTAZIONE IN PRIMO PLANO (Sempre visibile in alto alla scheda)
+            # --- 🌟 BANNER BLU SCURO COMPATTO CON PULSANTE INTEGRATO ---
             nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
+            
+            # Creiamo un contenitore HTML con posizione relativa per posizionare gli elementi al millimetro
             st.markdown(
                 f"""
                 <div style="
                     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                    padding: 20px 25px;
+                    padding: 15px 25px;
                     border-radius: 10px;
-                    margin-top: 10px;
-                    margin-bottom: 25px;
+                    margin-top: 0px;
+                    margin-bottom: 15px;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                ">
-                    <span style="color: #38bdf8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
-                        Scheda Anagrafica Iscritto
-                    </span>
-                    <h2 style="color: #ffffff; margin: 5px 0 0 0; font-size: 30px; font-weight: 700; border: none; padding: 0;">
-                        👦 {nome_completo}
-                    </h2>
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                " id="banner-intestazione">
+                    <div style="flex-grow: 1;">
+                        <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px;">
+                            Scheda Anagrafica Iscritto
+                        </span>
+                        <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
+                            👦 {nome_completo}
+                        </h2>
+                    </div>
+                    <div id="btn-container" style="margin-left: 20px;">
+                        <!-- Questo contenitore HTML fa da ancora visiva per il pulsante Streamlit affiancato -->
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
             )
+            
+            # Per far apparire il pulsante reale di Streamlit sopra l'area destra del banner blu,
+            # usiamo un layout a colonne subito sotto o sfruttiamo le colonne di Streamlit per sovrapporlo graficamente.
+            # Ecco l'approccio Streamlit-Native più pulito:
+            
+            # Creiamo una riga di colonne fittizia per allineare il pulsante sulla destra del banner
+            col_sinistra_vuota, col_destra_pulsante = st.columns([4, 1])
+            with col_destra_pulsante:
+                # Un piccolo trucco CSS per spostare il pulsante Streamlit in alto ed inserirlo visivamente dentro al banner sovrastante
+                st.markdown(
+                    """
+                    <style>
+                        div[element-to-ofuscate="true"] { display: none; }
+                        /* Sposta il pulsante di modifica verso l'alto per farlo entrare dentro al banner */
+                        .edit-btn-container {
+                            margin-top: -72px;
+                            margin-bottom: 25px;
+                            text-align: right;
+                        }
+                        /* Stile personalizzato per rendere il bottone coordinato */
+                        .edit-btn-container button {
+                            background-color: rgba(255, 255, 255, 0.1) !important;
+                            color: #ffffff !important;
+                            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                            transition: all 0.2s ease;
+                        }
+                        .edit-btn-container button:hover {
+                            background-color: #38bdf8 !important;
+                            color: #0f172a !important;
+                            border-color: #38bdf8 !important;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True
+                )
+                
+                st.markdown('<div class="edit-btn-container">', unsafe_allow_html=True)
+                # Mostriamo il bottone di modifica dinamico
+                if not st.session_state.modalita_modifica:
+                    if st.button("✏️ Modifica Dati", key="btn_attiva_modifica", use_container_width=True):
+                        st.session_state.modalita_modifica = True
+                        st.rerun()
+                else:
+                    if st.button("❌ Annulla", key="btn_annulla_modifica", use_container_width=True):
+                        st.session_state.modalita_modifica = False
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
+            # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
                 # FORM DI MODIFICA
                 with st.form("form_modifica_bambino"):
@@ -240,17 +324,11 @@ def mostra_anagrafiche(df_iscritti):
                     with c_nasc1:
                         e_luogo = st.text_input("Luogo di Nascita", value=str(riga_bambino[col_luogo]))
                     with c_nasc2:
-                        # 1. Recuperiamo il valore grezzo della data
                         data_grezza = riga_bambino[col_nascita]
-                        
-                        # 2. Proviamo a formattarla in GG/MM/AAAA, altrimenti usiamo un fallback sicuro
                         try:
                             data_pulita = pd.to_datetime(data_grezza).strftime('%d/%m/%Y')
                         except Exception:
-                            # Se il campo è vuoto o non è una data valida, mostriamo il valore così com'è o vuoto
                             data_pulita = str(data_grezza) if pd.notna(data_grezza) else ""
-
-                        # 3. Mostriamo il text_input con la data pulita
                         e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA)", value=data_pulita)
                     
                     c_res1, c_res2, c_res3, c_res4 = st.columns([3, 1, 1, 2])
@@ -271,8 +349,6 @@ def mostra_anagrafiche(df_iscritti):
                     salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
                     
                     if salva_bambino:
-                        # 1. Creiamo un dizionario con tutti i campi da controllare (Nome visualizzato -> Variabile)
-                        # Escludiamo solo 'e_quali' da questa lista perché dipende dalla risposta sulle allergie
                         campi_da_validare = {
                             "Cognome": e_cognome,
                             "Nome": e_nome,
@@ -286,22 +362,18 @@ def mostra_anagrafiche(df_iscritti):
                             "Allergie (SÌ/NO)": e_allergie
                         }
 
-                        # 2. Controlliamo se ci sono campi vuoti o composti solo da spazi
                         campi_mancanti = []
                         for nome_campo, valore in campi_da_validare.items():
                             valore_stringa = str(valore).strip() if valore is not None else ""
                             if not valore_stringa:
                                 campi_mancanti.append(nome_campo)
                         
-                        # Controllo speciale per le allergie: se ha risposto SÌ, deve specificare quali!
                         if e_allergie == "SÌ" and (not e_quali or not str(e_quali).strip()):
                             campi_mancanti.append("Specificare quali allergie")
 
-                        # 3. Se ci sono campi vuoti, blocchiamo il salvataggio e mostriamo l'errore
                         if len(campi_mancanti) > 0:
                             st.error(f"⚠️ **Impossibile salvare!** Tutti i campi sono obbligatori. Ti sei dimenticato di compilare: **{', '.join(campi_mancanti)}**")
                         else:
-                            # 4. Se tutto è compilato, procediamo con il salvataggio pulendo i testi
                             df_iscritti.at[riga_index, col_cognome] = e_cognome.strip().upper()
                             df_iscritti.at[riga_index, col_nome] = e_nome.strip().title()
                             df_iscritti.at[riga_index, col_cf] = e_cf.strip().upper()
@@ -326,15 +398,11 @@ def mostra_anagrafiche(df_iscritti):
                 # VISTA STATICA
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
-                # Prepariamo le variabili di data e contatti prima di disegnare i box
                 data_nascita_val = riga_bambino[col_nascita]
                 data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
-                
-                # Recuperiamo il contatto del genitore
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
                 
-                # Definizione dello stile comune Flexbox per l'allineamento verticale
-                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 250px; box-sizing: border-box;"
+                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 220px; box-sizing: border-box;"
 
                 # ==========================================
                 # 1. BOX IDENTITÀ (Allineato in verticale con Flexbox)
@@ -357,7 +425,7 @@ def mostra_anagrafiche(df_iscritti):
                     )
                 
                 # ==========================================
-                # 2. BOX RESIDENZA E CONTATTI (Allineato in verticale con Flexbox)
+                # 2. BOX RESIDENZA E CONTATTI
                 # ==========================================
                 with box_residenza:
                     st.markdown("#### 📍 Residenza e Contatti")
@@ -378,7 +446,7 @@ def mostra_anagrafiche(df_iscritti):
                     )
                 
                 # ==========================================
-                # 3. BOX SANITARIO (Allineato in verticale con Flexbox)
+                # 3. BOX SANITARIO
                 # ==========================================
                 with box_sanitario:
                     st.markdown("#### ⚠️ Informazioni Sanitarie")
