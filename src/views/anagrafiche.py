@@ -466,8 +466,8 @@ def mostra_anagrafiche(df_iscritti):
                     st.markdown(
                         f"""
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
-                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Nominativo:</b> {nome_completo_genitore}</p>
-                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Data di Nascita:</b> {data_n_g_str}</p>
+                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Cognome e nome:</b> {nome_completo_genitore}</p>
+                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Data di nascita:</b> {data_n_g_str}</p>
                             <p style="margin-bottom: 0; font-size: 17px;"><b>Codice Fiscale:</b> {cf_g_pulito}</p>
                         </div>
                         """, unsafe_allow_html=True
@@ -487,7 +487,7 @@ def mostra_anagrafiche(df_iscritti):
                 # Visualizzazione Fratelli
                 if not fratelli.empty:
                     st.markdown("---")
-                    st.markdown("### 👦 Altri figli iscritti a carico di questo genitore:")
+                    st.markdown("### 👦 Altri figli iscritti da questo genitore:")
                     for idx_fratello, riga_fratello in fratelli.iterrows():
                         nome_fratello = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
                         btn_col1, btn_col2 = st.columns([3, 1])
