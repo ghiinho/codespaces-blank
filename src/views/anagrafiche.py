@@ -208,8 +208,6 @@ def mostra_anagrafiche(df_iscritti):
                 st.session_state.modalita_modifica = False
                 st.rerun()
 
-        st.markdown("---")
-
         # ==========================================
         # 1. TAB: BAMBINO
         # ==========================================
