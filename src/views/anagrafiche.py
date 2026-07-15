@@ -63,12 +63,12 @@ def mostra_anagrafiche(df_iscritti):
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti.index))
     
     # Creiamo la lista finale aggiungendo un'opzione vuota all'inizio come invito alla ricerca
-    lista_selectbox = ["🔍 Inizia a digitare il cognome o nome..."] + list(opzioni_ricerca)
+    lista_selectbox = list(opzioni_ricerca)
 
     # ==========================================
     # 2. INTERFACCIA GRAFICA COMPATTA
     # ==========================================
-    st.markdown("### 👤 Ricerca Rapida Iscritto")
+    st.markdown("### 👤 Ricerca Iscritti")
     
     # Applichiamo il trucco del CSS per rendere la Selectbox grande e leggibile
     st.markdown(
@@ -91,10 +91,12 @@ def mostra_anagrafiche(df_iscritti):
     col_ricerca, col_vuota = st.columns([3, 2])
     
     with col_ricerca:
+        # Usiamo index=None e il placeholder nativo di Streamlit!
         scelta_utente = st.selectbox(
             "Cerca un iscritto:",
             options=lista_selectbox,
-            index=0,
+            index=None,  # All'avvio non seleziona nulla di default
+            placeholder="🔍 Digita il cognome o nome...", # Scritta di aiuto in grigio chiaro
             key="ricerca_dinamica_selectbox"
         )
 
