@@ -310,6 +310,8 @@ def mostra_anagrafiche(df_iscritti):
                 # Recuperiamo il contatto del genitore
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
 
+                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 250px; box-sizing: border-box;"
+                
                 # ==========================================
                 # 1. BOX IDENTITÀ (Con Nascita)
                 # ==========================================
@@ -337,7 +339,7 @@ def mostra_anagrafiche(df_iscritti):
                     citta_completa = f"{riga_bambino[col_citta]} - {riga_bambino[col_cap]}"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px; vertical">
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
                             <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
