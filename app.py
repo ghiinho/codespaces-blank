@@ -144,7 +144,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
 
         # --- MAPPATURA COLONNE SETTIMANE (Dinamica) ---
         # Cerchiamo tutte le colonne che contengono "settimana" nel nome (non importa se maiuscolo/minuscolo)
-        colonne_settimane = [col for col in colonne_reali if "Settimane" in col.lower()]
+        colonne_settimane = [col for col in colonne_reali if "SETTIMANE" in col.lower()]
 
         # --- STATO DELLA RICERCA ---
         if "id_bambino_corrente" not in st.session_state:
