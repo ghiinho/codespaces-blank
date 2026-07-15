@@ -49,7 +49,7 @@ def mostra_anagrafiche(df_iscritti):
     colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
     # --- MOTORE DI RICERCA OTTIMIZZATO ---
-    st.markdown("### 🔍 Ricerca Rapida Iscritto")
+    st.markdown("### 🔍 Ricerca Iscritti")
     
     # Usiamo colonne più strette e bilanciate per non disperdere lo spazio 
     # (3 parti per la ricerca, 1 parte per il bottone, e lasciamo spazio vuoto a destra)
