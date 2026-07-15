@@ -124,7 +124,7 @@ def mostra_anagrafiche(df_iscritti):
         scelta_utente = st.selectbox(
             "Cerca un iscritto:",
             options=lista_selectbox,
-            index=indice_default_selectbox,
+            index=None,
             placeholder="🔍 Digita il cognome o nome...",
             key="ricerca_dinamica_selectbox"
         )
