@@ -110,7 +110,8 @@ def mostra_anagrafiche(df_iscritti):
             options=lista_selectbox,
             index=None,  # All'avvio non seleziona nulla di default
             placeholder="🔍 Digita il cognome o nome...", # Scritta di aiuto in grigio chiaro
-            key="ricerca_dinamica_selectbox"
+            key="ricerca_dinamica_selectbox",
+            on_change=al_cambio_selezione
         )
 
     st.markdown("---")
