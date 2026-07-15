@@ -88,33 +88,33 @@ def mostra_anagrafiche(df_iscritti):
             return
 
         # Gestione omonimie
-    if len(df_filtrato) > 1:
-        # Usiamo un font più grande per il messaggio di avviso
-        st.success(f"📋 **Trovati {len(df_filtrato)} iscritti corrispondenti.**")
+        if len(df_filtrato) > 1:
+            # Usiamo un font più grande per il messaggio di avviso
+            st.success(f"📋 **Trovati {len(df_filtrato)} iscritti corrispondenti.**")
         
-        # TRASFORMAZIONE: Cognome in MAIUSCOLO, Nome con iniziale maiuscola e CF in MAIUSCOLO (.str.upper())
-        scelte = (
-            df_filtrato[col_cognome].astype(str).str.upper() + " " + 
-            df_filtrato[col_nome].astype(str).str.title() + " (" + 
-            df_filtrato[col_cf].astype(str).str.upper() + ")"
-        )
+            # TRASFORMAZIONE: Cognome in MAIUSCOLO, Nome con iniziale maiuscola e CF in MAIUSCOLO (.str.upper())
+            scelte = (
+                df_filtrato[col_cognome].astype(str).str.upper() + " " + 
+                df_filtrato[col_nome].astype(str).str.title() + " (" + 
+                df_filtrato[col_cf].astype(str).str.upper() + ")"
+            )
         
-        default_index = 0
-        if st.session_state.id_bambino_corrente in df_filtrato.index:
-            default_index = list(df_filtrato.index).index(st.session_state.id_bambino_corrente)
-            
-        # Ingrandiamo leggermente l'etichetta del selettore
-        st.markdown("<p style='font-size: 18px; font-weight: bold; margin-bottom: -10px;'>Seleziona l'anagrafica da visualizzare:</p>", unsafe_allow_html=True)
-        bambino_scelto = st.radio("", scelte, index=default_index)
+            default_index = 0
+            if st.session_state.id_bambino_corrente in df_filtrato.index:
+                default_index = list(df_filtrato.index).index(st.session_state.id_bambino_corrente)
+                
+            # Ingrandiamo leggermente l'etichetta del selettore
+            st.markdown("<p style='font-size: 18px; font-weight: bold; margin-bottom: -10px;'>Seleziona l'anagrafica da visualizzare:</p>", unsafe_allow_html=True)
+            bambino_scelto = st.radio("", scelte, index=default_index)
         
-        nuovo_id = scelte[scelte == bambino_scelto].index[0]
-        if nuovo_id != st.session_state.id_bambino_corrente:
-            st.session_state.id_bambino_corrente = nuovo_id
-            st.session_state.modalita_modifica = False # Resetta lo stato di modifica
-            st.rerun()
+            nuovo_id = scelte[scelte == bambino_scelto].index[0]
+            if nuovo_id != st.session_state.id_bambino_corrente:
+                st.session_state.id_bambino_corrente = nuovo_id
+                st.session_state.modalita_modifica = False # Resetta lo stato di modifica
+                st.rerun()
     
-    elif len(df_filtrato) == 1 and st.session_state.id_bambino_corrente not in df_filtrato.index:
-        st.session_state.id_bambino_corrente = df_filtrato.index[0]
+        elif len(df_filtrato) == 1 and st.session_state.id_bambino_corrente not in df_filtrato.index:
+            st.session_state.id_bambino_corrente = df_filtrato.index[0]
 
         # Estrazione della riga corrente
         riga_bambino = df_iscritti.loc[st.session_state.id_bambino_corrente]
