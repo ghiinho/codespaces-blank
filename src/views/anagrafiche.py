@@ -217,15 +217,7 @@ def mostra_anagrafiche(df_iscritti):
             nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
             
             # Stile CSS comune per "fondere" le due colonne in un unico blocco visivo
-            stile_comune = """
-                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                padding: 18px 25px;
-                min-height: 90px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            """
+            stile_comune = "background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 18px 25px; min-height: 90px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
             
             # Creiamo due colonne per affiancare il testo e il pulsante
             col_sinistra_nome, col_destra_pulsante = st.columns([3, 1])
