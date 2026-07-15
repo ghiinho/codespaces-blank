@@ -187,6 +187,31 @@ def mostra_anagrafiche(df_iscritti):
         ]
         fratelli = fratelli.drop(st.session_state.id_bambino_corrente, errors='ignore')
 
+        # ==========================================
+        # 🌟 HEADER FISSO: BANNER BLU IN CIMA A TUTTO
+        # ==========================================
+        nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
+
+        st.markdown(
+            f"""
+            <div style="
+                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                padding: 20px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                margin-bottom: 25px;
+            ">
+                <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
+                    Scheda Anagrafica Iscritto
+                </span>
+                <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
+                    👦 {nome_completo}
+                </h2>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
         # --- MENU NAVIGAZIONE SCHEDE ---
         col_tab1, col_tab2, col_tab3 = st.columns(3)
         with col_tab1:
@@ -213,29 +238,6 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- 🌟 BANNER BLU COMPATTO IN CIMA ---
-            nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
-            
-            st.markdown(
-                f"""
-                <div style="
-                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                    padding: 20px 25px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                    margin-bottom: 25px;
-                ">
-                    <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
-                        Scheda Anagrafica Iscritto
-                    </span>
-                    <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
-                        👦 {nome_completo}
-                    </h2>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
             # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
                 # FORM DI MODIFICA
@@ -321,7 +323,7 @@ def mostra_anagrafiche(df_iscritti):
                             except Exception as e:
                                 st.error(f"Errore durante il salvataggio: {e}")
             else:
-                # VISTA STATICA (I 3 Box Dati)
+                # VISTA STATICA
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
                 data_nascita_val = riga_bambino[col_nascita]
@@ -396,12 +398,8 @@ def mostra_anagrafiche(df_iscritti):
                         """, unsafe_allow_html=True
                     )
 
-                # ==========================================
-                # 🌟 PULSANTE DI MODIFICA IN FONDO A DESTRA
-                # ==========================================
-                # Un piccolo spazio di stacco dai box soprastanti
+                # --- PULSANTE DI MODIFICA IN FONDO AL TAB BAMBINO ---
                 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
-                
                 col_spazio_inf, col_pulsante_inf = st.columns([3, 1])
                 with col_pulsante_inf:
                     if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
