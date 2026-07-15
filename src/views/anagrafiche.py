@@ -54,9 +54,9 @@ def mostra_anagrafiche(df_iscritti):
     df_iscritti_ordinato = df_iscritti.sort_values(by=[col_cognome, col_nome])
     
     opzioni_ricerca = (
-        df_iscritti[col_cognome].astype(str).str.upper() + " " + 
-        df_iscritti[col_nome].astype(str).str.title() + " (" + 
-        df_iscritti[col_cf].astype(str).str.upper() + ")"
+        df_iscritti_ordinato[col_cognome].astype(str).str.upper() + " " + 
+        df_iscritti_ordinato[col_nome].astype(str).str.title() + " (" + 
+        df_iscritti_ordinato[col_cf].astype(str).str.upper() + ")"
     )
     
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti_ordinato.index))
