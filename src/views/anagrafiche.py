@@ -119,6 +119,8 @@ def mostra_anagrafiche(df_iscritti):
             id_sel = mappa_opzioni.get(sel)
             st.session_state.id_bambino_corrente = id_sel
             st.session_state.risultato_ricerca = df_iscritti.loc[[id_sel]]
+            # Assicurarsi di posizionarsi sempre sui Dati Bambino quando si apre una scheda
+            st.session_state.scheda_attiva = "bambino"
 
     with col_ricerca:
         scelta_utente = st.selectbox(
