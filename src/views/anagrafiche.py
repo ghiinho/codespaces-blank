@@ -51,6 +51,8 @@ def mostra_anagrafiche(df_iscritti):
     # ==========================================
     # 1. PREPARAZIONE DELLA LISTA DI RICERCA
     # ==========================================
+    df_iscritti_ordinato = df_iscritti.sort_values(by=[col_cognome, col_nome])
+    
     opzioni_ricerca = (
         df_iscritti[col_cognome].astype(str).str.upper() + " " + 
         df_iscritti[col_nome].astype(str).str.title() + " (" + 
