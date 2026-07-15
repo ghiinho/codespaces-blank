@@ -229,6 +229,15 @@ def mostra_anagrafiche(df_iscritti):
         with col_tab2:
             tipo_g = "primary" if st.session_state.scheda_attiva == "genitore" else "secondary"
             if st.button("👨‍👩‍👧 Contatti Genitore", type=tipo_g, use_container_width=True):
+                # Sincronizziamo la selectbox con l'iscritto corrente per evitare sovrascritture
+                try:
+                    current_id = st.session_state.get('id_bambino_corrente')
+                    if current_id is not None:
+                        opt = mappa_indice_a_opzione.get(current_id)
+                        if opt is not None:
+                            st.session_state.ricerca_dinamica_selectbox = opt
+                except Exception:
+                    pass
                 st.session_state.scheda_attiva = "genitore"
                 st.session_state.modalita_modifica = False
                 st.rerun()
@@ -358,8 +367,12 @@ def mostra_anagrafiche(df_iscritti):
                             se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
                             if len(se_fratelli) > 1:
                                 for idx_f in se_fratelli:
+                                    df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome.strip()
+                                    df_iscritti.at[idx_f, col_g_nome] = e_g_nome.strip()
+                                    df_iscritti.at[idx_f, col_g_cf] = e_g_cf.strip().upper()
                                     df_iscritti.at[idx_f, col_g_tel] = e_g_tel.strip()
                                     df_iscritti.at[idx_f, col_g_email] = e_g_email.strip()
+                                    df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita.strip()
                             
                             try:
                                 df_iscritti.to_excel("gestionale.xlsx", index=False)
@@ -488,8 +501,12 @@ def mostra_anagrafiche(df_iscritti):
                         se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
                         if len(se_fratelli) > 1:
                             for idx_f in se_fratelli:
+                                df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome
+                                df_iscritti.at[idx_f, col_g_nome] = e_g_nome
+                                df_iscritti.at[idx_f, col_g_cf] = e_g_cf
                                 df_iscritti.at[idx_f, col_g_tel] = e_g_tel
                                 df_iscritti.at[idx_f, col_g_email] = e_g_email
+                                df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita
                         
                         try:
                             df_iscritti.to_excel("gestionale.xlsx", index=False)
