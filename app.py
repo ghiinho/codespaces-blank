@@ -22,10 +22,11 @@ df_iscritti = db_utils.ottieni_iscritti()
 # 3. Disegniamo la barra laterale di navigazione
 disegna_sidebar()
 
+# 4. Mostra la vista corretta in base allo stato attuale
 if st.session_state.pagina_corrente == "Home Page":
     mostra_home()
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
-    mostra_anagrafiche(df_iscritti) # Passando il tuo DataFrame
+    mostra_anagrafiche(df_iscritti)
 elif st.session_state.pagina_corrente == "Impostazioni":
     mostra_impostazioni()
     
