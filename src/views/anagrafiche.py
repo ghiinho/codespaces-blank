@@ -61,23 +61,25 @@ def mostra_anagrafiche(df_iscritti):
     
     # Creiamo un dizionario temporaneo per mappare ogni opzione testuale al suo ID reale (l'indice del DataFrame)
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti.index))
+    # Creiamo la lista finale aggiungendo un'opzione vuota all'inizio come invito alla ricerca
+    lista_selectbox = list(opzioni_ricerca)
     
+    # ==========================================
+    # 2. FUNZIONE DI CALLBACK (Salva il dato e pulisce la barra)
+    # ==========================================
     def al_cambio_selezione():
             # Recuperiamo quello che l'utente ha appena selezionato nella selectbox
             scelta = st.session_state.ricerca_dinamica_selectbox
             
             if scelta is not None and scelta in mappa_opzioni:
-                # Salviamo il bambino selezionato nello stato persistente della pagina
                 id_selezionato = mappa_opzioni.get(scelta)
+                # Salviamo il bambino selezionato nello stato persistente della pagina
                 st.session_state.id_bambino_corrente = id_selezionato
                 st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
                 
-                # 💡 IL TRUCCO: Ora forziamo la selectbox a svuotarsi resettando la sua chiave interna!
+                # 💡 Svuotiamo la barra di ricerca, ma il bambino_corrente è ormai al sicuro nello stato!
                 st.session_state.ricerca_dinamica_selectbox = None
-
-    # Creiamo la lista finale aggiungendo un'opzione vuota all'inizio come invito alla ricerca
-    lista_selectbox = list(opzioni_ricerca)
-
+ 
     # ==========================================
     # 2. INTERFACCIA GRAFICA COMPATTA
     # ==========================================
@@ -119,17 +121,8 @@ def mostra_anagrafiche(df_iscritti):
     # ==========================================
     # 3. CARICAMENTO AUTOMATICO DEI DATI
     # ==========================================
-    # Se l'utente ha selezionato un iscritto reale (e non l'invito iniziale)
-    if scelta_utente is not None and scelta_utente in mappa_opzioni:
-        id_selezionato = mappa_opzioni.get(scelta_utente)
-        
-        if id_selezionato is not None:
-            st.session_state.id_bambino_corrente = id_selezionato
-            st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
-    else:
-        # Se il campo è vuoto o la chiave non esiste nella mappa (es. durante un reset), puliamo lo stato
-        st.session_state.id_bambino_corrente = None
-        st.session_state.risultato_ricerca = None
+    if st.session_state.id_bambino_corrente is not None:
+        bambino_selezionato = df_iscritti.loc[st.session_state.id_bambino_corrente]
 
 
     # ==========================================
