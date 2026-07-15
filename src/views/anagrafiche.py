@@ -209,23 +209,6 @@ def mostra_anagrafiche(df_iscritti):
                 st.session_state.modalita_modifica = False
                 st.rerun()
 
-        st.markdown("---")
-
-        # --- AZIONI RAPIDE ---
-        col_st_nome, col_st_azioni = st.columns([3, 1])
-        with col_st_nome:
-            st.subheader(f"{nome_completo_bambino}")
-        with col_st_azioni:
-            if st.session_state.scheda_attiva != "settimane":
-                if not st.session_state.modalita_modifica:
-                    if st.button("📝 Modifica Dati", use_container_width=True, type="secondary"):
-                        st.session_state.modalita_modifica = True
-                        st.rerun()
-                else:
-                    if st.button("❌ Annulla Modifica", use_container_width=True, type="primary"):
-                        st.session_state.modalita_modifica = False
-                        st.rerun()
-
         # ==========================================
         # 1. TAB: BAMBINO
         # ==========================================
