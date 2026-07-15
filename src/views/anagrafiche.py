@@ -248,42 +248,51 @@ def mostra_anagrafiche(df_iscritti):
                     salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
                     
                     if salva_bambino:
-                        # 1. Controlliamo e "puliamo" i campi obbligatori (rimuovendo spazi bianchi accidentali)
-                        cognome_pulito = e_cognome.strip() if e_cognome else ""
-                        nome_pulito = e_nome.strip() if e_nome else ""
-                        cf_pulito = e_cf.strip() if e_cf else ""
-                        nascita_pulita = e_nascita.strip() if e_nascita else ""
+                        # 1. Creiamo un dizionario con tutti i campi da controllare (Nome visualizzato -> Variabile)
+                        # Escludiamo solo 'e_quali' da questa lista perché dipende dalla risposta sulle allergie
+                        campi_da_validare = {
+                            "Cognome": e_cognome,
+                            "Nome": e_nome,
+                            "Codice Fiscale": e_cf,
+                            "Luogo di Nascita": e_luogo,
+                            "Data di Nascita": e_nascita,
+                            "Via/Piazza": e_via,
+                            "Civico": e_civico,
+                            "CAP": e_cap,
+                            "Città": e_citta,
+                            "Allergie (SÌ/NO)": e_allergie
+                        }
 
-                        # 2. Prepariamo una lista per raccogliere eventuali campi lasciati vuoti
+                        # 2. Controlliamo se ci sono campi vuoti o composti solo da spazi
                         campi_mancanti = []
-                        if not cognome_pulito:
-                            campi_mancanti.append("Cognome")
-                        if not nome_pulito:
-                            campi_mancanti.append("Nome")
-                        if not cf_pulito:
-                            campi_mancanti.append("Codice Fiscale")
-                        if not nascita_pulita:
-                            campi_mancanti.append("Data di Nascita")
+                        for nome_campo, valore in campi_da_validare.items():
+                            valore_stringa = str(valore).strip() if valore is not None else ""
+                            if not valore_stringa:
+                                campi_mancanti.append(nome_campo)
+                        
+                        # Controllo speciale per le allergie: se ha risposto SÌ, deve specificare quali!
+                        if e_allergie == "SÌ" and (not e_quali or not str(e_quali).strip()):
+                            campi_mancanti.append("Specificare quali allergie")
 
                         # 3. Se ci sono campi vuoti, blocchiamo il salvataggio e mostriamo l'errore
                         if len(campi_mancanti) > 0:
-                            st.error(f"⚠️ **Impossibile salvare!** I seguenti campi sono obbligatori e non possono essere lasciati vuoti: **{', '.join(campi_mancanti)}**")
+                            st.error(f"⚠️ **Impossibile salvare!** Tutti i campi sono obbligatori. Ti sei dimenticato di compilare: **{', '.join(campi_mancanti)}**")
                         else:
-                            # 4. Se tutto è compilato correttamente, procediamo con il salvataggio
-                            df_iscritti.at[riga_index, col_cognome] = cognome_pulito
-                            df_iscritti.at[riga_index, col_nome] = nome_pulito
-                            df_iscritti.at[riga_index, col_cf] = cf_pulito
-                            df_iscritti.at[riga_index, col_luogo] = e_luogo.strip() if e_luogo else ""
-                            df_iscritti.at[riga_index, col_nascita] = nascita_pulita
-                            df_iscritti.at[riga_index, col_via] = e_via.strip() if e_via else ""
-                            df_iscritti.at[riga_index, col_civico] = e_civico.strip() if e_civico else ""
-                            df_iscritti.at[riga_index, col_cap] = e_cap.strip() if e_cap else ""
-                            df_iscritti.at[riga_index, col_citta] = e_citta.strip() if e_citta else ""
+                            # 4. Se tutto è compilato, procediamo con il salvataggio pulendo i testi
+                            df_iscritti.at[riga_index, col_cognome] = e_cognome.strip().upper()
+                            df_iscritti.at[riga_index, col_nome] = e_nome.strip().title()
+                            df_iscritti.at[riga_index, col_cf] = e_cf.strip().upper()
+                            df_iscritti.at[riga_index, col_luogo] = e_luogo.strip().upper()
+                            df_iscritti.at[riga_index, col_nascita] = e_nascita.strip()
+                            df_iscritti.at[riga_index, col_via] = e_via.strip().title()
+                            df_iscritti.at[riga_index, col_civico] = e_civico.strip().upper()
+                            df_iscritti.at[riga_index, col_cap] = e_cap.strip()
+                            df_iscritti.at[riga_index, col_citta] = e_citta.strip().upper()
                             df_iscritti.at[riga_index, col_allergie] = e_allergie
-                            df_iscritti.at[riga_index, col_quali] = e_quali.strip() if (e_allergie == "SÌ" and e_quali) else ""
+                            df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
                             
                             try:
-                                df_iscritti.to_excel("gestionale.xlsx", index=False)
+                                df_iscritti.to_excel("iscritti.xlsx", index=False)
                                 st.success("✅ Dati del bambino aggiornati con successo!")
                                 st.session_state.modalita_modifica = False
                                 st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
