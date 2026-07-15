@@ -155,8 +155,6 @@ def mostra_anagrafiche(df_iscritti):
         height=0, # Invisibile all'utente, non occupa spazio a schermo
     )
 
-    st.markdown("---")
-
     # ==========================================
     # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
     # ==========================================
