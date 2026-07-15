@@ -341,12 +341,9 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
                             <div style="margin-bottom: 12px;">
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">DATA DI NASCITA</p>
-                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{data_nascita_str}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">LUOGO DI NASCITA</p>
-                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{riga_bambino[col_luogo]}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">CODICE FISCALE</p>
-                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a; font-family: monospace;">{cf_pulito}</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; color: #0f172a;">Data di nascita: <span style="font-weight: 600;">{data_nascita_str}</span></p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; color: #0f172a;">Luogo di nascita: <span style="font-weight: 600;">{riga_bambino[col_luogo]}</span></p>
+                                <p style="margin: 0; font-size: 15px; color: #0f172a;">Codice Fiscale: <span style="font-weight: 600; font-family: monospace;">{cf_pulito}</span></p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
@@ -363,12 +360,9 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
                             <div style="margin-bottom: 12px;">
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">INDIRIZZO</p>
-                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{indirizzo_completo}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">CITTÀ e CAP</p>
-                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{citta_completa}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">TELEFONO REFERENTE</p>
-                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;">{contatto_genitore}</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; color: #0f172a;">Indirizzo: <span style="font-weight: 600;">{indirizzo_completo}</span></p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; color: #0f172a;">Città e CAP: <span style="font-weight: 600;">{citta_completa}</span></p>
+                                <p style="margin: 0; font-size: 15px; color: #0f172a;">Telefono Referente: <span style="font-weight: 600;">{contatto_genitore}</span></p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
