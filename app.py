@@ -373,69 +373,94 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                                     st.rerun()
                 
                 elif st.session_state.scheda_attiva == "settimane":
-                    # --- VISTA SETTIMANE DI ISCRIZIONE ---
-                    st.markdown(f"### 📅 Calendario Settimanale: {nome_completo_bambino}")
-                    st.write("Verifica le settimane di frequenza registrate per questo iscritto:")
-                    
+                    # --- VISTA SETTIMANE DI ISCRIZIONE CON MODIFICA ATTIVA ---
+                    st.markdown(f"### 📅 Gestione Iscrizioni Settimanali: {nome_completo_bambino}")
+                    st.write("Modifica la tipologia di frequenza per ciascuna settimana. Clicca su 'Salva Modifiche' in fondo per rendere permanenti i cambiamenti.")
+
                     if colonne_settimane:
-                        # CASO A: C'è una sola colonna cumulativa (es. "SETTIMANE DISPONIBILI (date)")
-                        if len(colonne_settimane) == 1:
-                            col_unica = colonne_settimane[0]
-                            valore_cella = str(riga_bambino[col_unica]).strip()
+                        # Recuperiamo l'indice esatto della riga del bambino nel DataFrame principale
+                        # (Assicurati che st.session_state.df sia il DataFrame originale caricato all'inizio)
+                        id_colonna = colonne_reali[0]  # Di solito la prima colonna è l'ID univoco
+                        valore_id_corrente = riga_bambino[id_colonna]
+                        riga_index = st.session_state.df[st.session_state.df[id_colonna] == valore_id_corrente].index[0]
+
+                        # Opzioni consentite nel database
+                        opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
+
+                        # Racchiudiamo tutto in un Form per ottimizzare le performance
+                        with st.form(key="form_modifica_settimane"):
                             
-                            st.info(f"📋 **Colonna rilevata:** `{col_unica}`")
-                            
-                            if pd.isnull(riga_bambino[col_unica]) or valore_cella.lower() in ["nan", "", "nessuna", "nessuno"]:
-                                st.warning("⚠️ Nessuna settimana di iscrizione registrata per questo bambino.")
-                            else:
-                                # Se le settimane sono separate da virgole o altri caratteri, le mostriamo come elenco visivo
-                                lista_settimane = [s.strip() for s in valore_cella.replace(";", ",").split(",") if s.strip()]
-                                
-                                col_cards = st.columns(min(len(lista_settimane), 4))
-                                for idx, sett in enumerate(lista_settimane):
-                                    col_idx = idx % 4
-                                    with col_cards[col_idx]:
-                                        st.markdown(
-                                            f"""
-                                            <div style="background-color: #ecfdf5; border: 1px solid #10b981; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 100px;">
-                                                <h5 style="margin-top: 0; margin-bottom: 8px; color: #065f46; font-size: 14px;">📅 Iscritto</h5>
-                                                <p style="margin: 0; font-weight: bold; font-size: 15px; color: #1e293b;">{sett}</p>
-                                            </div>
-                                            """,
-                                            unsafe_allow_html=True
-                                        )
-                        
-                        # CASO B: Ci sono più colonne (una per ogni settimana)
-                        else:
                             col_cards = st.columns(4)
+                            nuovi_valori = {}
+
                             for i, col_settimana in enumerate(colonne_settimane):
-                                valore_iscrizione = str(riga_bambino[col_settimana]).strip().upper()
-                                is_iscritto = valore_iscrizione in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]
-                                col_index = i % 4
+                                valore_cella_grezzo = riga_bambino[col_settimana]
+                                valore_cella = str(valore_cella_grezzo).strip() if pd.notnull(valore_cella_grezzo) else ""
                                 
+                                # Pulizia estetica del titolo della settimana
+                                nome_pulito = col_settimana.replace("SETTIMANE DISPONIBILI", "").strip()
+                                if not nome_pulito:
+                                    nome_pulito = col_settimana
+
+                                # Determiniamo l'opzione attualmente selezionata nel file Excel
+                                if valore_cella in ["GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]:
+                                    indice_default = opzioni_frequenza.index(valore_cella)
+                                else:
+                                    indice_default = 0 # "NON ISCRITTO ❌"
+
+                                col_index = i % 4
                                 with col_cards[col_index]:
-                                    if is_iscritto:
-                                        colore_card = "#ecfdf5"
-                                        colore_bordo = "#10b981"
-                                        badge_html = "<span style='background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>ISCRITTO ✅</span>"
-                                    else:
-                                        colore_card = "#f8fafc"
-                                        colore_bordo = "#cbd5e1"
-                                        badge_html = "<span style='background-color: #94a3b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>NON ATTIVO ❌</span>"
+                                    # Stile CSS per rendere la card esteticamente piacevole attorno al selettore
+                                    colore_bordo = "#10b981" if indice_default > 0 else "#cbd5e1"
+                                    colore_sfondo = "#f0fdf4" if indice_default > 0 else "#f8fafc"
                                     
                                     st.markdown(
                                         f"""
-                                        <div style="background-color: {colore_card}; border: 1px solid {colore_bordo}; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 120px;">
-                                            <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 14px;">{col_settimana}</h5>
-                                            <div style="margin-top: 8px;">{badge_html}</div>
+                                        <div style="background-color: {colore_sfondo}; border-top: 4px solid {colore_bordo}; padding: 10px; border-radius: 6px 6px 0 0; text-align: center; margin-bottom: 0px;">
+                                            <span style="font-weight: bold; font-size: 13px; color: #1e293b;">{nome_pulito}</span>
                                         </div>
-                                        """,
+                                        """, 
                                         unsafe_allow_html=True
                                     )
-                    else:
-                        st.error("⚠️ Non ho trovato colonne relative alle settimane. Controlla se nel file Excel l'intestazione contiene la parola 'settimana' o 'settimane'.")
-                        st.write("Colonne effettivamente presenti nel file:")
-                        st.write(colonne_reali)
+                                    
+                                    # Il selettore interattivo
+                                    scelta = st.selectbox(
+                                        label=f"Stato {nome_pulito}",
+                                        options=opzioni_frequenza,
+                                        index=indice_default,
+                                        key=f"sel_{col_settimana}",
+                                        label_visibility="collapsed" # nascondiamo la label di Streamlit per usare la card sopra
+                                    )
+                                    
+                                    # Salviamo la scelta dell'utente in un dizionario temporaneo
+                                    nuovi_valori[col_settimana] = scelta
+                                    st.write("") # Spazio per distanziare le righe di card
+
+                            st.markdown("---")
+                            
+                            # Pulsante di invio del form
+                            salva_cliccato = st.form_submit_button("💾 Salva Modifiche", type="primary", use_container_width=True)
+                            
+                            if salva_cliccato:
+                                # 1. Aggiorniamo il DataFrame in memoria (session_state)
+                                for col_settimana, valore in nuovi_valori.items():
+                                    # Se l'utente ha scelto "NON ISCRITTO ❌", nel database salviamo un valore nullo (None)
+                                    valore_da_salvare = None if valore == "NON ISCRITTO ❌" else valore
+                                    st.session_state.df.at[riga_index, col_settimana] = valore_da_salvare
+                                
+                                # 2. Scriviamo le modifiche direttamente sul file Excel fisico
+                                percorso_file_excel = "gestionale.xlsx" # <-- Modifica questo con il nome reale del tuo file se diverso!
+                                
+                                try:
+                                    st.session_state.df.to_excel(percorso_file_excel, index=False)
+                                    st.success("✅ Modifiche salvate con successo sia nel sistema che sul file Excel!")
+                                    
+                                    # Ricarichiamo la riga aggiornata per mostrare subito i nuovi dati a schermo
+                                    st.session_state.risultato_ricerca = st.session_state.df[st.session_state.df[id_colonna] == valore_id_corrente]
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"❌ Errore durante il salvataggio sul file Excel: {e}")
+                                    st.info("Verifica che il file Excel non sia aperto su Excel nel tuo computer, altrimenti il sistema non può scriverci sopra!")
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
 
