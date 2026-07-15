@@ -213,80 +213,43 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- 🌟 CSS GLOBALE PER IL BANNER BLU E IL PULSANTE ---
-            # Questo CSS intercetta le colonne di Streamlit e le unisce nel banner blu sfumato
+            # --- 🌟 BANNER BLU COMPATTO (HTML Singolo e Sicuro al 100%) ---
+            nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
+            
             st.markdown(
-                """
-                <style>
-                    /* Seleziona la riga delle colonne che contiene il nostro pulsante di modifica */
-                    div[data-testid="stHorizontalBlock"]:has(button[key="btn_attiva_modifica"]),
-                    div[data-testid="stHorizontalBlock"]:has(button[key="btn_annulla_modifica"]) {
-                        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-                        padding: 20px 25px !important;
-                        border-radius: 10px !important;
-                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-                        margin-bottom: 25px !important;
-                        align-items: center !important; /* Centra verticalmente nome e pulsante */
-                    }
-                    
-                    /* Stile personalizzato per il pulsante Modifica dentro il banner */
-                    div[data-testid="stHorizontalBlock"] button[key="btn_attiva_modifica"],
-                    div[data-testid="stHorizontalBlock"] button[key="btn_annulla_modifica"] {
-                        background-color: rgba(255, 255, 255, 0.1) !important;
-                        color: #ffffff !important;
-                        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-                        height: 42px !important;
-                        font-weight: 600 !important;
-                        transition: all 0.2s ease-in-out !important;
-                    }
-                    
-                    div[data-testid="stHorizontalBlock"] button[key="btn_attiva_modifica"]:hover {
-                        background-color: #38bdf8 !important;
-                        color: #0f172a !important;
-                        border-color: #38bdf8 !important;
-                    }
-
-                    div[data-testid="stHorizontalBlock"] button[key="btn_annulla_modifica"]:hover {
-                        background-color: #ef4444 !important;
-                        color: #ffffff !important;
-                        border-color: #ef4444 !important;
-                    }
-                </style>
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                    padding: 20px 25px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    margin-bottom: 15px;
+                ">
+                    <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
+                        Scheda Anagrafica Iscritto
+                    </span>
+                    <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
+                        👦 {nome_completo}
+                    </h2>
+                </div>
                 """,
                 unsafe_allow_html=True
             )
             
-            # --- 🌟 STRUTTURA DEL BANNER (Senza HTML pericoloso) ---
-            nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
-            
-            # Creiamo le colonne nativamente. Il CSS sopra si occuperà di colorare lo sfondo di blu
-            col_sinistra_nome, col_destra_pulsante = st.columns([3, 1])
-            
-            with col_sinistra_nome:
-                st.markdown(
-                    f"""
-                    <div style="padding: 2px 0;">
-                        <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px;">
-                            Scheda Anagrafica Iscritto
-                        </span>
-                        <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
-                            👦 {nome_completo}
-                        </h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                
-            with col_destra_pulsante:
-                # I pulsanti sono ora puliti e nativi, posizionati dentro la colonna destra del banner
+            # --- 🌟 PULSANTE DI MODIFICA (Posizionato subito sotto, pulito e nativo) ---
+            col_spazio, col_pulsante = st.columns([3, 1])
+            with col_pulsante:
                 if not st.session_state.modalita_modifica:
-                    if st.button("✏️ Modifica", key="btn_attiva_modifica", use_container_width=True):
+                    if st.button("✏️ Modifica Dati", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
                         st.session_state.modalita_modifica = True
                         st.rerun()
                 else:
-                    if st.button("❌ Annulla", key="btn_annulla_modifica", use_container_width=True):
+                    if st.button("❌ Annulla Modifica", key="btn_annulla_modifica", use_container_width=True, type="primary"):
                         st.session_state.modalita_modifica = False
                         st.rerun()
+
+            # Spazio di separazione prima del corpo
+            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
             # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
