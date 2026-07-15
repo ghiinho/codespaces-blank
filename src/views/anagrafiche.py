@@ -203,6 +203,30 @@ def mostra_anagrafiche(df_iscritti):
         # 1. TAB: BAMBINO
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
+            
+            # 🌟 INTESTAZIONE IN PRIMO PLANO (Sempre visibile in alto alla scheda)
+            nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
+            st.markdown(
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                    padding: 20px 25px;
+                    border-radius: 10px;
+                    margin-top: 10px;
+                    margin-bottom: 25px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                ">
+                    <span style="color: #38bdf8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">
+                        Scheda Anagrafica Iscritto
+                    </span>
+                    <h2 style="color: #ffffff; margin: 5px 0 0 0; font-size: 30px; font-weight: 700; border: none; padding: 0;">
+                        👦 {nome_completo}
+                    </h2>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
             if st.session_state.modalita_modifica:
                 # FORM DI MODIFICA
                 with st.form("form_modifica_bambino"):
@@ -309,26 +333,31 @@ def mostra_anagrafiche(df_iscritti):
                 # Recuperiamo il contatto del genitore
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
                 
+                # Definizione dello stile comune Flexbox per l'allineamento verticale
+                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 250px; box-sizing: border-box;"
+
                 # ==========================================
-                # 1. BOX IDENTITÀ (Con Nascita)
+                # 1. BOX IDENTITÀ (Allineato in verticale con Flexbox)
                 # ==========================================
                 with box_anagrafica:
                     st.markdown("#### 👤 Dati anagrafici")
                     cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b> {riga_bambino[col_cognome]}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b> {riga_bambino[col_nome]}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Data di nascita:</b> {data_nascita_str}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Luogo di nascita:</b> {riga_bambino[col_luogo]}</p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><span style="color: #0f172a; font-weight: 600;"> {cf_pulito}</span></p>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_flex}">
+                            <div>
+                                <p style="margin-bottom: 12px; font-size: 15px;"><b>Data di nascita:</b><br>{data_nascita_str}</p>
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Luogo di nascita:</b><br>{riga_bambino[col_luogo]}</p>
+                            </div>
+                            <div style="border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: 10px;">
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True
                     )
                 
                 # ==========================================
-                # 2. BOX RESIDENZA E CONTATTI
+                # 2. BOX RESIDENZA E CONTATTI (Allineato in verticale con Flexbox)
                 # ==========================================
                 with box_residenza:
                     st.markdown("#### 📍 Residenza e Contatti")
@@ -336,16 +365,20 @@ def mostra_anagrafiche(df_iscritti):
                     citta_completa = f"{riga_bambino[col_citta]} - {riga_bambino[col_cap]}"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px; vertical">
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
-                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
-                            <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
+                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_flex}">
+                            <div>
+                                <p style="margin-bottom: 12px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
+                            </div>
+                            <div style="border-top: 1px solid #f1f5f9; padding-top: 10px; margin-top: 10px;">
+                                <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True
                     )
                 
                 # ==========================================
-                # 3. BOX SANITARIO
+                # 3. BOX SANITARIO (Allineato in verticale con Flexbox)
                 # ==========================================
                 with box_sanitario:
                     st.markdown("#### ⚠️ Informazioni Sanitarie")
@@ -358,9 +391,13 @@ def mostra_anagrafiche(df_iscritti):
                         dettaglio = "<i>Nessuna allergia o intolleranza segnalata.</i>"
                     st.markdown(
                         f"""
-                        <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 250px;">
-                            <p style="font-size: 16px; margin-bottom: 12px;"><b>Stato:</b> {icona} {ha_allergie}</p>
-                            <p style="margin-bottom: 0; font-size: 14px;">{dettaglio}</p>
+                        <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_flex}">
+                            <div>
+                                <p style="font-size: 16px; margin-bottom: 0;"><b>Stato:</b> {icona} {ha_allergie}</p>
+                            </div>
+                            <div style="border-top: 1px solid rgba(0, 0, 0, 0.04); padding-top: 10px; margin-top: 10px;">
+                                <p style="margin-bottom: 0; font-size: 14px;">{dettaglio}</p>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True
                     )
