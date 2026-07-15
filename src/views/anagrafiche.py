@@ -387,7 +387,7 @@ def mostra_anagrafiche(df_iscritti):
                                 <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">PRESENZA ALLERGIE</p>
                                 <p style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: {colore_testo};">{icona} {ha_allergie}</p>
                                 <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">DETTAGLIO ALLERGIE / FARMACI</p>
-                                <p style="margin: 0; font-size: 14px; line-height: 1.4;">{dettaglio}</p>
+                                <p style="margin: 0; font-size: 15px; line-height: 1.4;">{dettaglio}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
