@@ -62,6 +62,19 @@ def mostra_anagrafiche(df_iscritti):
     # Creiamo un dizionario temporaneo per mappare ogni opzione testuale al suo ID reale (l'indice del DataFrame)
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti.index))
     
+    def al_cambio_selezione():
+            # Recuperiamo quello che l'utente ha appena selezionato nella selectbox
+            scelta = st.session_state.ricerca_dinamica_selectbox
+            
+            if scelta is not None and scelta in mappa_opzioni:
+                # Salviamo il bambino selezionato nello stato persistente della pagina
+                id_selezionato = mappa_opzioni.get(scelta)
+                st.session_state.id_bambino_corrente = id_selezionato
+                st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
+                
+                # 💡 IL TRUCCO: Ora forziamo la selectbox a svuotarsi resettando la sua chiave interna!
+                st.session_state.ricerca_dinamica_selectbox = None
+
     # Creiamo la lista finale aggiungendo un'opzione vuota all'inizio come invito alla ricerca
     lista_selectbox = list(opzioni_ricerca)
 
