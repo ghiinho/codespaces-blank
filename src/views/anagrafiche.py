@@ -272,6 +272,20 @@ def mostra_anagrafiche(df_iscritti):
                     e_allergie = st.selectbox("Allergie/Intolleranze?", ["SÌ", "NO"], index=0 if str(riga_bambino[col_allergie]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1)
                     e_quali = st.text_area("Se sì, specificare quali allergie o farmaci salvavita:", value=str(riga_bambino[col_quali]) if pd.notnull(riga_bambino[col_quali]) else "")
                     
+                    st.markdown("---")
+                    st.markdown("##### 👨‍👩‍👧 Dati Genitore")
+                    e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
+                    e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
+                    e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
+
+                    c_gen1, c_gen2 = st.columns(2)
+                    with c_gen1:
+                        e_g_tel = st.text_input("Telefono Genitore", value=str(riga_bambino[col_g_tel]))
+                    with c_gen2:
+                        e_g_email = st.text_input("Email Genitore", value=str(riga_bambino[col_g_email]))
+
+                    e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
+
                     salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
                     
                     if salva_bambino:
@@ -287,6 +301,19 @@ def mostra_anagrafiche(df_iscritti):
                             "Città": e_citta,
                             "Allergie (SÌ/NO)": e_allergie
                         }
+
+                        # Campi genitore obbligatori nella stessa form di modifica
+                        campi_da_validare_genitore = {
+                            "Cognome Genitore": e_g_cognome,
+                            "Nome Genitore": e_g_nome,
+                            "Codice Fiscale Genitore": e_g_cf,
+                            "Telefono Genitore": e_g_tel,
+                            "Email Genitore": e_g_email,
+                            "Data di Nascita Genitore": e_g_nascita
+                        }
+
+                        # Unire i due dizionari per la validazione
+                        campi_da_validare.update(campi_da_validare_genitore)
 
                         campi_mancanti = []
                         for nome_campo, valore in campi_da_validare.items():
@@ -311,6 +338,20 @@ def mostra_anagrafiche(df_iscritti):
                             df_iscritti.at[riga_index, col_citta] = e_citta.strip().upper()
                             df_iscritti.at[riga_index, col_allergie] = e_allergie
                             df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
+                            # Salviamo anche i dati del genitore
+                            df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip()
+                            df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip()
+                            df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
+                            df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
+                            df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
+                            df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
+
+                            # Se ci sono fratelli, allineiamo i recapiti come nella form genitore
+                            se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
+                            if len(se_fratelli) > 1:
+                                for idx_f in se_fratelli:
+                                    df_iscritti.at[idx_f, col_g_tel] = e_g_tel.strip()
+                                    df_iscritti.at[idx_f, col_g_email] = e_g_email.strip()
                             
                             try:
                                 df_iscritti.to_excel("gestionale.xlsx", index=False)
