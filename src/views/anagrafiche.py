@@ -345,7 +345,7 @@ def mostra_anagrafiche(df_iscritti):
                                 <p style="margin-bottom: 12px; font-size: 15px;"><b>Data di nascita:</b><br>{data_nascita_str}</p>
                                 <p style="margin-bottom: 0; font-size: 15px;"><b>Luogo di nascita:</b><br>{riga_bambino[col_luogo]}</p>
                             </div>
-                            <div style="padding-top: 10px; margin-top: 10px;">
+                            <div>
                                 <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
                             </div>
                         </div>
