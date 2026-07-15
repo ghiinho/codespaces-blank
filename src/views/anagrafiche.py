@@ -96,12 +96,12 @@ def mostra_anagrafiche(df_iscritti):
                 font-size: 16px;
             }
             div[data-testid="stWidgetLabel"] p {
-                font-size: 18px !important;
+                font-size: 16px !important;
                 font-weight: bold !important;
             }
             /* Ingrandisce specificamente il testo delle etichette dei bottoni radio */
             label[data-testid="stRadioOption"] p {
-                font-size: 18px !important; /* Qui imposti la grandezza dei nomi nell'elenco */
+                font-size: 16px !important; /* Qui imposti la grandezza dei nomi nell'elenco */
                 font-weight: 500;
             }
             </style>
