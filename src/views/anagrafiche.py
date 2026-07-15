@@ -51,45 +51,24 @@ def mostra_anagrafiche(df_iscritti):
     # ==========================================
     # 1. PREPARAZIONE DELLA LISTA DI RICERCA
     # ==========================================
-    # Creiamo l'elenco formattato per la ricerca: "COGNOME Nome (CODICE FISCALE)"
-    # Questo garantisce che anche in caso di omonimia (es. due "Rossi Mario"), il CF li distingua subito.
     opzioni_ricerca = (
         df_iscritti[col_cognome].astype(str).str.upper() + " " + 
         df_iscritti[col_nome].astype(str).str.title() + " (" + 
         df_iscritti[col_cf].astype(str).str.upper() + ")"
     )
     
-    # Creiamo un dizionario temporaneo per mappare ogni opzione testuale al suo ID reale (l'indice del DataFrame)
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti.index))
-    # Creiamo la lista finale aggiungendo un'opzione vuota all'inizio come invito alla ricerca
     lista_selectbox = list(opzioni_ricerca)
-    
-    # ==========================================
-    # 2. FUNZIONE DI CALLBACK (Salva il dato e pulisce la barra)
-    # ==========================================
-    def al_cambio_selezione():
-            # Recuperiamo quello che l'utente ha appena selezionato nella selectbox
-            scelta = st.session_state.ricerca_dinamica_selectbox
-            
-            if scelta is not None and scelta in mappa_opzioni:
-                id_selezionato = mappa_opzioni.get(scelta)
-                # Salviamo il bambino selezionato nello stato persistente della pagina
-                st.session_state.id_bambino_corrente = id_selezionato
-                st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
-                
-                # 💡 Svuotiamo la barra di ricerca, ma il bambino_corrente è ormai al sicuro nello stato!
-                st.session_state.ricerca_dinamica_selectbox = None
- 
+
     # ==========================================
     # 2. INTERFACCIA GRAFICA COMPATTA
     # ==========================================
     st.markdown("### 👤 Ricerca Iscritti")
     
-    # Applichiamo il trucco del CSS per rendere la Selectbox grande e leggibile
+    # CSS per ingrandire il testo e dare risalto visivo
     st.markdown(
         """
         <style>
-        /* Ingrandisce il testo dentro il box di ricerca e le opzioni */
         div[data-testid="stSelectbox"] p {
             font-size: 18px !important;
         }
@@ -102,35 +81,41 @@ def mostra_anagrafiche(df_iscritti):
         unsafe_allow_html=True
     )
 
-    # Mostriamo la barra di ricerca intelligente (occupa il 60% della larghezza per non essere enorme)
     col_ricerca, col_vuota = st.columns([3, 2])
     
     with col_ricerca:
-        # Usiamo index=None e il placeholder nativo di Streamlit!
+        # La selectbox legge lo stato corrente per mostrare l'eventuale selezione attiva.
+        # Se l'utente clicca sulla "x" a destra del box, 'scelta_utente' diventerà None,
+        # permettendo di digitare subito un nuovo nome.
         scelta_utente = st.selectbox(
             "Cerca un iscritto:",
             options=lista_selectbox,
-            index=None,  # All'avvio non seleziona nulla di default
-            placeholder="🔍 Digita il cognome o nome...", # Scritta di aiuto in grigio chiaro
-            key="ricerca_dinamica_selectbox",
-            on_change=al_cambio_selezione
+            index=None,
+            placeholder="🔍 Digita il cognome o nome...",
+            key="ricerca_dinamica_selectbox"
         )
 
     st.markdown("---")
 
     # ==========================================
-    # 3. CARICAMENTO AUTOMATICO DEI DATI
+    # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
+    # ==========================================
+    # Se l'utente ha selezionato attivamente una voce valida dalla lista,
+    # aggiorniamo subito lo stato con il nuovo bambino.
+    if scelta_utente is not None and scelta_utente in mappa_opzioni:
+        id_selezionato = mappa_opzioni.get(scelta_utente)
+        st.session_state.id_bambino_corrente = id_selezionato
+        st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
+
+    # 💡 NOTA: Se 'scelta_utente' è None (perché l'utente ha cliccato sul box per cancellare 
+    # o ha premuto la "x" di reset per fare una nuova ricerca), NON azzeriamo 
+    # st.session_state.id_bambino_corrente! 
+    # In questo modo la vecchia scheda rimane visibile a schermo finché non viene scelto il nuovo nome.
+
+    # ==========================================
+    # 4. CARICAMENTO E VISUALIZZAZIONE DELLA SCHEDA
     # ==========================================
     if st.session_state.id_bambino_corrente is not None:
-        bambino_selezionato = df_iscritti.loc[st.session_state.id_bambino_corrente]
-
-
-    # ==========================================
-    # 4. VISUALIZZAZIONE DELLE SCHEDE (Inalterata)
-    # ==========================================
-    if st.session_state.id_bambino_corrente is not None:
-        # Da qui in poi il tuo codice originale che mostra i tab 
-        # (Dati Bambino, Genitori, Settimane) continuerà a funzionare alla perfezione!
         bambino_selezionato = df_iscritti.loc[st.session_state.id_bambino_corrente]
         
         # ... (Mostra i tuoi tab e dettagli del bambino come facevi prima) ...
