@@ -31,7 +31,6 @@ st.markdown(
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
     st.write("Visualizza, modifica o aggiorna i dati personali, sanitari e i contatti di ciascun iscritto.")
-    st.markdown("---")
     
     if df_iscritti.empty:
         st.info("Carica il file Excel per abilitare la gestione anagrafica.")
@@ -208,6 +207,8 @@ def mostra_anagrafiche(df_iscritti):
                 st.session_state.scheda_attiva = "settimane"
                 st.session_state.modalita_modifica = False
                 st.rerun()
+
+        st.markdown("---")
 
         # ==========================================
         # 1. TAB: BAMBINO
