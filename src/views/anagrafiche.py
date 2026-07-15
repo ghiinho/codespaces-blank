@@ -59,7 +59,7 @@ def mostra_anagrafiche(df_iscritti):
         df_iscritti[col_cf].astype(str).str.upper() + ")"
     )
     
-    mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti.index))
+    mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti_ordinato.index))
     lista_selectbox = list(opzioni_ricerca)
 
     # ==========================================
