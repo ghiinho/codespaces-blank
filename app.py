@@ -31,6 +31,16 @@ if st.session_state.pagina_corrente != "Anagrafiche Iscritti":
     if "ricerca_cognome" in st.session_state:
         st.session_state["ricerca_cognome"] = ""
 
+# Rileviamo cambi di pagina per eseguire azioni una-tantum al cambio di vista
+pagina_precedente = st.session_state.get("pagina_precedente")
+if st.session_state.pagina_corrente == "Anagrafiche Iscritti" and pagina_precedente != "Anagrafiche Iscritti":
+    # Forziamo l'apertura sui Dati Bambino quando si accede alla pagina Anagrafiche
+    st.session_state.scheda_attiva = "bambino"
+    st.session_state.modalita_modifica = False
+
+# Aggiorniamo la pagina precedente
+st.session_state.pagina_precedente = st.session_state.pagina_corrente
+
 # Ora mostriamo la pagina corretta in totale sicurezza
 if st.session_state.pagina_corrente == "Home Page":
     mostra_home()
