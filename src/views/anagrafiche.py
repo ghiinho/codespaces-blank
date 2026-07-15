@@ -302,35 +302,51 @@ def mostra_anagrafiche(df_iscritti):
             else:
                 # VISTA STATICA
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
+                
+                # Prepariamo le variabili di data e contatti prima di disegnare i box
+                data_nascita_val = riga_bambino[col_nascita]
+                data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
+                
+                # Recuperiamo il contatto del genitore (sostituisci 'col_contatto' con la tua colonna reale se diversa)
+                contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_contatto' in locals() else "Dato mancante"
+
+                # ==========================================
+                # 1. BOX IDENTITÀ (Con Nascita)
+                # ==========================================
                 with box_anagrafica:
                     st.markdown("#### 👤 Identità")
                     cf_pulito = str(riga_bambino[col_cf]).strip().upper() if pd.notnull(riga_bambino[col_cf]) else "Dato mancante"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Cognome:</b><br>{riga_bambino[col_cognome]}</p>
                             <p style="margin-bottom: 8px; font-size: 15px;"><b>Nome:</b><br>{riga_bambino[col_nome]}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Nato/a il:</b> {data_nascita_str} <b>a:</b> {riga_bambino[col_luogo]}</p>
                             <p style="margin-bottom: 0; font-size: 15px;"><b>Codice Fiscale:</b><br><span style="color: #0f172a; font-weight: 600;">{cf_pulito}</span></p>
                         </div>
                         """, unsafe_allow_html=True
                     )
                 
+                # ==========================================
+                # 2. BOX RESIDENZA E CONTATTI
+                # ==========================================
                 with box_residenza:
-                    st.markdown("#### 📍 Nascita e Residenza")
-                    data_nascita_val = riga_bambino[col_nascita]
-                    data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
+                    st.markdown("#### 📍 Residenza e Contatti")
                     indirizzo_completo = f"{riga_bambino[col_via]}, {riga_bambino[col_civico]}"
                     citta_completa = f"{riga_bambino[col_cap]} - {riga_bambino[col_citta]}"
                     st.markdown(
                         f"""
-                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 220px;">
-                            <p style="margin-bottom: 8px;"><b>Nato/a il:</b> {data_nascita_str}<br><b>a:</b> {riga_bambino[col_luogo]}</p>
-                            <p style="margin-bottom: 8px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
-                            <p style="margin-bottom: 0;"><b>Città:</b><br>{citta_completa}</p>
+                        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 250px;">
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Indirizzo:</b><br>{indirizzo_completo}</p>
+                            <p style="margin-bottom: 8px; font-size: 15px;"><b>Città:</b><br>{citta_completa}</p>
+                            <p style="margin-bottom: 0; font-size: 15px;"><b>Contatto Genitore:</b><br><span style="color: #0f172a; font-weight: 600;">{contatto_genitore}</span></p>
                         </div>
                         """, unsafe_allow_html=True
                     )
                 
+                # ==========================================
+                # 3. BOX SANITARIO
+                # ==========================================
                 with box_sanitario:
                     st.markdown("#### ⚠️ Informazioni Sanitarie")
                     ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
@@ -342,7 +358,7 @@ def mostra_anagrafiche(df_iscritti):
                         dettaglio = "<i>Nessuna allergia o intolleranza segnalata.</i>"
                     st.markdown(
                         f"""
-                        <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 220px;">
+                        <div style="background-color: {colore_sfondo}; padding: 15px; border-radius: 8px; border: 1px solid {colore_bordo}; min-height: 250px;">
                             <p style="font-size: 16px; margin-bottom: 12px;"><b>Stato:</b> {icona} {ha_allergie}</p>
                             <p style="margin-bottom: 0; font-size: 14px;">{dettaglio}</p>
                         </div>
