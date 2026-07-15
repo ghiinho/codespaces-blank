@@ -48,17 +48,28 @@ def mostra_anagrafiche(df_iscritti):
     # Settimane (Dinamica)
     colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
-    # --- MOTORE DI RICERCA ---
-    col_ricerca, col_bottone = st.columns([4, 1])
+    # --- MOTORE DI RICERCA OTTIMIZZATO ---
+    st.markdown("### 🔍 Ricerca Rapida Iscritto")
+    
+    # Usiamo colonne più strette e bilanciate per non disperdere lo spazio 
+    # (3 parti per la ricerca, 1 parte per il bottone, e lasciamo spazio vuoto a destra)
+    col_ricerca, col_bottone, col_vuota = st.columns([2.5, 1, 2.5])
+    
     with col_ricerca:
         cognome_input = st.text_input(
-            "🔍 Cerca iscritto per Cognome:", 
-            placeholder="Scrivi il cognome...",
-            key="ricerca_cognome"
+            "Cognome dell'iscritto:", 
+            placeholder="Es. Rossi...",
+            key="ricerca_cognome",
+            label_visibility="visible" # Mantiene l'etichetta visibile e ordinata
         )
+        
     with col_bottone:
-        st.write("##")
-        avvia_ricerca = st.button("Cerca 🚀", use_container_width=True)
+        # Questo spazio vuoto (o "invisibile") serve ad allineare perfettamente 
+        # il bottone sul fondo, allo stesso livello del campo di testo.
+        st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
+        avvia_ricerca = st.button("Cerca 🚀", use_container_width=True, type="primary")
+
+    st.markdown("---")
 
     if avvia_ricerca and cognome_input:
         risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
