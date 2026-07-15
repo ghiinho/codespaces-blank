@@ -231,84 +231,43 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- 🌟 BANNER BLU SCURO COMPATTO CON PULSANTE INTEGRATO ---
+            # --- 🌟 INTESTAZIONE COMPATTA NATIVA (Nome + Pulsante affiancati) ---
             nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
             
-            # Creiamo un contenitore HTML con posizione relativa per posizionare gli elementi al millimetro
-            st.markdown(
-                f"""
-                <div style="
-                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-                    padding: 15px 25px;
-                    border-radius: 10px;
-                    margin-top: 0px;
-                    margin-bottom: 15px;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                " id="banner-intestazione">
-                    <div style="flex-grow: 1;">
-                        <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px;">
+            # Usiamo le colonne native di Streamlit per affiancare perfettamente nome e pulsante
+            col_nome_titolo, col_pulsante_modifica = st.columns([3, 1])
+            
+            with col_nome_titolo:
+                # Stampiamo SOLO il nome ben formattato, senza duplicati esterni
+                st.markdown(
+                    f"""
+                    <div style="padding: 5px 0;">
+                        <span style="color: #0284c7; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
                             Scheda Anagrafica Iscritto
                         </span>
-                        <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0; line-height: 1.2;">
+                        <h2 style="margin: 0; font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.1;">
                             👦 {nome_completo}
                         </h2>
                     </div>
-                    <div id="btn-container" style="margin-left: 20px;">
-                        <!-- Questo contenitore HTML fa da ancora visiva per il pulsante Streamlit affiancato -->
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Per far apparire il pulsante reale di Streamlit sopra l'area destra del banner blu,
-            # usiamo un layout a colonne subito sotto o sfruttiamo le colonne di Streamlit per sovrapporlo graficamente.
-            # Ecco l'approccio Streamlit-Native più pulito:
-            
-            # Creiamo una riga di colonne fittizia per allineare il pulsante sulla destra del banner
-            col_sinistra_vuota, col_destra_pulsante = st.columns([4, 1])
-            with col_destra_pulsante:
-                # Un piccolo trucco CSS per spostare il pulsante Streamlit in alto ed inserirlo visivamente dentro al banner sovrastante
-                st.markdown(
-                    """
-                    <style>
-                        div[element-to-ofuscate="true"] { display: none; }
-                        /* Sposta il pulsante di modifica verso l'alto per farlo entrare dentro al banner */
-                        .edit-btn-container {
-                            margin-top: -72px;
-                            margin-bottom: 25px;
-                            text-align: right;
-                        }
-                        /* Stile personalizzato per rendere il bottone coordinato */
-                        .edit-btn-container button {
-                            background-color: rgba(255, 255, 255, 0.1) !important;
-                            color: #ffffff !important;
-                            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                            transition: all 0.2s ease;
-                        }
-                        .edit-btn-container button:hover {
-                            background-color: #38bdf8 !important;
-                            color: #0f172a !important;
-                            border-color: #38bdf8 !important;
-                        }
-                    </style>
-                    """, unsafe_allow_html=True
+                    """, 
+                    unsafe_allow_html=True
                 )
                 
-                st.markdown('<div class="edit-btn-container">', unsafe_allow_html=True)
-                # Mostriamo il bottone di modifica dinamico
+            with col_pulsante_modifica:
+                # Il pulsante di modifica nativo, pulito e allineato sulla destra del nome
+                st.markdown("<div style='padding-top: 15px;'>", unsafe_allow_html=True)
                 if not st.session_state.modalita_modifica:
-                    if st.button("✏️ Modifica Dati", key="btn_attiva_modifica", use_container_width=True):
+                    if st.button("✏️ Modifica Dati", key="btn_attiva_modifica", use_container_width=True, type="secondary"):
                         st.session_state.modalita_modifica = True
                         st.rerun()
                 else:
-                    if st.button("❌ Annulla", key="btn_annulla_modifica", use_container_width=True):
+                    if st.button("❌ Annulla", key="btn_annulla_modifica", use_container_width=True, type="primary"):
                         st.session_state.modalita_modifica = False
                         st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # Un unico divisore leggero sotto l'intestazione prima dei dati
+            st.markdown("<hr style='margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
 
             # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
