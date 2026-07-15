@@ -41,6 +41,10 @@ if st.sidebar.button("👤 Vai alle anagrafiche", use_container_width=True):
     st.session_state.risultato_ricerca = None
     st.session_state.scheda_attiva = "bambino"
     
+    # Questo svuota fisicamente il testo digitato nel campo di ricerca!
+    if "ricerca_cognome" in st.session_state:
+        st.session_state.ricerca_cognome = ""
+    
     st.session_state.pagina_corrente = "Anagrafiche Iscritti"
     st.rerun()
 
@@ -151,7 +155,12 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
         col_ricerca, col_bottone = st.columns([4, 1])
         
         with col_ricerca:
-            cognome_input = st.text_input("🔍 Inserisci il Cognome del bambino da cercare:", placeholder="Es. Rossi...")
+            # Abbiamo aggiunto key="ricerca_cognome" alla fine!
+            cognome_input = st.text_input(
+                "🔍 Inserisci il Cognome del bambino da cercare:", 
+                placeholder="Es. Rossi...",
+                key="ricerca_cognome"
+            )
             
         with col_bottone:
             st.write("##") # Allineamento verticale
