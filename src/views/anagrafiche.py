@@ -160,10 +160,15 @@ def mostra_anagrafiche(df_iscritti):
     # ==========================================
     # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
     # ==========================================
-    if scelta_utente is not None and scelta_utente in mappa_opzioni:
+    # Selezione tramite selectbox (saltiamo l'override se arriviamo da un click su "Vedi scheda")
+    skip_sync = st.session_state.get("_skip_selectbox_sync", False)
+    if not skip_sync and scelta_utente is not None and scelta_utente in mappa_opzioni:
         id_selezionato = mappa_opzioni.get(scelta_utente)
         st.session_state.id_bambino_corrente = id_selezionato
         st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
+    # Dopo aver eventualmente ignorato una sincronizzazione forzata, ripristiniamo il flag
+    if skip_sync:
+        st.session_state._skip_selectbox_sync = False
 
     # ==========================================
     # 4. CARICAMENTO E VISUALIZZAZIONE DELLA SCHEDA
@@ -539,8 +544,13 @@ def mostra_anagrafiche(df_iscritti):
                         with btn_col2:
                             if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
                                 # Impostiamo anche la selectbox di ricerca con l'opzione corrispondente
+                                # Impostiamo un flag per non permettere alla selectbox di sovrascrivere
+                                st.session_state._skip_selectbox_sync = True
+                                # Impostiamo anche la selectbox se riusciamo a trovare l'opzione
                                 try:
-                                    st.session_state.ricerca_dinamica_selectbox = mappa_indice_a_opzione.get(idx_fratello, None)
+                                    opt = mappa_indice_a_opzione.get(idx_fratello, None)
+                                    if opt is not None:
+                                        st.session_state.ricerca_dinamica_selectbox = opt
                                 except Exception:
                                     pass
                                 st.session_state.id_bambino_corrente = idx_fratello
