@@ -38,26 +38,35 @@ def mostra_anagrafiche(df_iscritti):
     # Settimane (Dinamica)
     colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
-    # --- RESET AUTOMATICO AL CAMBIO PAGINA ---
-    # 1. Teniamo traccia di dove si trova l'utente
+    # ==========================================
+    # 1. INIZIALIZZAZIONE SICURA (Mette al sicuro da errori di variabili mancanti)
+    # ==========================================
+    if "risultato_ricerca" not in st.session_state:
+        st.session_state.risultato_ricerca = None
+
     if "ultima_pagina_vista" not in st.session_state:
         st.session_state.ultima_pagina_vista = "Home Page"
 
-    # 2. Se l'utente è appena arrivato qui da un'altra pagina, azzeriamo tutto!
-    if st.session_state.ultima_pagina_vista != "Anagrafiche Iscritti":
-    # Svuota il testo digitato nella barra
-        st.session_state["ricerca_cognome"] = ""
-    # Svuota i risultati salvati della ricerca precedente
-    if "risultato_ricerca" in st.session_state:
-        del st.session_state.risultato_ricerca
-    # Resetta anche la scheda attiva se necessario
-    if "scheda_attiva" in st.session_state:
-        st.session_state.scheda_attiva = None
 
-    # 3. Aggiorniamo la pagina corrente come ultima vista per il prossimo giro
+    # ==========================================
+    # 2. RESET SILENZIOSO AL CAMBIO PAGINA
+    # (Non cancella le chiavi, le riporta solo allo stato iniziale neutro)
+    # ==========================================
+    if st.session_state.ultima_pagina_vista != "Anagrafiche Iscritti":
+        # Invece di cancellare le variabili, le impostiamo a valori vuoti/sicuri
+        st.session_state.risultato_ricerca = None
+        
+        # Se la chiave del widget esiste, la svuotiamo in modo che il text_input nasca vuoto
+        if "ricerca_cognome" in st.session_state:
+            st.session_state["ricerca_cognome"] = ""
+
+    # Aggiorniamo l'ultima pagina vista
     st.session_state.ultima_pagina_vista = "Anagrafiche Iscritti"
 
-    # --- MOTORE DI RICERCA ---
+
+    # ==========================================
+    # 3. IL TUO MOTORE DI RICERCA (Inalterato)
+    # ==========================================
     col_ricerca, col_bottone = st.columns([4, 1])
     with col_ricerca:
         cognome_input = st.text_input(
@@ -70,12 +79,13 @@ def mostra_anagrafiche(df_iscritti):
         avvia_ricerca = st.button("Cerca 🚀", use_container_width=True)
 
     if avvia_ricerca and cognome_input:
+        # Usiamo una copia locale per evitare di sovrascrivere direttamente lo stato in modo brusco
         risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
         st.session_state.risultato_ricerca = risultati
-        st.session_state.modalita_modifica = False # Resetta lo stato di modifica
-        if not risultati.empty:
-            st.session_state.id_bambino_corrente = risultati.index[0]
-            st.session_state.scheda_attiva = "bambino"
+        st.session_state.modalita_modifica = False 
+    if not risultati.empty:
+        st.session_state.id_bambino_corrente = risultati.index[0]
+        st.session_state.scheda_attiva = "bambino"
 
     # --- GESTIONE DEI RISULTATI ---
     if st.session_state.risultato_ricerca is not None:
