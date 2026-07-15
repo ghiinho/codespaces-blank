@@ -303,7 +303,7 @@ def mostra_anagrafiche(df_iscritti):
 
                     e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
 
-                    st.info("Se ci sono altri fratelli iscritti, i dati del genitore verranno aggiornati su tutte le anagrafiche a lui riconducibili.")
+                    st.info("Se ci sono altri fratelli iscritti, i dati del genitore verranno aggiornati nelle schede di tutti gli iscritti.")
 
                     salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
                     
