@@ -142,6 +142,10 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
         col_allergie = colonne_reali[16] # Q
         col_quali = colonne_reali[17]    # R
 
+        # --- MAPPATURA COLONNE SETTIMANE (Dinamica) ---
+        # Cerchiamo tutte le colonne che contengono "settimana" nel nome (non importa se maiuscolo/minuscolo)
+        colonne_settimane = [col for col in colonne_reali if "Settimane" in col.lower()]
+
         # --- STATO DELLA RICERCA ---
         if "id_bambino_corrente" not in st.session_state:
             st.session_state.id_bambino_corrente = None
@@ -215,11 +219,9 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                 ]
                 fratelli = fratelli.drop(st.session_state.id_bambino_corrente, errors='ignore')
                 
-                # --- SISTEMA DI NAVIGAZIONE A PULSANTI (SOSTITUISCE ST.TABS) ---
-                # Questo sistema garantisce al 100% che lo stato cambi quando vogliamo noi.
-                col_tab1, col_tab2 = st.columns(2)
+                # --- SISTEMA DI NAVIGAZIONE A PULSANTI (3 OPZIONI) ---
+                col_tab1, col_tab2, col_tab3 = st.columns(3)
                 with col_tab1:
-                    # Se la scheda attiva è 'bambino', il pulsante appare evidenziato (primary)
                     tipo_pulsante_b = "primary" if st.session_state.scheda_attiva == "bambino" else "secondary"
                     if st.button("👦 Dati Bambino", type=tipo_pulsante_b, use_container_width=True):
                         st.session_state.scheda_attiva = "bambino"
@@ -228,6 +230,11 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                     tipo_pulsante_g = "primary" if st.session_state.scheda_attiva == "genitore" else "secondary"
                     if st.button("👨‍👩‍👧 Contatti Genitore", type=tipo_pulsante_g, use_container_width=True):
                         st.session_state.scheda_attiva = "genitore"
+                        st.rerun()
+                with col_tab3:
+                    tipo_pulsante_s = "primary" if st.session_state.scheda_attiva == "settimane" else "secondary"
+                    if st.button("📅 Settimane Iscrizione", type=tipo_pulsante_s, use_container_width=True):
+                        st.session_state.scheda_attiva = "settimane"
                         st.rerun()
                 
                 st.markdown("---")
@@ -364,6 +371,61 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                                     st.session_state.id_bambino_corrente = idx_fratello
                                     st.session_state.scheda_attiva = "bambino" # <--- SPOSTAMENTO FORZATO E SICURO
                                     st.rerun()
+                
+                elif st.session_state.scheda_attiva == "settimane":
+                    # --- VISTA SETTIMANE DI ISCRIZIONE ---
+                    st.markdown(f"### 📅 Calendario Settimanale: {nome_completo_bambino}")
+                    st.write("Verifica in quali settimane l'iscritto risulta registrato ed ha confermato la frequenza:")
+                    
+                    if colonne_settimane:
+                        # Creiamo una griglia responsive di card (es. 4 colonne per riga)
+                        col_cards = st.columns(4)
+                        
+                        for i, col_settimana in enumerate(colonne_settimane):
+                            valore_iscrizione = str(riga_bambino[col_settimana]).strip().upper()
+                            
+                            # Definiamo se è iscritto o meno
+                            # Copriamo valori come "SI", "SÌ", "YES", "ISCRITTO", o valori booleani True
+                            is_iscritto = valore_iscrizione in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]
+                            
+                            # Calcolo della colonna in cui inserire la card
+                            col_index = i % 4
+                            
+                            with col_cards[col_index]:
+                                if is_iscritto:
+                                    colore_card = "#ecfdf5"  # Verde chiarissimo
+                                    colore_bordo = "#10b981" # Verde smeraldo
+                                    badge_html = "<span style='background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>ISCRITTO ✅</span>"
+                                else:
+                                    colore_card = "#f8fafc"  # Grigio chiaro
+                                    colore_bordo = "#cbd5e1" # Grigio scuro
+                                    badge_html = "<span style='background-color: #94a3b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>NON ATTIVO ❌</span>"
+                                
+                                # Visualizzazione della Card HTML elegante
+                                st.markdown(
+                                    f"""
+                                    <div style="background-color: {colore_card}; border: 1px solid {colore_bordo}; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 120px;">
+                                        <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 15px;">{col_settimana}</h5>
+                                        <div style="margin-top: 8px;">{badge_html}</div>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+                                
+                        # Piccolo riepilogo testuale rapido
+                        settimane_attive = []
+                        for col_settimana in colonne_settimane:
+                            valore = str(riga_bambino[col_settimana]).strip().upper()
+                            if valore in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]:
+                                settimane_attive.append(col_settimana)
+                                
+                        st.markdown("###")
+                        if settimane_attive:
+                            st.success(f"📌 **Riepilogo:** {riga_bambino[col_nome]} frequenta un totale di **{len(settimane_attive)} settimane** su {len(colonne_settimane)} disponibili.")
+                        else:
+                            st.warning(f"⚠️ **Attenzione:** Questo iscritto non risulta registrato in nessuna delle settimane disponibili.")
+                    else:
+                        st.error("⚠️ Non ho trovato colonne che contengono la parola 'Settimana' nel tuo foglio Excel. Verifica che i nomi delle colonne nel file corrispondano!")
 
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
