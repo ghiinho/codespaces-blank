@@ -144,7 +144,7 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
 
         # --- MAPPATURA COLONNE SETTIMANE (Dinamica) ---
         # Cerchiamo tutte le colonne che contengono "settimana" nel nome (non importa se maiuscolo/minuscolo)
-        colonne_settimane = [col for col in colonne_reali if "SETTIMANE" in col.lower()]
+        colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
         # --- STATO DELLA RICERCA ---
         if "id_bambino_corrente" not in st.session_state:
@@ -375,58 +375,67 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                 elif st.session_state.scheda_attiva == "settimane":
                     # --- VISTA SETTIMANE DI ISCRIZIONE ---
                     st.markdown(f"### 📅 Calendario Settimanale: {nome_completo_bambino}")
-                    st.write("Verifica in quali settimane l'iscritto risulta registrato ed ha confermato la frequenza:")
+                    st.write("Verifica le settimane di frequenza registrate per questo iscritto:")
                     
                     if colonne_settimane:
-                        # Creiamo una griglia responsive di card (es. 4 colonne per riga)
-                        col_cards = st.columns(4)
+                        # CASO A: C'è una sola colonna cumulativa (es. "SETTIMANE DISPONIBILI (date)")
+                        if len(colonne_settimane) == 1:
+                            col_unica = colonne_settimane[0]
+                            valore_cella = str(riga_bambino[col_unica]).strip()
+                            
+                            st.info(f"📋 **Colonna rilevata:** `{col_unica}`")
+                            
+                            if pd.isnull(riga_bambino[col_unica]) or valore_cella.lower() in ["nan", "", "nessuna", "nessuno"]:
+                                st.warning("⚠️ Nessuna settimana di iscrizione registrata per questo bambino.")
+                            else:
+                                # Se le settimane sono separate da virgole o altri caratteri, le mostriamo come elenco visivo
+                                lista_settimane = [s.strip() for s in valore_cella.replace(";", ",").split(",") if s.strip()]
+                                
+                                col_cards = st.columns(min(len(lista_settimane), 4))
+                                for idx, sett in enumerate(lista_settimane):
+                                    col_idx = idx % 4
+                                    with col_cards[col_idx]:
+                                        st.markdown(
+                                            f"""
+                                            <div style="background-color: #ecfdf5; border: 1px solid #10b981; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 100px;">
+                                                <h5 style="margin-top: 0; margin-bottom: 8px; color: #065f46; font-size: 14px;">📅 Iscritto</h5>
+                                                <p style="margin: 0; font-weight: bold; font-size: 15px; color: #1e293b;">{sett}</p>
+                                            </div>
+                                            """,
+                                            unsafe_allow_html=True
+                                        )
                         
-                        for i, col_settimana in enumerate(colonne_settimane):
-                            valore_iscrizione = str(riga_bambino[col_settimana]).strip().upper()
-                            
-                            # Definiamo se è iscritto o meno
-                            # Copriamo valori come "SI", "SÌ", "YES", "ISCRITTO", o valori booleani True
-                            is_iscritto = valore_iscrizione in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]
-                            
-                            # Calcolo della colonna in cui inserire la card
-                            col_index = i % 4
-                            
-                            with col_cards[col_index]:
-                                if is_iscritto:
-                                    colore_card = "#ecfdf5"  # Verde chiarissimo
-                                    colore_bordo = "#10b981" # Verde smeraldo
-                                    badge_html = "<span style='background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>ISCRITTO ✅</span>"
-                                else:
-                                    colore_card = "#f8fafc"  # Grigio chiaro
-                                    colore_bordo = "#cbd5e1" # Grigio scuro
-                                    badge_html = "<span style='background-color: #94a3b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>NON ATTIVO ❌</span>"
-                                
-                                # Visualizzazione della Card HTML elegante
-                                st.markdown(
-                                    f"""
-                                    <div style="background-color: {colore_card}; border: 1px solid {colore_bordo}; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 120px;">
-                                        <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 15px;">{col_settimana}</h5>
-                                        <div style="margin-top: 8px;">{badge_html}</div>
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-                                
-                        # Piccolo riepilogo testuale rapido
-                        settimane_attive = []
-                        for col_settimana in colonne_settimane:
-                            valore = str(riga_bambino[col_settimana]).strip().upper()
-                            if valore in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]:
-                                settimane_attive.append(col_settimana)
-                                
-                        st.markdown("###")
-                        if settimane_attive:
-                            st.success(f"📌 **Riepilogo:** {riga_bambino[col_nome]} frequenta un totale di **{len(settimane_attive)} settimane** su {len(colonne_settimane)} disponibili.")
+                        # CASO B: Ci sono più colonne (una per ogni settimana)
                         else:
-                            st.warning(f"⚠️ **Attenzione:** Questo iscritto non risulta registrato in nessuna delle settimane disponibili.")
+                            col_cards = st.columns(4)
+                            for i, col_settimana in enumerate(colonne_settimane):
+                                valore_iscrizione = str(riga_bambino[col_settimana]).strip().upper()
+                                is_iscritto = valore_iscrizione in ["SÌ", "SI", "YES", "TRUE", "VERO", "ISCRITTO", "1", "1.0"]
+                                col_index = i % 4
+                                
+                                with col_cards[col_index]:
+                                    if is_iscritto:
+                                        colore_card = "#ecfdf5"
+                                        colore_bordo = "#10b981"
+                                        badge_html = "<span style='background-color: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>ISCRITTO ✅</span>"
+                                    else:
+                                        colore_card = "#f8fafc"
+                                        colore_bordo = "#cbd5e1"
+                                        badge_html = "<span style='background-color: #94a3b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;'>NON ATTIVO ❌</span>"
+                                    
+                                    st.markdown(
+                                        f"""
+                                        <div style="background-color: {colore_card}; border: 1px solid {colore_bordo}; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px; min-height: 120px;">
+                                            <h5 style="margin-top: 0; margin-bottom: 12px; color: #1e293b; font-size: 14px;">{col_settimana}</h5>
+                                            <div style="margin-top: 8px;">{badge_html}</div>
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True
+                                    )
                     else:
-                        st.error("⚠️ Non ho trovato colonne che contengono la parola 'Settimana' nel tuo foglio Excel. Verifica che i nomi delle colonne nel file corrispondano!")
-
+                        st.error("⚠️ Non ho trovato colonne relative alle settimane. Controlla se nel file Excel l'intestazione contiene la parola 'settimana' o 'settimane'.")
+                        st.write("Colonne effettivamente presenti nel file:")
+                        st.write(colonne_reali)
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
 
