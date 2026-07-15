@@ -1,4 +1,5 @@
 import streamlit as st
+from src.utils.config_manager import carica_configurazione
 
 # Carica la configurazione per sapere quali voci mostrare
 config = carica_configurazione()
