@@ -9,7 +9,7 @@ def disegna_sidebar():
         st.session_state.pagina_corrente = "Home Page"
         
     # Pulsante 1: Home Page
-    if st.sidebar.button("🏠 Torna alla Home Page", use_container_width=True):
+    if st.sidebar.button("🏠 Torna alla Home Page", use_container_width=True, key="btn_torna_home"):
         st.session_state.pagina_corrente = "Home Page"
         st.rerun()
         
