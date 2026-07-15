@@ -188,7 +188,7 @@ def mostra_anagrafiche(df_iscritti):
         # --- AZIONI RAPIDE ---
         col_st_nome, col_st_azioni = st.columns([3, 1])
         with col_st_nome:
-            st.subheader(f"📍 {nome_completo_bambino}")
+            st.subheader(f"{nome_completo_bambino}")
         with col_st_azioni:
             if st.session_state.scheda_attiva != "settimane":
                 if not st.session_state.modalita_modifica:
@@ -309,8 +309,6 @@ def mostra_anagrafiche(df_iscritti):
                 
                 # Recuperiamo il contatto del genitore
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
-
-                stile_flex = "display: flex; flex-direction: column; justify-content: space-between; padding: 15px; border-radius: 8px; min-height: 250px; box-sizing: border-box;"
                 
                 # ==========================================
                 # 1. BOX IDENTITÀ (Con Nascita)
