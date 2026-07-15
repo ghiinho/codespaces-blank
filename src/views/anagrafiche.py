@@ -328,8 +328,8 @@ def mostra_anagrafiche(df_iscritti):
                 data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
                 
-                # Stile standardizzato per altezza, spaziatura interna e allineamento di tutti i box
-                stile_box = "display: flex; flex-direction: column; justify-content: space-between; padding: 18px; border-radius: 8px; min-height: 180px; box-sizing: border-box; height: 100%;"
+                # Stile standardizzato per altezza fissa identica e nessuna linea di separazione
+                stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; height: 230px; box-sizing: border-box;"
 
                 # ==========================================
                 # 1. BOX IDENTITÀ
@@ -341,14 +341,12 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
                             <div style="margin-bottom: 12px;">
-                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">DATA DI NASCITA</p>
-                                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: #0f172a;">{data_nascita_str}</p>
-                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">LUOGO DI NASCITA</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">{riga_bambino[col_luogo]}</p>
-                            </div>
-                            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: auto;">
-                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">CODICE FISCALE</p>
-                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #0f172a; font-family: monospace;">{cf_pulito}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">DATA DI NASCITA</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{data_nascita_str}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">LUOGO DI NASCITA</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{riga_bambino[col_luogo]}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">CODICE FISCALE</p>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a; font-family: monospace;">{cf_pulito}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
@@ -365,14 +363,12 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
                             <div style="margin-bottom: 12px;">
-                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">INDIRIZZO</p>
-                                <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 500; color: #0f172a;">{indirizzo_completo}</p>
-                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">CITTÀ e CAP</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: 500; color: #0f172a;">{citta_completa}</p>
-                            </div>
-                            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: auto;">
-                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">TELEFONO REFERENTE</p>
-                                <p style="margin: 0; font-size: 15px; font-weight: 600; color: #0f172a;">{contatto_genitore}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">INDIRIZZO</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{indirizzo_completo}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">CITTÀ e CAP</p>
+                                <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 500; color: #0f172a;">{citta_completa}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">TELEFONO REFERENTE</p>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #0f172a;">{contatto_genitore}</p>
                             </div>
                         </div>
                         """, unsafe_allow_html=True
@@ -394,11 +390,9 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_box}">
                             <div style="margin-bottom: 12px;">
-                                <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.4; color: #64748b;">PRESENZA ALLERGIE</p>
-                                <p style="margin: 0; font-size: 18px; font-weight: 700; color: {colore_testo};">{icona} {ha_allergie}</p>
-                            </div>
-                            <div style="border-top: 1px solid rgba(0, 0, 0, 0.06); padding-top: 12px; margin-top: auto;">
-                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.05em;">DETTAGLIO ALLERGIE / FARMACI</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b;">PRESENZA ALLERGIE</p>
+                                <p style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: {colore_testo};">{icona} {ha_allergie}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; color: #64748b; font-weight: 600;">DETTAGLIO ALLERGIE / FARMACI</p>
                                 <p style="margin: 0; font-size: 14px; line-height: 1.4;">{dettaglio}</p>
                             </div>
                         </div>
