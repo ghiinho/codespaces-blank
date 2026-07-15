@@ -87,6 +87,8 @@ def mostra_anagrafiche(df_iscritti):
     
     mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti_ordinato.index))
     lista_selectbox = list(opzioni_ricerca)
+    # Mappa inversa: indice -> stringa opzione (utile per sincronizzare la selectbox)
+    mappa_indice_a_opzione = {v: k for k, v in mappa_opzioni.items()}
 
     # ==========================================
     # 2. INTERFACCIA GRAFICA COMPATTA & CSS
@@ -536,6 +538,11 @@ def mostra_anagrafiche(df_iscritti):
                             st.write(f"🧑‍🤝‍🧑 **{nome_fratello}** (Codice Fiscale: `{riga_fratello[col_cf]}`)")
                         with btn_col2:
                             if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
+                                # Impostiamo anche la selectbox di ricerca con l'opzione corrispondente
+                                try:
+                                    st.session_state.ricerca_dinamica_selectbox = mappa_indice_a_opzione.get(idx_fratello, None)
+                                except Exception:
+                                    pass
                                 st.session_state.id_bambino_corrente = idx_fratello
                                 st.session_state.scheda_attiva = "bambino"
                                 st.rerun()
