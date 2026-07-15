@@ -217,11 +217,22 @@ def mostra_anagrafiche(df_iscritti):
                     with c_nasc1:
                         e_luogo = st.text_input("Luogo di Nascita", value=str(riga_bambino[col_luogo]))
                     with c_nasc2:
-                        e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA o AAAA-MM-DD)", value=str(riga_bambino[col_nascita]))
+                        # 1. Recuperiamo il valore grezzo della data
+                        data_grezza = riga_bambino[col_nascita]
+                        
+                        # 2. Proviamo a formattarla in GG/MM/AAAA, altrimenti usiamo un fallback sicuro
+                        try:
+                            data_pulita = pd.to_datetime(data_grezza).strftime('%d/%m/%Y')
+                        except Exception:
+                            # Se il campo è vuoto o non è una data valida, mostriamo il valore così com'è o vuoto
+                            data_pulita = str(data_grezza) if pd.notna(data_grezza) else ""
+
+                        # 3. Mostriamo il text_input con la data pulita
+                        e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA)", value=data_pulita)
                     
                     c_res1, c_res2, c_res3, c_res4 = st.columns([3, 1, 1, 2])
                     with c_res1:
-                        e_via = st.text_input("Via/Piazza", value=str(riga_bambino[col_via]))
+                        e_via = st.text_input("Via/Strada/Piazza", value=str(riga_bambino[col_via]))
                     with c_res2:
                         e_civico = st.text_input("Civico", value=str(riga_bambino[col_civico]))
                     with c_res3:
