@@ -290,7 +290,7 @@ def mostra_anagrafiche(df_iscritti):
                     )
                 
                 with box_sanitario:
-                    st.markdown("#### ⚠️ Informazioni Sanitarie")
+                    st.markdown("#### ⚠️ Allergie o Intolleranze")
                     ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
                     if ha_allergie in ["SÌ", "SI", "YES", "Vero", "TRUE"]:
                         colore_sfondo, colore_bordo, icona = "#fef2f2", "#f87171", "🚨"
