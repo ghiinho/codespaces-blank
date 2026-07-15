@@ -213,19 +213,59 @@ def mostra_anagrafiche(df_iscritti):
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- 🌟 BANNER BLU SCURO COMPATTO (Nome + Pulsante uniti nello stesso sfondo) ---
+            # --- 🌟 CSS GLOBALE PER IL BANNER BLU E IL PULSANTE ---
+            # Questo CSS intercetta le colonne di Streamlit e le unisce nel banner blu sfumato
+            st.markdown(
+                """
+                <style>
+                    /* Seleziona la riga delle colonne che contiene il nostro pulsante di modifica */
+                    div[data-testid="stHorizontalBlock"]:has(button[key="btn_attiva_modifica"]),
+                    div[data-testid="stHorizontalBlock"]:has(button[key="btn_annulla_modifica"]) {
+                        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+                        padding: 20px 25px !important;
+                        border-radius: 10px !important;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+                        margin-bottom: 25px !important;
+                        align-items: center !important; /* Centra verticalmente nome e pulsante */
+                    }
+                    
+                    /* Stile personalizzato per il pulsante Modifica dentro il banner */
+                    div[data-testid="stHorizontalBlock"] button[key="btn_attiva_modifica"],
+                    div[data-testid="stHorizontalBlock"] button[key="btn_annulla_modifica"] {
+                        background-color: rgba(255, 255, 255, 0.1) !important;
+                        color: #ffffff !important;
+                        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+                        height: 42px !important;
+                        font-weight: 600 !important;
+                        transition: all 0.2s ease-in-out !important;
+                    }
+                    
+                    div[data-testid="stHorizontalBlock"] button[key="btn_attiva_modifica"]:hover {
+                        background-color: #38bdf8 !important;
+                        color: #0f172a !important;
+                        border-color: #38bdf8 !important;
+                    }
+
+                    div[data-testid="stHorizontalBlock"] button[key="btn_annulla_modifica"]:hover {
+                        background-color: #ef4444 !important;
+                        color: #ffffff !important;
+                        border-color: #ef4444 !important;
+                    }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            
+            # --- 🌟 STRUTTURA DEL BANNER (Senza HTML pericoloso) ---
             nome_completo = f"{str(riga_bambino[col_cognome]).upper()} {str(riga_bambino[col_nome]).title()}"
             
-            # Stile CSS comune per "fondere" le due colonne in un unico blocco visivo
-            stile_comune = "background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 18px 25px; min-height: 90px; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);"
-            
-            # Creiamo due colonne per affiancare il testo e il pulsante
+            # Creiamo le colonne nativamente. Il CSS sopra si occuperà di colorare lo sfondo di blu
             col_sinistra_nome, col_destra_pulsante = st.columns([3, 1])
             
             with col_sinistra_nome:
                 st.markdown(
                     f"""
-                    <div style="{stile_comune} border-top-left-radius: 10px; border-bottom-left-radius: 10px; border-right: none;">
+                    <div style="padding: 2px 0;">
                         <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 2px;">
                             Scheda Anagrafica Iscritto
                         </span>
@@ -238,30 +278,7 @@ def mostra_anagrafiche(df_iscritti):
                 )
                 
             with col_destra_pulsante:
-                # Applichiamo lo stesso sfondo a destra per completare il banner
-                st.markdown(
-                    f"""
-                    <style>
-                        /* Rende il bottone nativo elegante, trasparente e coordinato al banner */
-                        div[data-testid="column"] button {{
-                            background-color: rgba(255, 255, 255, 0.1) !important;
-                            color: #ffffff !important;
-                            border: 1px solid rgba(255, 255, 255, 0.25) !important;
-                            height: 42px !important;
-                            transition: all 0.2s ease-in-out;
-                        }}
-                        div[data-testid="column"] button:hover {{
-                            background-color: #38bdf8 !important;
-                            color: #0f172a !important;
-                            border-color: #38bdf8 !important;
-                        }}
-                    </style>
-                    <div style="{stile_comune} border-top-right-radius: 10px; border-bottom-right-radius: 10px; align-items: center; justify-content: center; padding-left: 10px; padding-right: 20px;">
-                    """,
-                    unsafe_allow_html=True
-                )
-                
-                # Il pulsante nativo di Streamlit si posiziona perfettamente al centro della colonna destra "blu"
+                # I pulsanti sono ora puliti e nativi, posizionati dentro la colonna destra del banner
                 if not st.session_state.modalita_modifica:
                     if st.button("✏️ Modifica", key="btn_attiva_modifica", use_container_width=True):
                         st.session_state.modalita_modifica = True
@@ -270,11 +287,6 @@ def mostra_anagrafiche(df_iscritti):
                     if st.button("❌ Annulla", key="btn_annulla_modifica", use_container_width=True):
                         st.session_state.modalita_modifica = False
                         st.rerun()
-                        
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            # Spazio minimo di separazione prima della griglia dei dati
-            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
             # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
