@@ -10,6 +10,16 @@ def mostra_anagrafiche(df_iscritti):
         st.info("Carica il file Excel per abilitare la gestione anagrafica.")
         return
 
+    # --- INIZIALIZZAZIONE STATO (Super semplice) ---
+    if "id_bambino_corrente" not in st.session_state:
+        st.session_state.id_bambino_corrente = None
+    if "risultato_ricerca" not in st.session_state:
+        st.session_state.risultato_ricerca = None
+    if "scheda_attiva" not in st.session_state:
+        st.session_state.scheda_attiva = "bambino"
+    if "modalita_modifica" not in st.session_state:
+        st.session_state.modalita_modifica = False
+
     # --- MAPPATURA COLONNE ---
     colonne_reali = list(df_iscritti.columns)
     id_colonna = colonne_reali[0] # ID/Timestamp o prima colonna univoca
@@ -38,49 +48,22 @@ def mostra_anagrafiche(df_iscritti):
     # Settimane (Dinamica)
     colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
 
-    # ==========================================
-    # 1. GESTIONE RESET SILENZIOSO CON KEY DINAMICA
-    # ==========================================
-    # Creiamo un contatore per la chiave del widget se non esiste
-    if "ricerca_key_version" not in st.session_state:
-        st.session_state.ricerca_key_version = 0
-
-    if "ultima_pagina_vista" not in st.session_state:
-        st.session_state.ultima_pagina_vista = "Home Page"
-
-    # Se l'utente ha cambiato pagina, resettiamo i dati e INCREMENTIAMO la versione della chiave
-    if st.session_state.ultima_pagina_vista != "Anagrafiche Iscritti":
-        st.session_state.risultato_ricerca = None
-        st.session_state.ricerca_key_version += 1  # Questo forza il widget di testo a svuotarsi!
-        if "scheda_attiva" in st.session_state:
-            st.session_state.scheda_attiva = None
-
-    # Aggiorniamo la pagina corrente
-    st.session_state.ultima_pagina_vista = "Anagrafiche Iscritti"
-
-    # ==========================================
-    # 2. IL TUO MOTORE DI RICERCA CON CHIAVE AGGIORNATA
-    # ==========================================
+    # --- MOTORE DI RICERCA ---
     col_ricerca, col_bottone = st.columns([4, 1])
     with col_ricerca:
-        # La chiave del widget ora cambia dinamicamente (es. "ricerca_cognome_0", "ricerca_cognome_1"...)
-        chiave_dinamica = f"ricerca_cognome_{st.session_state.ricerca_key_version}"
-        
         cognome_input = st.text_input(
             "🔍 Cerca iscritto per Cognome:", 
             placeholder="Scrivi il cognome...",
-            key=chiave_dinamica
+            key="ricerca_cognome"
         )
     with col_bottone:
         st.write("##")
         avvia_ricerca = st.button("Cerca 🚀", use_container_width=True)
 
-    # Gestiamo la ricerca usando la variabile locale 'cognome_input'
     if avvia_ricerca and cognome_input:
         risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
         st.session_state.risultato_ricerca = risultati
-        st.session_state.modalita_modifica = False # Resetta lo stato di modifica
-        
+        st.session_state.modalita_modifica = False
         if not risultati.empty:
             st.session_state.id_bambino_corrente = risultati.index[0]
             st.session_state.scheda_attiva = "bambino"

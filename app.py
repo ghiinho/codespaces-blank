@@ -22,7 +22,16 @@ df_iscritti = db_utils.ottieni_iscritti()
 # 3. Disegniamo la barra laterale di navigazione
 disegna_sidebar()
 
-# 4. Mostra la vista corretta in base allo stato attuale
+# 💡 IL SEGRETO: Se la pagina corrente NON è le Anagrafiche, 
+# svuotiamo completamente i dati di ricerca in modo che non rimangano in memoria!
+if st.session_state.pagina_corrente != "Anagrafiche Iscritti":
+    st.session_state.risultato_ricerca = None
+    st.session_state.id_bambino_corrente = None
+    # Svuotiamo anche il testo scritto nel box di ricerca
+    if "ricerca_cognome" in st.session_state:
+        st.session_state["ricerca_cognome"] = ""
+
+# Ora mostriamo la pagina corretta in totale sicurezza
 if st.session_state.pagina_corrente == "Home Page":
     mostra_home()
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
