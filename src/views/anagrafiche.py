@@ -518,15 +518,18 @@ def mostra_anagrafiche(df_iscritti):
                     btn_col1, btn_col2 = st.columns([3, 1])
                     with btn_col1:
                         st.write(f"🧑‍🤝‍🧑 **{nome_fratello}** (Codice Fiscale: `{riga_fratello[col_cf]}`)")
+                    # Sostituisci il blocco nel TAB GENITORE (dove c'è il pulsante fratelli) con questo:
+
                     with btn_col2:
                         if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
-                            # 1. Imposta l'ID del fratello come corrente
+                            # 1. Aggiorna lo stato del bambino
                             st.session_state.id_bambino_corrente = idx_fratello
-                            st.session_state.risultato_ricerca = df_iscritti.loc[[idx_fratello]]
                             
-                            # 2. CHIAVE DI VOLTA: allinea la selectbox principale impostando il suo stato interno
-                            if stringa_selectbox_esatta:
-                                st.session_state["ricerca_dinamica_selectbox"] = stringa_selectbox_esatta
+                            # 2. NON FORZARE LA SELECTBOX DIRETTAMENTE
+                            # Invece, resettiamo la chiave della selectbox per permettere un nuovo caricamento pulito
+                            # Oppure, ancora meglio, rimuoviamo la chiave per forzare la selectbox a rileggere lo stato
+                            if "ricerca_dinamica_selectbox" in st.session_state:
+                                del st.session_state["ricerca_dinamica_selectbox"]
                             
                             st.session_state.scheda_attiva = "bambino"
                             st.session_state.modalita_modifica = False
