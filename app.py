@@ -18,19 +18,47 @@ def naviga_a(nome_pagina):
     st.session_state.pagina_corrente = nome_pagina
     st.rerun()
 
-# --- BARRA LATERALE PER TORNARE SEMPRE ALLA HOME ---
-with st.sidebar:
-    st.markdown("### ☀️ Centro Estivo")
-    if st.button("🏠 Torna alla Home Page", use_container_width=True):
-        naviga_a("Home")
-    st.markdown("---")
-    st.caption("Fatto con ❤️ per la simulazione del gestionale")
+# ==========================================
+# SIDEBAR: NAVIGAZIONE A PULSANTI
+# ==========================================
+st.sidebar.title("Navigation")
+st.sidebar.write("Seleziona la sezione desiderata:")
+
+# Inizializziamo la pagina corrente se non esiste nello stato
+if "pagina_corrente" not in st.session_state:
+    st.session_state.pagina_corrente = "Home Page"
+
+# --- PULSANTE 1: TORNA ALLA HOME PAGE ---
+if st.sidebar.button("🏠 Torna alla Home Page", use_container_width=True):
+    st.session_state.pagina_corrente = "Home Page"
+    st.rerun()
+
+# --- PULSANTE 2: VAI ALLE ANAGRAFICHE ---
+# Quando viene cliccato, oltre a cambiare pagina, azzera attivamente la ricerca
+if st.sidebar.button("👤 Vai alle anagrafiche", use_container_width=True):
+    # RESET STATO RICERCA ANAGRAFICA
+    st.session_state.id_bambino_corrente = None
+    st.session_state.risultato_ricerca = None
+    st.session_state.scheda_attiva = "bambino"
+    
+    st.session_state.pagina_corrente = "Anagrafiche Iscritti"
+    st.rerun()
+
+# --- PULSANTE 3: VAI AGLI ELENCHI SETTIMANALI ---
+if st.sidebar.button("📅 Vai agli elenchi settimanali", use_container_width=True):
+    st.session_state.pagina_corrente = "Elenchi Settimanali"
+    st.rerun()
+
+# --- PULSANTE 4: VAI AI PAGAMENTI ---
+if st.sidebar.button("💳 Vai ai pagamenti", use_container_width=True):
+    st.session_state.pagina_corrente = "Gestione Pagamenti"
+    st.rerun()
 
 # ==========================================
 # 1. PAGINA PRINCIPALE: HOME PAGE A RIQUADRI
 # ==========================================
-if st.session_state.pagina_corrente == "Home":
-    st.title("Plancia di Comando - Centro Estivo")
+if st.session_state.pagina_corrente == "Home Page":
+    st.title("Gestionale Centro Estivo")
     st.write("Benvenuto nel gestionale. Clicca su uno dei riquadri qui sotto per accedere alle funzioni specifiche:")
     st.markdown("---")
 
@@ -333,16 +361,16 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
 
 
 # ==========================================
-# 3. SEZIONE: ELENCHI SETTIMANALI
+# 3. SEZIONE: ELENCHI SETTIMANALI (Futura)
 # ==========================================
 elif st.session_state.pagina_corrente == "Elenchi Settimanali":
-    st.title("📅 Sezione: Elenchi Settimanali")
-    st.write("Qui metteremo il filtro (es. 'Settimana 1') per vedere l'elenco dei soli bambini iscritti in quella settimana.")
+    st.title("📅 Elenchi Settimanali")
+    st.info("🚧 Questa sezione è in fase di sviluppo. Qui potrai visualizzare e gestire le presenze e i gruppi settimana per settimana.")
 
 
 # ==========================================
-# 4. SEZIONE: GESTIONE PAGAMENTI
+# 4. SEZIONE: GESTIONE PAGAMENTI (Futura)
 # ==========================================
 elif st.session_state.pagina_corrente == "Gestione Pagamenti":
-    st.title("💰 Sezione: Gestione Pagamenti")
-    st.write("Qui metteremo i resoconti dei soldi incassati, da incassare e i calcoli delle tariffe.")
+    st.title("💳 Gestione Pagamenti")
+    st.info("🚧 Questa sezione è in fase di sviluppo. Qui potrai monitorare le quote di iscrizione, i saldi e registrare i pagamenti ricevuti.")
