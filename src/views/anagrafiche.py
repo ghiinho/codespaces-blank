@@ -83,9 +83,9 @@ def mostra_anagrafiche(df_iscritti):
         risultati = df_iscritti[df_iscritti[col_cognome].astype(str).str.lower().str.contains(cognome_input.strip().lower())]
         st.session_state.risultato_ricerca = risultati
         st.session_state.modalita_modifica = False 
-    if not risultati.empty:
-        st.session_state.id_bambino_corrente = risultati.index[0]
-        st.session_state.scheda_attiva = "bambino"
+        if not risultati.empty:
+            st.session_state.id_bambino_corrente = risultati.index[0]
+            st.session_state.scheda_attiva = "bambino"
 
     # --- GESTIONE DEI RISULTATI ---
     if st.session_state.risultato_ricerca is not None:
