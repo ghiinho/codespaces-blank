@@ -110,36 +110,54 @@ def mostra_anagrafiche(df_iscritti):
 
     col_ricerca, col_vuota = st.columns([3, 2])
     
+    # Se abbiamo un ID bambino corrente impostato (magari dai fratelli),
+    # cerchiamo di pre-selezionare il valore corretto nella selectbox
+    indice_default_selectbox = None
+    if st.session_state.id_bambino_corrente is not None:
+        for opt_str, idx_val in mappa_opzioni.items():
+            if idx_val == st.session_state.id_bambino_corrente:
+                if opt_str in lista_selectbox:
+                    indice_default_selectbox = lista_selectbox.index(opt_str)
+                break
+
     with col_ricerca:
         scelta_utente = st.selectbox(
             "Cerca un iscritto:",
             options=lista_selectbox,
-            index=None,
+            index=indice_default_selectbox,
             placeholder="🔍 Digita il cognome o nome...",
             key="ricerca_dinamica_selectbox"
         )
 
+    # Aggiorna lo stato in base alla selezione della selectbox
+    if scelta_utente is not None and scelta_utente in mappa_opzioni:
+        id_selezionato = mappa_opzioni.get(scelta_utente)
+        if st.session_state.id_bambino_corrente != id_selezionato:
+            st.session_state.id_bambino_corrente = id_selezionato
+            st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
+            st.session_state.modalita_modifica = False
+            st.rerun()
+    elif scelta_utente is None:
+        st.session_state.id_bambino_corrente = None
+        st.session_state.risultato_ricerca = None
+        st.session_state.modalita_modifica = False
+
     # ==========================================
     # 💡 L'ASSO NELLA MANICA: JAVASCRIPT INJECTION
     # ==========================================
-    # Questo script trova l'input di ricerca della selectbox di Streamlit nel DOM del browser
-    # e forza la selezione totale del testo al click, permettendo la sovrascrittura istantanea.
     st.components.v1.html(
         """
         <script>
-        // Funzione che aggancia l'evento di focus all'input di Streamlit
         function attenuaInput() {
-            // Cerchiamo l'elemento input generato da Streamlit per la selectbox
             const inputs = window.parent.document.querySelectorAll('div[data-testid="stSelectbox"] input');
             inputs.forEach(input => {
                 if (!input.dataset.hasAutoSelectListener) {
                     input.dataset.hasAutoSelectListener = "true";
                     
-                    // Al click o al focus, selezioniamo tutto il testo contenuto
                     const selectText = () => {
                         setTimeout(() => {
                             input.select();
-                        }, 50); // Piccolo delay per attendere il rendering di Streamlit
+                        }, 50);
                     };
                     
                     input.addEventListener('focus', selectText);
@@ -147,21 +165,11 @@ def mostra_anagrafiche(df_iscritti):
                 }
             });
         }
-
-        // Monitoriamo continuamente la pagina (necessario perché Streamlit ridisegna spesso i componenti)
         setInterval(attenuaInput, 500);
         </script>
         """,
-        height=0, # Invisibile all'utente, non occupa spazio a schermo
+        height=0,
     )
-
-    # ==========================================
-    # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
-    # ==========================================
-    if scelta_utente is not None and scelta_utente in mappa_opzioni:
-        id_selezionato = mappa_opzioni.get(scelta_utente)
-        st.session_state.id_bambino_corrente = id_selezionato
-        st.session_state.risultato_ricerca = df_iscritti.loc[[id_selezionato]]
 
     # ==========================================
     # 4. CARICAMENTO E VISUALIZZAZIONE DELLA SCHEDA
@@ -232,30 +240,31 @@ def mostra_anagrafiche(df_iscritti):
                 st.rerun()
 
         # ==========================================
-        # 1. TAB: BAMBINO
+        # 1. TAB: BAMBINO (Con Form di Modifica Unificato)
         # ==========================================
         if st.session_state.scheda_attiva == "bambino":
             
-            # --- CORPO DELLA SCHEDA ---
             if st.session_state.modalita_modifica:
-                # FORM DI MODIFICA
-                with st.form("form_modifica_bambino"):
-                    st.markdown("#### 📝 Modifica Anagrafica e Sanitari Bambino")
+                # FORM DI MODIFICA UNIFICATO (BAMBINO + GENITORE)
+                with st.form("form_modifica_unificato"):
+                    st.markdown("### 📝 Modifica Scheda Anagrafica Completa")
                     
-                    e_cognome = st.text_input("Cognome", value=str(riga_bambino[col_cognome]))
-                    e_nome = st.text_input("Nome", value=str(riga_bambino[col_nome]))
-                    e_cf = st.text_input("Codice Fiscale", value=str(riga_bambino[col_cf]).upper())
+                    # --- SEZIONE BAMBINO ---
+                    st.markdown("#### 👦 Informazioni Bambino")
+                    e_cognome = st.text_input("Cognome Bambino", value=str(riga_bambino[col_cognome]))
+                    e_nome = st.text_input("Nome Bambino", value=str(riga_bambino[col_nome]))
+                    e_cf = st.text_input("Codice Fiscale Bambino", value=str(riga_bambino[col_cf]).upper())
                     
                     c_nasc1, c_nasc2 = st.columns(2)
                     with c_nasc1:
-                        e_luogo = st.text_input("Luogo di Nascita", value=str(riga_bambino[col_luogo]))
+                        e_luogo = st.text_input("Luogo di Nascita Bambino", value=str(riga_bambino[col_luogo]))
                     with c_nasc2:
                         data_grezza = riga_bambino[col_nascita]
                         try:
                             data_pulita = pd.to_datetime(data_grezza).strftime('%d/%m/%Y')
                         except Exception:
                             data_pulita = str(data_grezza) if pd.notna(data_grezza) else ""
-                        e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA)", value=data_pulita)
+                        e_nascita = st.text_input("Data di Nascita Bambino (GG/MM/AAAA)", value=data_pulita)
                     
                     c_res1, c_res2, c_res3, c_res4 = st.columns([3, 1, 1, 2])
                     with c_res1:
@@ -267,25 +276,50 @@ def mostra_anagrafiche(df_iscritti):
                     with c_res4:
                         e_citta = st.text_input("Città", value=str(riga_bambino[col_citta]))
                     
-                    st.markdown("---")
                     st.markdown("##### 🩺 Informazioni Sanitarie")
                     e_allergie = st.selectbox("Allergie/Intolleranze?", ["SÌ", "NO"], index=0 if str(riga_bambino[col_allergie]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1)
                     e_quali = st.text_area("Se sì, specificare quali allergie o farmaci salvavita:", value=str(riga_bambino[col_quali]) if pd.notnull(riga_bambino[col_quali]) else "")
                     
-                    salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
+                    st.markdown("---")
                     
-                    if salva_bambino:
+                    # --- SEZIONE GENITORE ---
+                    st.markdown("#### 👨‍👩‍👧 Informazioni Contatto Genitore")
+                    e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
+                    e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
+                    e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
+                    
+                    c_gen1, c_gen2 = st.columns(2)
+                    with c_gen1:
+                        e_g_tel = st.text_input("Telefono Genitore", value=str(riga_bambino[col_g_tel]))
+                    with c_gen2:
+                        e_g_email = st.text_input("Email Genitore", value=str(riga_bambino[col_g_email]))
+                    
+                    e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
+                    
+                    # Opzione per propagare i contatti del genitore ai fratelli se presenti
+                    applica_a_fratelli = False
+                    if len(fratelli) > 0:
+                        applica_a_fratelli = st.checkbox("🔄 Applica automaticamente questi dati di contatto genitore (Telefono ed Email) anche alle schede dei fratelli", value=True)
+
+                    salva_tutto = st.form_submit_button("💾 Salva Modifiche Complete", use_container_width=True, type="primary")
+                    
+                    if salva_tutto:
+                        # Validazione campi obbligatori
                         campi_da_validare = {
-                            "Cognome": e_cognome,
-                            "Nome": e_nome,
-                            "Codice Fiscale": e_cf,
-                            "Luogo di Nascita": e_luogo,
-                            "Data di Nascita": e_nascita,
+                            "Cognome Bambino": e_cognome,
+                            "Nome Bambino": e_nome,
+                            "Codice Fiscale Bambino": e_cf,
+                            "Luogo di Nascita Bambino": e_luogo,
+                            "Data di Nascita Bambino": e_nascita,
                             "Via/Piazza": e_via,
                             "Civico": e_civico,
                             "CAP": e_cap,
                             "Città": e_citta,
-                            "Allergie (SÌ/NO)": e_allergie
+                            "Cognome Genitore": e_g_cognome,
+                            "Nome Genitore": e_g_nome,
+                            "Codice Fiscale Genitore": e_g_cf,
+                            "Telefono Genitore": e_g_tel,
+                            "Email Genitore": e_g_email
                         }
 
                         campi_mancanti = []
@@ -298,8 +332,9 @@ def mostra_anagrafiche(df_iscritti):
                             campi_mancanti.append("Specificare quali allergie")
 
                         if len(campi_mancanti) > 0:
-                            st.error(f"⚠️ **Impossibile salvare!** Tutti i campi sono obbligatori. Ti sei dimenticato di compilare: **{', '.join(campi_mancanti)}**")
+                            st.error(f"⚠️ **Impossibile salvare!** I seguenti campi sono obbligatori: **{', '.join(campi_mancanti)}**")
                         else:
+                            # 1. Salvataggio dati bambino
                             df_iscritti.at[riga_index, col_cognome] = e_cognome.strip().upper()
                             df_iscritti.at[riga_index, col_nome] = e_nome.strip().title()
                             df_iscritti.at[riga_index, col_cf] = e_cf.strip().upper()
@@ -312,23 +347,45 @@ def mostra_anagrafiche(df_iscritti):
                             df_iscritti.at[riga_index, col_allergie] = e_allergie
                             df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
                             
+                            # 2. Salvataggio dati genitore
+                            df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip().upper()
+                            df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip().title()
+                            df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
+                            df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
+                            df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
+                            df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
+
+                            # 3. Aggiornamento opzionale fratelli
+                            if len(fratelli) > 0 and applica_a_fratelli:
+                                percorsi_fratelli_indici = df_iscritti[
+                                    ((df_iscritti[col_g_cf] == cf_genitore_corrente) & (pd.notnull(df_iscritti[col_g_cf]))) |
+                                    ((df_iscritti[col_g_email] == email_genitore_corrente) & (pd.notnull(df_iscritti[col_g_email])))
+                                ].index
+                                for idx_f in percorsi_fratelli_indici:
+                                    df_iscritti.at[idx_f, col_g_cognome] = e_g_cognome.strip().upper()
+                                    df_iscritti.at[idx_f, col_g_nome] = e_g_nome.strip().title()
+                                    df_iscritti.at[idx_f, col_g_cf] = e_g_cf.strip().upper()
+                                    df_iscritti.at[idx_f, col_g_tel] = e_g_tel.strip()
+                                    df_iscritti.at[idx_f, col_g_email] = e_g_email.strip()
+                                    df_iscritti.at[idx_f, col_g_nascita] = e_g_nascita.strip()
+
                             try:
+                                # Salvataggio su file
                                 df_iscritti.to_excel("iscritti.xlsx", index=False)
-                                st.success("✅ Dati del bambino aggiornati con successo!")
+                                st.success("✅ Scheda anagrafica aggiornata con successo!")
                                 st.session_state.modalita_modifica = False
                                 st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"Errore durante il salvataggio: {e}")
+                                st.error(f"Errore durante il salvataggio sul file Excel: {e}")
             else:
-                # VISTA STATICA (I 3 Box Dati rimessi in riga)
+                # VISTA STATICA (I 3 Box Dati standardizzati)
                 box_anagrafica, box_residenza, box_sanitario = st.columns(3)
                 
                 data_nascita_val = riga_bambino[col_nascita]
                 data_nascita_str = pd.to_datetime(data_nascita_val).strftime('%d/%m/%Y') if pd.notnull(data_nascita_val) and not isinstance(data_nascita_val, str) else str(data_nascita_val)
                 contatto_genitore = riga_bambino.get(col_g_tel, "Non specificato") if 'col_g_tel' in locals() else "Dato mancante"
                 
-                # Stile standardizzato per altezza fissa identica e nessuna linea di separazione
                 stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; height: 230px; box-sizing: border-box;"
 
                 # ==========================================
@@ -398,106 +455,82 @@ def mostra_anagrafiche(df_iscritti):
                 # --- PULSANTE DI MODIFICA IN FONDO AL TAB BAMBINO ---
                 st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
-                # Nessuna colonna: inserito direttamente nel container/tab principale
-                # use_container_width=False impedisce al pulsante di espandersi fino a destra
                 if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica", use_container_width=False, type="secondary"):
                     st.session_state.modalita_modifica = True
                     st.rerun()
 
         # ==========================================
-        # 2. TAB: GENITORE & FAMIGLIA
+        # 2. TAB: GENITORE & FAMIGLIA (Sola lettura, pulita)
         # ==========================================
         elif st.session_state.scheda_attiva == "genitore":
-            if st.session_state.modalita_modifica:
-                # FORM DI MODIFICA GENITORE
-                with st.form("form_modifica_genitore"):
-                    st.markdown("#### 📝 Modifica Dati Contatto Genitore")
-                    e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
-                    e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
-                    e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
-                    
-                    c_gen1, c_gen2 = st.columns(2)
-                    with c_gen1:
-                        e_g_tel = st.text_input("Telefono", value=str(riga_bambino[col_g_tel]))
-                    with c_gen2:
-                        e_g_email = st.text_input("Email", value=str(riga_bambino[col_g_email]))
-                    
-                    e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
-                    
-                    salva_genitore = st.form_submit_button("💾 Salva Modifiche Genitore", use_container_width=True, type="primary")
-                    
-                    if salva_genitore:
-                        # Aggiorniamo la riga singola
-                        df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome
-                        df_iscritti.at[riga_index, col_g_nome] = e_g_nome
-                        df_iscritti.at[riga_index, col_g_cf] = e_g_cf
-                        df_iscritti.at[riga_index, col_g_tel] = e_g_tel
-                        df_iscritti.at[riga_index, col_g_email] = e_g_email
-                        df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita
-                        
-                        # Se ha altri figli, opzione comoda di aggiornare i contatti per tutti i fratelli automaticamente!
-                        se_fratelli = df_iscritti[df_iscritti[col_g_cf] == cf_genitore_corrente].index
-                        if len(se_fratelli) > 1:
-                            for idx_f in se_fratelli:
-                                df_iscritti.at[idx_f, col_g_tel] = e_g_tel
-                                df_iscritti.at[idx_f, col_g_email] = e_g_email
-                        
-                        try:
-                            df_iscritti.to_excel("gestionale.xlsx", index=False)
-                            st.success("✅ Contatti della famiglia aggiornati (e allineati per eventuali fratelli)!")
-                            st.session_state.modalita_modifica = False
-                            st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Errore durante il salvataggio: {e}")
-            else:
-                # VISTA STATICA GENITORE
-                tel_g_grezzo = str(riga_bambino[col_g_tel])
-                tel_g_pulito = tel_g_grezzo.replace(" ", "").replace("/", "").replace("-", "").strip()
-                if tel_g_pulito.endswith(".0"): tel_g_pulito = tel_g_pulito[:-2]
+            tel_g_grezzo = str(riga_bambino[col_g_tel])
+            tel_g_pulito = tel_g_grezzo.replace(" ", "").replace("/", "").replace("-", "").strip()
+            if tel_g_pulito.endswith(".0"): tel_g_pulito = tel_g_pulito[:-2]
 
-                data_n_g_val = riga_bambino[col_g_nascita]
-                data_n_g_str = pd.to_datetime(data_n_g_val).strftime('%d/%m/%Y') if pd.notnull(data_n_g_val) and not isinstance(data_n_g_val, str) else str(data_n_g_val)
-                cf_g_pulito = str(riga_bambino[col_g_cf]).strip().upper() if pd.notnull(riga_bambino[col_g_cf]) else "Dato mancante"
+            data_n_g_val = riga_bambino[col_g_nascita]
+            data_n_g_str = pd.to_datetime(data_n_g_val).strftime('%d/%m/%Y') if pd.notnull(data_n_g_val) and not isinstance(data_n_g_val, str) else str(data_n_g_val)
+            cf_g_pulito = str(riga_bambino[col_g_cf]).strip().upper() if pd.notnull(riga_bambino[col_g_cf]) else "Dato mancante"
+            
+            g_col1, g_col2 = st.columns(2)
+            with g_col1:
+                st.markdown("#### 👤 Dati anagrafici genitore")
+                st.markdown(
+                    f"""
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
+                        <p style="margin-bottom: 10px; font-size: 17px;"><b>Cognome e nome:</b> {nome_completo_genitore}</p>
+                        <p style="margin-bottom: 10px; font-size: 17px;"><b>Data di nascita:</b> {data_n_g_str}</p>
+                        <p style="margin-bottom: 0; font-size: 17px;"><b>Codice Fiscale:</b> {cf_g_pulito}</p>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
                 
-                g_col1, g_col2 = st.columns(2)
-                with g_col1:
-                    st.markdown("#### 👤 Dati anagrafici genitore")
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 180px;">
-                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Cognome e nome:</b> {nome_completo_genitore}</p>
-                            <p style="margin-bottom: 10px; font-size: 17px;"><b>Data di nascita:</b> {data_n_g_str}</p>
-                            <p style="margin-bottom: 0; font-size: 17px;"><b>Codice Fiscale:</b> {cf_g_pulito}</p>
-                        </div>
-                        """, unsafe_allow_html=True
+            with g_col2:
+                st.markdown("#### 📞 Recapiti")
+                st.markdown(
+                    f"""
+                    <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4; min-height: 180px;">
+                        <p style="margin-bottom: 10px; font-size: 17px;"><b>📞 Telefono:</b> <a href="tel:{tel_g_pulito}" style="font-weight: bold; color: #0f172a; text-decoration: none;">{tel_g_pulito}</a></p>
+                        <p style="margin-bottom: 0; font-size: 17px;"><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0d9488;">{riga_bambino[col_g_email]}</a></p>
+                    </div>
+                    """, unsafe_allow_html=True
+                )
+            
+            # --- SEZIONE FRATELLI (RISOLTA) ---
+            if not fratelli.empty:
+                st.markdown("---")
+                st.markdown("### 👦 Altri figli iscritti da questo genitore:")
+                for idx_fratello, riga_fratello in fratelli.iterrows():
+                    nome_fratello = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
+                    
+                    # Generazione del testo della selectbox per questo fratello specifico
+                    label_ricerca_fratello = (
+                        f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper() + " " + 
+                        f"{riga_fratello[col_cf]}".upper()
                     )
                     
-                with g_col2:
-                    st.markdown("#### 📞 Recapiti")
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4; min-height: 180px;">
-                            <p style="margin-bottom: 10px; font-size: 17px;"><b>📞 Telefono:</b> <a href="tel:{tel_g_pulito}" style="font-weight: bold; color: #0f172a; text-decoration: none;">{tel_g_pulito}</a></p>
-                            <p style="margin-bottom: 0; font-size: 17px;"><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0d9488;">{riga_bambino[col_g_email]}</a></p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-                
-                # Visualizzazione Fratelli
-                if not fratelli.empty:
-                    st.markdown("---")
-                    st.markdown("### 👦 Altri figli iscritti da questo genitore:")
-                    for idx_fratello, riga_fratello in fratelli.iterrows():
-                        nome_fratello = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
-                        btn_col1, btn_col2 = st.columns([3, 1])
-                        with btn_col1:
-                            st.write(f"🧑‍🤝‍🧑 **{nome_fratello}** (Codice Fiscale: `{riga_fratello[col_cf]}`)")
-                        with btn_col2:
-                            if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
-                                st.session_state.id_bambino_corrente = idx_fratello
-                                st.session_state.scheda_attiva = "bambino"
-                                st.rerun()
+                    # Troviamo la corrispondenza esatta presente nella lista_selectbox
+                    stringa_selectbox_esatta = None
+                    for opt in lista_selectbox:
+                        if idx_fratello == mappa_opzioni.get(opt):
+                            stringa_selectbox_esatta = opt
+                            break
+                    
+                    btn_col1, btn_col2 = st.columns([3, 1])
+                    with btn_col1:
+                        st.write(f"🧑‍🤝‍🧑 **{nome_fratello}** (Codice Fiscale: `{riga_fratello[col_cf]}`)")
+                    with btn_col2:
+                        if st.button(f"Vedi scheda di {riga_fratello[col_nome]} 📂", key=f"btn_fratello_{idx_fratello}"):
+                            # 1. Imposta l'ID del fratello come corrente
+                            st.session_state.id_bambino_corrente = idx_fratello
+                            st.session_state.risultato_ricerca = df_iscritti.loc[[idx_fratello]]
+                            
+                            # 2. CHIAVE DI VOLTA: allinea la selectbox principale impostando il suo stato interno
+                            if stringa_selectbox_esatta:
+                                st.session_state["ricerca_dinamica_selectbox"] = stringa_selectbox_esatta
+                            
+                            st.session_state.scheda_attiva = "bambino"
+                            st.session_state.modalita_modifica = False
+                            st.rerun()
 
         # ==========================================
         # 3. TAB: SETTIMANE
@@ -550,7 +583,7 @@ def mostra_anagrafiche(df_iscritti):
                             df_iscritti.at[riga_index, col_settimana] = val_salva
                         
                         try:
-                            df_iscritti.to_excel("gestionale.xlsx", index=False)
+                            df_iscritti.to_excel("iscritti.xlsx", index=False)
                             st.success("✅ Settimane di frequenza salvate correttamente!")
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
                             st.rerun()
