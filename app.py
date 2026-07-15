@@ -434,28 +434,29 @@ elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
                             salva_cliccato = st.form_submit_button("💾 Salva Modifiche", type="primary", use_container_width=True)
                             
                             if salva_cliccato:
-                                # 2. Aggiorniamo direttamente df_iscritti in memoria
+                                # 1. Aggiorniamo il DataFrame df_iscritti in memoria
                                 for col_settimana, valore in nuovi_valori.items():
+                                    # Se l'utente sceglie "NON ISCRITTO ❌", salviamo un valore vuoto (NaN/None)
                                     valore_da_salvare = None if valore == "NON ISCRITTO ❌" else valore
                                     df_iscritti.at[riga_index, col_settimana] = valore_da_salvare
                                 
-                                # 3. Salviamo usando db_utils!
-                                # Nota: Verifica se in db_utils hai una funzione di salvataggio. 
-                                # Solitamente, se c'è "inizializza_database_in_memoria", ci sarà anche una funzione per scrivere su disco,
-                                # ad esempio "db_utils.salva_database(df_iscritti)" o "db_utils.salva_iscritti(df_iscritti)".
+                                # 2. Scrittura diretta e sicura sul file Excel
+                                # (Assicurati che il nome del file sia corretto, es. "iscritti.xlsx")
+                                nome_file_excel = "iscritti.xlsx" 
+                                
                                 try:
-                                    # Usa la funzione di salvataggio del tuo db_utils. Se non sei sicuro del nome,
-                                    # puoi provare a scrivermi quali funzioni ci sono in db_utils.py!
-                                    db_utils.salva_database(df_iscritti) # <-- o la funzione equivalente nel tuo db_utils
+                                    # Salviamo il file Excel mantenendo intatta la formattazione di pandas
+                                    df_iscritti.to_excel(nome_file_excel, index=False)
                                     
-                                    st.success("✅ Modifiche salvate con successo!")
+                                    st.success("✅ Modifiche salvate con successo sia nel sistema che sul file Excel!")
                                     
-                                    # Forza il ricaricamento della ricerca con i dati freschi
+                                    # 3. Forziamo l'aggiornamento immediato della schermata di ricerca
                                     st.session_state.risultato_ricerca = df_iscritti[df_iscritti[id_colonna] == valore_id_corrente]
                                     st.rerun()
                                 except Exception as e:
-                                    st.error(f"❌ Errore durante il salvataggio: {e}")
-                                    
+                                    st.error(f"❌ Errore durante il salvataggio sul file Excel: {e}")
+                                    st.info("Consiglio: Verifica che il file Excel non sia aperto in questo momento sul tuo computer!")
+
     else:
         st.info("Carica il file Excel per abilitare la ricerca anagrafica.")
 
