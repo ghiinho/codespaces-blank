@@ -104,7 +104,7 @@ def mostra_anagrafiche(df_iscritti):
                 default_index = list(df_filtrato.index).index(st.session_state.id_bambino_corrente)
                 
             # Ingrandiamo leggermente l'etichetta del selettore
-            st.markdown("<p style='font-size: 40px; font-weight: bold; margin-bottom: -10px;'>Seleziona l'anagrafica da visualizzare:</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 24px; font-weight: bold; margin-bottom: -10px;'>Seleziona l'anagrafica da visualizzare:</p>", unsafe_allow_html=True)
             bambino_scelto = st.radio("", scelte, index=default_index)
         
             nuovo_id = scelte[scelte == bambino_scelto].index[0]
