@@ -87,6 +87,28 @@ def mostra_anagrafiche(df_iscritti):
             st.warning(f"❌ Nessun iscritto trovato con il cognome '{cognome_input}'.")
             return
 
+        # --- CSS PERSONALIZZATO PER INGRANDIRE LE OPZIONI DEL RADIO BUTTON ---
+        st.markdown(
+            """
+            <style>
+            /* Ingrandisce il testo delle opzioni del radio button */
+            div[data-testid="stMarkdownContainer"] p {
+                font-size: 16px;
+            }
+            div[data-testid="stWidgetLabel"] p {
+                font-size: 18px !important;
+                font-weight: bold !important;
+            }
+            /* Ingrandisce specificamente il testo delle etichette dei bottoni radio */
+            label[data-testid="stRadioOption"] p {
+                font-size: 18px !important; /* Qui imposti la grandezza dei nomi nell'elenco */
+                font-weight: 500;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
         # Gestione omonimie
         if len(df_filtrato) > 1:
             # Usiamo un font più grande per il messaggio di avviso
