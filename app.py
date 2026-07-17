@@ -59,26 +59,6 @@ elif st.session_state.pagina_corrente == "Registro Presenze":
     if not prefisso or prefisso == "None":
         prefisso = "PERIODI DISPONIBILI"
     
-    # Estrazione con "Salvagente": se nel config il campo manca o è vuoto, 
-    # inseriamo il nome esatto della colonna del tuo nuovo modulo Google.
-    col_cf = mapping.get("codice_fiscale_bambino")
-    if not col_cf: col_cf = "Codice Fiscale Bambino"
-        
-    col_cognome = mapping.get("cognome")
-    if not col_cognome: col_cognome = "Cognome Bambino"
-        
-    col_nome = mapping.get("nome")
-    if not col_nome: col_nome = "Nome Bambino"
-        
-    col_allergie = mapping.get("allergie")
-    if not col_allergie: col_allergie = "Allergie o Intolleranze alimentari/farmacologiche?"
-        
-    col_quali = mapping.get("note_allergie")
-    if not col_quali: col_quali = "Se hai risposto SÌ, specifica quali:"
-        
-    col_g_tel = mapping.get("telefono")
-    if not col_g_tel: col_g_tel = "Telefono Genitore (Emergenze)"
-    
     # 4. Ora che le variabili esistono tutte, invochiamo la schermata senza errori!
     mostra_elenchi_settimanali(
         df_iscritti=df_iscritti,

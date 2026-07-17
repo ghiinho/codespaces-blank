@@ -6,8 +6,7 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
     st.markdown("## 📅 Elenchi Settimanali e Appello")
     st.markdown("Seleziona una settimana per visualizzare i bambini frequentanti e scaricare il registro presenze.")
 
-    # 1. RILEVAZIONE AUTOMATICA E BLINDATA DELLE SETTIMANE
-    # Filtriamo le colonne assicurandoci di ignorare i valori nulli (NaN) e convertendo tutto in testo in sicurezza
+    # 1. RILEVAZIONE AUTOMATICA DELLE SETTIMANE
     prefisso_ricerca = str(prefisso_settimane).strip()
     colonne_settimane_reali = [
         str(col).strip() for col in df_iscritti.columns 
@@ -15,107 +14,112 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
     ]
 
     if not colonne_settimane_reali:
-        st.error(f"⚠️ Non è stato possibile rilevare le colonne delle settimane nel file Excel.")
+        st.error(f"⚠️ Non è stato possibile rilevare le colonne delle settimane con il prefisso '{prefisso_ricerca}' nel file Excel.")
         return
 
-    # CREAZIONE DELLE ETICHETTE PULITE PER IL MENU A TENDINA
-    # Puliamo il nome eliminando il prefisso noioso: "Iscrizione - Settimana 1 (15-19 Giu)" -> "Settimana 1 (15-19 Giu)"
-    mappa_nomi_settimane = {col.replace(f"{prefisso_settimane} ", ""): col for col in colonne_settimane_reali}
-    
-    # Ordiniamo le settimane per mostrarle in ordine cronologico nel menu
+    # Mappatura nomi puliti per l'interfaccia
+    mappa_nomi_settimane = {col.replace(f"{prefisso_ricerca} ", ""): col for col in colonne_settimane_reali}
     lista_settimane_pulite = sorted(list(mappa_nomi_settimane.keys()))
 
-    # Riga di controllo in alto (Filtro + Contatore)
-    c_filtro1, c_filtro2 = st.columns([2, 2])
+    # --- SBLOCCO LOGICO: DEFINIAMO LE VARIABILI IN MODO LINEARE ---
+    # Creiamo il selettore e assegniamo IMMEDIATAMENTE il valore fuori dai blocchi "with"
+    settimana_scelta_pulita = st.selectbox(
+        "📆 Seleziona la settimana da visualizzare:", 
+        options=lista_settimane_pulite,
+        help="Il sistema mostra solo le settimane configurate nel modulo d'iscrizione."
+    )
     
-    with c_filtro1:
-        settimana_scelta_pulita = st.selectbox(
-            "📆 Seleziona la settimana da visualizzare:", 
-            options=lista_settimane_pulite,
-            help="Il sistema mostra solo le settimane configurate nel modulo d'iscrizione."
-        )
-    
-    # Recuperiamo il nome reale della colonna nell'Excel (quello lungo di Google Moduli)
-    colonna_excel_effettiva = mappa_nomi_settimane[settimana_scelta_pulita]
-    
-    # 2. FILTRAGGIO INTELLIGENTE DEI FREQUENTANTI
-    # Escludiamo i vuoti e chi ha esplicitamente risposto "Non frequenta"
+    # Questa è la colonna reale dell'Excel che useremo ovunque da qui in poi
+    col_settimana_scelta = mappa_nomi_settimane[settimana_scelta_pulita]
+
+    # 2. FILTRAGGIO DEI FREQUENTANTI
     condizione_frequenza = (
-        df_iscritti[colonna_excel_effettiva].notna() & 
-        (df_iscritti[colonna_excel_effettiva].astype(str).str.strip() != "")
+        df_iscritti[col_settimana_scelta].notna() & 
+        (df_iscritti[col_settimana_scelta].astype(str).str.strip() != "") &
+        (df_iscritti[col_settimana_scelta].astype(str).str.strip().str.lower() != "non frequenta")
     )
     df_settimana = df_iscritti[condizione_frequenza].copy()
     tot_bambini = len(df_settimana)
     
-    with c_filtro2:
-        st.metric(label=f"Totale iscritti in {settimana_scelta_pulita}", value=f"{tot_bambini} Bambini")
+    # Mostriamo il contatore di fianco (usiamo le colonne di Streamlit solo per la grafica)
+    c1, c2 = st.columns([2, 2])
+    with c2:
+        st.metric(label=f"Totale iscritti in questa settimana", value=f"{tot_bambini} Bambini")
 
     st.markdown("---")
 
     if tot_bambini == 0:
-        st.info(f"ℹ️ Nessun bambino iscritto o nessuna frequenza inserita per la **{settimana_scelta_pulita}**.")
-    else:
-        # 3. PREPARAZIONE DATAFRAME DI VISUALIZZAZIONE (Incluso Codice Fiscale)
-        colonne_visualizzazione = {
-            col_cf: "Codice Fiscale",
-            col_cognome: "Cognome",
-            col_nome: "Nome",
-            colonna_excel_effettiva: "Tipo Frequenza",
-            col_allergie: "Allergie",
-            col_quali: "Dettaglio Allergie / Note",
-            col_g_tel: "Telefono Genitore"
-        }
+        st.info(f"ℹ️ Nessun bambino iscritto o nessuna frequenza inserita per la settimana selezionata.")
+        return
 
-        # ======= BLOCCO DI DIAGNOSI TEMPORANEO =======
-        colonne_mancanti = []
-        for chiave_originale in colonne_visualizzazione.keys():
-            if chiave_originale not in df_settimana.columns:
-                colonne_mancanti.append(chiave_originale)
-        
-        if colonne_mancanti:
-            st.error("🚨 Errore di mappatura nel config.json!")
-            st.markdown("Il codice sta cercando delle colonne che non esistono nel tuo file Excel attuale.")
-            st.write("**Colonne non trovate:**", colonne_mancanti)
+    # 3. COSTRUZIONE DELLA TABELLA A SCHERMO
+    # Usiamo una lista di tuple (Colonna Excel, Nome Interfaccia) senza dizionari o chiavi dinamiche strane
+    mappa_colonne_finali = [
+        (col_cf, "Codice Fiscale"),
+        (col_cognome, "Cognome"),
+        (col_nome, "Nome"),
+        (col_settimana_scelta, "Tipo Frequenza"),
+        (col_allergie, "Allergie"),
+        (col_quali, "Dettaglio Allergie / Note"),
+        (col_g_tel, "Telefono Genitore")
+    ]
+    
+    # Controllo di sicurezza preventivo
+    errori_mappatura = []
+    colonne_valide = []
+    nomi_interfaccia = []
+    
+    for col_excel, nome_vista in mappa_colonne_finali:
+        if col_excel not in df_settimana.columns:
+            errori_mappatura.append(f"Non trovo la colonna: '{col_excel}' (per '{nome_vista}')")
+        else:
+            colonne_valide.append(col_excel)
+            nomi_interfaccia.append(nome_vista)
             
-            with st.expander("👀 Clicca qui per vedere i nomi esatti di TUTTE le colonne del tuo Excel"):
-                st.write(list(df_iscritti.columns))
-            return
-        # =============================================
+    if errori_mappatura:
+        st.error("🚨 Errore di allineamento colonne nel config.json!")
+        for err in errori_mappatura:
+            st.write(f"- {err}")
+        with st.expander("👀 Clicca qui per vedere l'elenco completo delle colonne del tuo Excel"):
+            st.write(list(df_iscritti.columns))
+        return
 
-        # Estraiamo solo le colonne che ci servono davvero per lo schermo
-        df_vista_settimanale = df_settimana[list(colonne_visualizzazione.keys())].rename(columns=colonne_visualizzazione)
-        df_vista_settimanale = df_vista_settimanale.sort_values(by=["Cognome", "Nome"]).reset_index(drop=True)
-        df_vista_settimanale.index += 1  # Numerazione elenco da 1
+    # Estrazione e rinomina sicura
+    df_vista_settimanale = df_settimana[colonne_valide].copy()
+    df_vista_settimanale.columns = nomi_interfaccia
+    
+    # Ordinamento alfabetico
+    df_vista_settimanale = df_vista_settimanale.sort_values(by=["Cognome", "Nome"]).reset_index(drop=True)
+    df_vista_settimanale.index += 1
+    
+    st.markdown(f"#### 📋 Elenco Frequentanti — *{settimana_scelta_pulita}*")
+    
+    # Evidenzia allergie
+    def evidenzia_allergie(row):
+        if str(row["Allergie"]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"]:
+            return ['background-color: #fef2f2; color: #991b1b; font-weight: 500;'] * len(row)
+        return [''] * len(row)
         
-        st.markdown(f"#### 📋 Elenco Frequentanti — *{settimana_scelta_pulita}*")
+    styled_df = df_vista_settimanale.style.apply(evidenzia_allergie, axis=1)
+    st.dataframe(styled_df, use_container_width=True)
+    
+    # 4. ESPORTAZIONE EXCEL
+    st.markdown("### 📥 Esporta Registro")
+    df_appello = df_vista_settimanale[["Cognome", "Nome", "Tipo Frequenza", "Dettaglio Allergie / Note", "Telefono Genitore"]].copy()
+    for giorno in ["LUN", "MAR", "MER", "GIO", "VEN"]:
+        df_appello[giorno] = ""
         
-        # 4. FUNZIONE PER EVIDENZIARE LE ALLERGIE
-        def evidenzia_allergie(row):
-            if str(row["Allergie"]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"]:
-                return ['background-color: #fef2f2; color: #991b1b; font-weight: 500;'] * len(row)
-            return [''] * len(row)
-            
-        styled_df = df_vista_settimanale.style.apply(evidenzia_allergie, axis=1)
-        st.dataframe(styled_df, use_container_width=True)
+    try:
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            df_appello.to_excel(writer, index=True, index_label="N°", sheet_name="Appello")
         
-        # 5. GENERAZIONE FILE EXCEL PER L'APPELLO CARTACEO (Senza codice fiscale per la privacy dei ragazzi sul campo)
-        st.markdown("### 📥 Esporta Registro")
-        
-        df_appello = df_vista_settimanale[["Cognome", "Nome", "Tipo Frequenza", "Dettaglio Allergie / Note", "Telefono Genitore"]].copy()
-        for giorno in ["LUN", "MAR", "MER", "GIO", "VEN"]:
-            df_appello[giorno] = ""
-            
-        try:
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_appello.to_excel(writer, index=True, index_label="N°", sheet_name="Appello")
-            
-            st.download_button(
-                label=f"📄 Scarica Foglio Appello Excel - {settimana_scelta_pulita}",
-                data=buffer.getvalue(),
-                file_name=f"Appello_{settimana_scelta_pulita.replace(' ', '_')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-        except Exception as e:
-            st.error(f"Errore nella generazione dell'export: {e}")
+        st.download_button(
+            label=f"📄 Scarica Foglio Appello Excel - {settimana_scelta_pulita}",
+            data=buffer.getvalue(),
+            file_name=f"Appello_{settimana_scelta_pulita.replace(' ', '_')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    except Exception as e:
+        st.error(f"Errore nella generazione dell'export: {e}")
