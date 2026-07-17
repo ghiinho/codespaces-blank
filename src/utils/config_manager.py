@@ -9,16 +9,16 @@ DEFAULT_CONFIG = {
         "anagrafiche": {
             "nome": "👤 Anagrafiche Iscritti",
             "attivo": True,
-            "descrizione": "Visualizza, modifica e gestisci le schede personali e sanitarie dei bambini."
+            "descrizione": "Visualizza, modifica e gestisci le schede personali dei bambini iscritti."
         },
         "presenze": {
             "nome": "📝 Registro Presenze",
-            "attivo": False,
-            "descrizione": "Prendi le presenze giornaliere e tieni traccia di chi è entrato o uscito."
+            "attivo": True,
+            "descrizione": "Visualizza gli elenchi settimanali degli iscritti e gestisci i gruppi."
         },
         "pagamenti": {
             "nome": "💰 Gestione Pagamenti",
-            "attivo": False,
+            "attivo": True,
             "descrizione": "Monitora le quote pagate, gli acconti e genera le ricevute per le famiglie."
         },
         "statistiche": {

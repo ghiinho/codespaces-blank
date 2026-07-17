@@ -12,7 +12,6 @@ def mostra_impostazioni():
     # --- SEZIONE 1: IMPOSTAZIONI GENERALI ---
     st.subheader("🏫 Impostazioni Generali")
     nuovo_nome = st.text_input("Nome del Campus / Associazione:", value=config["general"].get("nome_campus", "Campus Estivo"))
-    mostra_metriche = st.toggle("Mostra metriche rapide in Home Page", value=config["general"].get("mostra_metriche_rapide", True))
     
     st.markdown("---")
 
