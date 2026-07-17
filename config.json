@@ -33,7 +33,7 @@
         "note_allergie": "SE SI, INDICA QUALI",
         "recapito": "TELEFONO GENITORE"
     },
-    "prefisso:settimane": "PERIODI DISPONIBILI",
+    "prefisso_settimane": "PERIODI DISPONIBILI",
     "general": {
         "nome_campus": "Campus Estivo 2026"
     }

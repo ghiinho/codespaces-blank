@@ -11,7 +11,7 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
     colonne_settimane_reali = [col for col in df_iscritti.columns if str(col).startswith(prefisso_settimane)]
 
     if not colonne_settimane_reali:
-        st.error(f"⚠️ Non è stato possibile rilevare le colonne delle settimane con il prefisso '{prefisso_settimane}' nel file Excel.")
+        st.error(f"⚠️ Non è stato possibile rilevare le colonne delle settimane nel file Excel.")
         return
 
     # CREAZIONE DELLE ETICHETTE PULITE PER IL MENU A TENDINA
