@@ -7,8 +7,11 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
     st.markdown("Seleziona una settimana per visualizzare i bambini frequentanti e scaricare il registro presenze.")
 
     # 1. RILEVAZIONE AUTOMATICA E BLINDATA DELLE SETTIMANE
-    # Cerchiamo tutte le colonne che iniziano con il prefisso impostato in config.json
-    colonne_settimane_reali = [col for col in df_iscritti.columns if str(col).startswith(prefisso_settimane)]
+    # Filtriamo le colonne assicurandoci di ignorare i valori nulli (NaN) e convertendo tutto in testo in sicurezza
+    colonne_settimane_reali = [
+        str(col).strip() for col in df_iscritti.columns 
+        if pd.notna(col) and str(col).strip().startswith(prefisso_settimane)
+    ]
 
     if not colonne_settimane_reali:
         st.error(f"⚠️ Non è stato possibile rilevare le colonne delle settimane nel file Excel.")
@@ -61,13 +64,6 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
             col_quali: "Dettaglio Allergie / Note",
             col_g_tel: "Telefono Genitore"
         }
-        
-        # ======= COPIA QUESTO BLOCCO DI CONTROLLO TEMPORANEO =======
-        for chiave_originale in colonne_visualizzazione.keys():
-            if chiave_originale not in df_settimana.columns:
-                st.error(f"❌ COLONNA MANCANTE: Nell'Excel NON esiste una colonna chiamata esattamente: **'{chiave_originale}'**")
-                st.info("Verifica che nel config.json sia scritta al millimetro come sul modulo Google (occhio a maiuscole e spazi!)")
-        # ===========================================================
 
         # Estraiamo solo le colonne che ci servono davvero per lo schermo
         df_vista_settimanale = df_settimana[list(colonne_visualizzazione.keys())].rename(columns=colonne_visualizzazione)
