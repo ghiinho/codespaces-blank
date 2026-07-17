@@ -1,6 +1,6 @@
 {
     "database":{
-        "file_excel": "Iscrizioni.xlsx",
+        "file_excel": "iscrizioni.xlsx",
         "nome_scheda": "Risposte del modulo 1"
     },
     "moduli": {
