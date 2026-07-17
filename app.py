@@ -48,27 +48,20 @@ if st.session_state.pagina_corrente == "Home Page":
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     mostra_anagrafiche(df_iscritti)
 elif st.session_state.pagina_corrente == "Registro Presenze":
-    config = carica_configurazione()
-    
-    # ======= RADAR ISPETTIVO DEL CONFIG =======
-    st.info("🔍 Ispezione del file config.json in corso...")
-    st.write("**Contenuto intero del tuo config.json:**")
-    st.json(config)
-    # ==========================================
-    
+    config = carica_configurazione()    
     mapping = config.get("mappatura_colonne", {})
     prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip()
     
-    col_cf = mapping.get("codice_fiscale_bambino", "Codice Fiscale Bambino")
-    col_cognome = mapping.get("cognome", "Cognome Bambino")
-    col_nome = mapping.get("nome", "Nome Bambino")
-    col_allergie = mapping.get("allergie", "Allergie o Intolleranze alimentari/farmacologiche?")
-    col_quali = mapping.get("note_allergie", "Se hai risposto SÌ, specifica quali:")
-    col_g_tel = mapping.get("telefono", "Telefono Genitore (Emergenze)")
+    col_cognome = mapping.get("cognome", "COGNOME MINORE")
+    col_nome = mapping.get("nome", "NOME MINORE")
+    col_allergie = mapping.get("allergie", "ALLERGIE O INTOLLERANZE?")
+    col_quali = mapping.get("note_allergie", "SE SI, INDICA QUALI")
+    col_g_tel = mapping.get("recapito", "TELEFONO GENITORE")
     
+    col_cf = "CODICE FISCALE"
+
     mostra_elenchi_settimanali(
         df_iscritti=df_iscritti,
-        col_cf=str(col_cf).strip(),
         col_cognome=str(col_cognome).strip(),
         col_nome=str(col_nome).strip(),
         col_allergie=str(col_allergie).strip(),
