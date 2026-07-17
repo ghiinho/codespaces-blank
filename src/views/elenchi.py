@@ -62,12 +62,6 @@ def mostra_elenchi_settimanali(df_iscritti, col_cognome, col_nome, col_allergie,
         (col_g_tel, "Telefono Genitore")
     ]
     
-    # ======= SUPER ISPEZIONE RADAR =======
-    st.warning("🕵️‍♂️ Diagnosi Radar delle Variabili Ricevute:")
-    for valore, nome_vista in mappa_colonne_finali:
-        st.write(f"- **{nome_vista}**: Valore: `{valore}` | Tipo: `{type(valore).__name__}`")
-    # ======================================
-    
     # Controllo di sicurezza preventivo
     errori_mappatura = []
     colonne_valide = []
