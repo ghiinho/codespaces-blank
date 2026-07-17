@@ -60,12 +60,12 @@ elif st.session_state.pagina_corrente == "Registro Presenze":
     # 4. Ora che le variabili esistono tutte, invochiamo la schermata senza errori!
     mostra_elenchi_settimanali(
         df_iscritti=df_iscritti,
-        col_cf=mapping.get("codice_fiscale_bambino", "Codice Fiscale Bambino"),
-        col_cognome=mapping.get("cognome", "Cognome Bambino"),
-        col_nome=mapping.get("nome", "Nome Bambino"),
-        col_allergie=mapping.get("allergie", "Allergie o Intolleranze alimentari/farmacologiche?"),
-        col_quali=mapping.get("note_allergie", "Se hai risposto SÌ, specifica quali:"),
-        col_g_tel=mapping.get("telefono", "Telefono Genitore (Emergenze)"),
+        col_cf=mapping.get("CODICE FISCALE MINORE"),
+        col_cognome=mapping.get("COGNOME MINORE"),
+        col_nome=mapping.get("NOME MINORE"),
+        col_allergie=mapping.get("ALLERGIE O INTOLLERANZE?"),
+        col_quali=mapping.get("SE SI, INDICA QUALI"),
+        col_g_tel=mapping.get("TELEFONO GENITORE"),
         prefisso_settimane=prefisso
     )
 elif st.session_state.pagina_corrente == "Impostazioni":
