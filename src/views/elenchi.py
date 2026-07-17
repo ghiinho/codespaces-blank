@@ -8,9 +8,10 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
 
     # 1. RILEVAZIONE AUTOMATICA E BLINDATA DELLE SETTIMANE
     # Filtriamo le colonne assicurandoci di ignorare i valori nulli (NaN) e convertendo tutto in testo in sicurezza
+    prefisso_ricerca = str(prefisso_settimane).strip()
     colonne_settimane_reali = [
         str(col).strip() for col in df_iscritti.columns 
-        if pd.notna(col) and str(col).strip().startswith(prefisso_settimane)
+        if pd.notna(col) and str(col).strip().startswith(prefisso_ricerca)
     ]
 
     if not colonne_settimane_reali:

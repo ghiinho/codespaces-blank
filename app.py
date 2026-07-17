@@ -55,7 +55,9 @@ elif st.session_state.pagina_corrente == "Registro Presenze":
     mapping = config.get("mappatura_colonne", {})
     
     # 3. Estraiamo il prefisso delle settimane (con il testo di default se manca nel JSON)
-    prefisso = config.get("PERIODI DISPONIBILI")
+    prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip()
+    if not prefisso or prefisso == "None":
+        prefisso = "PERIODI DISPONIBILI"
     
     # 4. Ora che le variabili esistono tutte, invochiamo la schermata senza errori!
     mostra_elenchi_settimanali(
