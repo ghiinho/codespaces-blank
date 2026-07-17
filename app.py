@@ -20,17 +20,6 @@ st.set_page_config(page_title="Gestionale Camp", layout="wide")
 db_utils.inizializza_database_in_memoria()
 df_iscritti = db_utils.ottieni_iscritti()
 
-# ======= INSERISCI QUESTO BLOCCO TEMPORANEO DI TEST =======
-st.sidebar.markdown("---")
-st.sidebar.subheader("🔍 Test Connessione Dati")
-if not df_iscritti.empty:
-    st.sidebar.success(f"Excel Caricato! Righe trovate: {len(df_iscritti)}")
-    # Mostriamo le prime 3 colonne reali per verificare l'anagrafica
-    st.sidebar.caption(f"Prime colonne rilevate: {list(df_iscritti.columns[:3])}")
-else:
-    st.sidebar.error("Il file Excel è vuoto o non è stato caricato!")
-# ==========================================================
-
 # 3. Disegniamo la barra laterale di navigazione
 disegna_sidebar()
 
@@ -59,15 +48,25 @@ if st.session_state.pagina_corrente == "Home Page":
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     mostra_anagrafiche(df_iscritti)
 elif st.session_state.pagina_corrente == "Registro Presenze":
-    # IMPORTANTE: Inserisci qui all'interno dei doppi apici i nomi ESATTI 
-    # delle colonne così come compaiono nella prima riga del tuo file Excel.
+    # 1. Carichiamo la configurazione dal file JSON
+    config = carica_configurazione()
+    
+    # 2. Estraiamo il dizionario con i nomi delle colonne (usando un dizionario vuoto come salvagente)
+    mapping = config.get("mappatura_colonne", {})
+    
+    # 3. Estraiamo il prefisso delle settimane (con il testo di default se manca nel JSON)
+    prefisso = config.get("prefisso_settimane", "Iscrizione - Settimana")
+    
+    # 4. Ora che le variabili esistono tutte, invochiamo la schermata senza errori!
     mostra_elenchi_settimanali(
-        df_iscritti=df_iscritti, 
-        col_cognome="COGNOME",          # Sostituisci con il nome reale della colonna se diverso
-        col_nome="NOME",              # Sostituisci con il nome reale della colonna se diverso
-        col_allergie="ALLERGIE",      # Sostituisci con il nome reale della colonna se diverso
-        col_quali="QUALI ALLERGIE",    # Sostituisci con il nome reale della colonna se diverso
-        col_g_tel="TEL GENITORE"       # Sostituisci con il nome reale della colonna se diverso
+        df_iscritti=df_iscritti,
+        col_cf=mapping.get("codice_fiscale_bambino", "Codice Fiscale Bambino"),
+        col_cognome=mapping.get("cognome", "Cognome Bambino"),
+        col_nome=mapping.get("nome", "Nome Bambino"),
+        col_allergie=mapping.get("allergie", "Allergie o Intolleranze alimentari/farmacologiche?"),
+        col_quali=mapping.get("note_allergie", "Se hai risposto SÌ, specifica quali:"),
+        col_g_tel=mapping.get("telefono", "Telefono Genitore (Emergenze)"),
+        prefisso_settimane=prefisso
     )
 elif st.session_state.pagina_corrente == "Impostazioni":
     mostra_impostazioni()
