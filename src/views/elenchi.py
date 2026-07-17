@@ -66,6 +66,22 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
             col_g_tel: "Telefono Genitore"
         }
 
+        # ======= BLOCCO DI DIAGNOSI TEMPORANEO =======
+        colonne_mancanti = []
+        for chiave_originale in colonne_visualizzazione.keys():
+            if chiave_originale not in df_settimana.columns:
+                colonne_mancanti.append(chiave_originale)
+        
+        if colonne_mancanti:
+            st.error("🚨 Errore di mappatura nel config.json!")
+            st.markdown("Il codice sta cercando delle colonne che non esistono nel tuo file Excel attuale.")
+            st.write("**Colonne non trovate:**", colonne_mancanti)
+            
+            with st.expander("👀 Clicca qui per vedere i nomi esatti di TUTTE le colonne del tuo Excel"):
+                st.write(list(df_iscritti.columns))
+            return
+        # =============================================
+
         # Estraiamo solo le colonne che ci servono davvero per lo schermo
         df_vista_settimanale = df_settimana[list(colonne_visualizzazione.keys())].rename(columns=colonne_visualizzazione)
         df_vista_settimanale = df_vista_settimanale.sort_values(by=["Cognome", "Nome"]).reset_index(drop=True)
