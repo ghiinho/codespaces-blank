@@ -53,7 +53,6 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
         return
 
     # 3. COSTRUZIONE DELLA TABELLA A SCHERMO
-    # Usiamo una lista di tuple (Colonna Excel, Nome Interfaccia) senza dizionari o chiavi dinamiche strane
     mappa_colonne_finali = [
         (col_cf, "Codice Fiscale"),
         (col_cognome, "Cognome"),
@@ -64,23 +63,31 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
         (col_g_tel, "Telefono Genitore")
     ]
     
+    # ======= SUPER ISPEZIONE RADAR =======
+    st.warning("🕵️‍♂️ Diagnosi Radar delle Variabili Ricevute:")
+    for valore, nome_vista in mappa_colonne_finali:
+        st.write(f"- **{nome_vista}**: Valore: `{valore}` | Tipo: `{type(valore).__name__}`")
+    # ======================================
+    
     # Controllo di sicurezza preventivo
     errori_mappatura = []
     colonne_valide = []
     nomi_interfaccia = []
     
     for col_excel, nome_vista in mappa_colonne_finali:
-        if col_excel not in df_settimana.columns:
-            errori_mappatura.append(f"Non trovo la colonna: '{col_excel}' (per '{nome_vista}')")
+        # Se la colonna non è una stringa o non esiste nell'Excel, la tracciamo
+        if str(col_excel).strip() not in [str(c).strip() for c in df_settimana.columns]:
+            errori_mappatura.append(f"'{col_excel}' ({nome_vista})")
         else:
             colonne_valide.append(col_excel)
             nomi_interfaccia.append(nome_vista)
             
     if errori_mappatura:
         st.error("🚨 Errore di allineamento colonne nel config.json!")
-        for err in errori_mappatura:
-            st.write(f"- {err}")
-        with st.expander("👀 Clicca qui per vedere l'elenco completo delle colonne del tuo Excel"):
+        st.write("**Colonne non trovate dal sistema:**")
+        st.json(errori_mappatura)
+        
+        with st.expander("👀 Clicca qui per vedere l'elenco reale di TUTTE le colonne presenti nel tuo Excel"):
             st.write(list(df_iscritti.columns))
         return
 
