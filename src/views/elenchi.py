@@ -62,6 +62,13 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
             col_g_tel: "Telefono Genitore"
         }
         
+        # ======= COPIA QUESTO BLOCCO DI CONTROLLO TEMPORANEO =======
+        for chiave_originale in colonne_visualizzazione.keys():
+            if chiave_originale not in df_settimana.columns:
+                st.error(f"❌ COLONNA MANCANTE: Nell'Excel NON esiste una colonna chiamata esattamente: **'{chiave_originale}'**")
+                st.info("Verifica che nel config.json sia scritta al millimetro come sul modulo Google (occhio a maiuscole e spazi!)")
+        # ===========================================================
+
         # Estraiamo solo le colonne che ci servono davvero per lo schermo
         df_vista_settimanale = df_settimana[list(colonne_visualizzazione.keys())].rename(columns=colonne_visualizzazione)
         df_vista_settimanale = df_vista_settimanale.sort_values(by=["Cognome", "Nome"]).reset_index(drop=True)
