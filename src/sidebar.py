@@ -36,10 +36,13 @@ def disegna_sidebar():
             use_container_width=True, 
             type=tipo_bottone
         ):
-            # --- RESET DELLE RICERCHE ---
-            # Sostituisci 'ricerca_iscritti' con la chiave esatta che usi nel text_input delle anagrafiche
+
+            # --- RESET DELLE RICERCHE E FILTRI ---
             if "ricerca_iscritti" in st.session_state:
                 st.session_state["ricerca_iscritti"] = ""
+            
+            if "settimana_selezionata" in st.session_state:
+                del st.session_state["settimana_selezionata"]
                 
             st.session_state.pagina_corrente = nome_pagina
             st.rerun()

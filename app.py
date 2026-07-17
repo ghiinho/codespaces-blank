@@ -7,6 +7,7 @@ from src.views.home import mostra_home
 from src.views.anagrafiche import mostra_anagrafiche
 from src.utils.config_manager import carica_configurazione
 from src.views.impostazioni import mostra_impostazioni
+from src.views.elenchi import mostra_elenchi_settimanali
 
 # --- INIZIALIZZAZIONE STATO ---
 if "pagina_corrente" not in st.session_state:
