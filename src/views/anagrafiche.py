@@ -309,7 +309,12 @@ def mostra_anagrafiche(df_iscritti):
                         e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
                         e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
                         e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
-                        e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
+                        data_grezza_genitore = riga_bambino[col_g_nascita]
+                        try:
+                            data_pulita_genitore = pd.to_datetime(data_grezza_genitore).strftime('%d/%m/%Y')
+                        except Exception:
+                            data_pulita_genitore = str(data_grezza_genitore) if pd.notna(data_grezza_genitore) else ""
+                        e_g_nascita = st.text_input("Data di Nascita Genitore (GG/MM/AAAA)", value=data_pulita_genitore)
 
                         c_gen1, c_gen2 = st.columns(2)
                         with c_gen1:
