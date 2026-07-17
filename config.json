@@ -16,7 +16,7 @@
         },
         "pagamenti": {
             "nome": "💰 Gestione Pagamenti",
-            "attivo": false,
+            "attivo": true,
             "descrizione": "Monitora le quote pagate, gli acconti e genera le ricevute per le famiglie."
         },
         "statistiche": {

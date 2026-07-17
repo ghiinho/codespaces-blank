@@ -57,3 +57,42 @@ def mostra_impostazioni():
             st.rerun()
         else:
             st.error("Si è verificato un errore durante il salvataggio.")
+
+    # =====================================================================
+    # GESTIONE GRUPPI (Aggiungere in fondo alla pagina delle Impostazioni)
+    # =====================================================================
+    st.markdown("---")
+    st.markdown("### 👥 Configurazione Gruppi del Camp")
+    st.markdown("Crea i gruppi in cui dividere i bambini (es. *Piccoli, Medi, Grandi* oppure *Squadra Rossa, Squadra Blu*).")
+
+    # Inizializziamo la lista dei gruppi in memoria se non esiste
+    if "lista_gruppi" not in st.session_state:
+        st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"] # Default di prova
+
+    # Layout a colonne: una per inserire, una per vedere
+    col_nuovo, col_lista = st.columns([2, 2])
+
+    with col_nuovo:
+        nuovo_gruppo = st.text_input("✍️ Nome nuovo gruppo:", placeholder="Es. Lupi, Grandi...").strip()
+        if st.button("➕ Aggiungi Gruppo", use_container_width=True):
+            if nuovo_gruppo and nuovo_gruppo not in st.session_state.lista_gruppi:
+                st.session_state.lista_gruppi.append(nuovo_gruppo)
+                st.success(f"Gruppo '{nuovo_gruppo}' aggiunto con successo!")
+                st.rerun()
+            elif nuovo_gruppo in st.session_state.lista_gruppi:
+                st.warning("Questo gruppo esiste già!")
+
+    with col_lista:
+        st.markdown("**Gruppi Attuali:**")
+        if len(st.session_state.lista_gruppi) <= 1:
+            st.info("Nessun gruppo personalizzato creato.")
+        else:
+            for grp in st.session_state.lista_gruppi:
+                if grp == "Nessun Gruppo": 
+                    continue
+                # Creiamo un bottone piccolino di fianco a ogni gruppo per poterlo eliminare
+                c_nome, c_canc = st.columns([3, 1])
+                c_nome.write(f"• {grp}")
+                if c_canc.button("🗑️", key=f"del_{grp}"):
+                    st.session_state.lista_gruppi.remove(grp)
+                    st.rerun()
