@@ -1,4 +1,8 @@
 {
+    "database":{
+        "file_excel": "Iscrizioni.xlsx",
+        "nome_scheda": "Risposte del modulo 1"
+    },
     "moduli": {
         "anagrafiche": {
             "nome": "👤 Anagrafiche Iscritti",
@@ -7,7 +11,7 @@
         },
         "presenze": {
             "nome": "📝 Registro Presenze",
-            "attivo": false,
+            "attivo": true,
             "descrizione": "Prendi le presenze giornaliere e tieni traccia di chi è entrato o uscito."
         },
         "pagamenti": {
@@ -21,8 +25,16 @@
             "descrizione": "Grafici sull'andamento delle iscrizioni, fasce d'età e saturazione delle settimane."
         }
     },
+    "mappatura colonne": {
+        "cognome": "COGNOME MINORE",
+        "nome": "NOME MINORE",
+        "data_nascita": "DATA DI NASCITA MINORE",
+        "allergie": "ALLERGIE O INTOLLERANZE?",
+        "note_allergie": "SE SI, INDICA QUALI",
+        "recapito": "TELEFONO GENITORE"
+    },
+    "prefisso:settimane": "PERIODI DISPONIBILI",
     "general": {
-        "nome_campus": "Campus Estivo 2026",
-        "mostra_metriche_rapide": true
+        "nome_campus": "Campus Estivo 2026"
     }
 }
