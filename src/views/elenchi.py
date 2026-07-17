@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 
-def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_allergie, col_quali, col_g_tel, prefisso_settimane):
+def mostra_elenchi_settimanali(df_iscritti, col_cognome, col_nome, col_allergie, col_quali, col_g_tel, prefisso_settimane):
     st.markdown("## 📅 Elenchi Settimanali e Appello")
     st.markdown("Seleziona una settimana per visualizzare i bambini frequentanti e scaricare il registro presenze.")
 
@@ -54,7 +54,6 @@ def mostra_elenchi_settimanali(df_iscritti, col_cf, col_cognome, col_nome, col_a
 
     # 3. COSTRUZIONE DELLA TABELLA A SCHERMO
     mappa_colonne_finali = [
-        (col_cf, "Codice Fiscale"),
         (col_cognome, "Cognome"),
         (col_nome, "Nome"),
         (col_settimana_scelta, "Tipo Frequenza"),
