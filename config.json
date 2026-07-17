@@ -5,12 +5,12 @@
     },
     "moduli": {
         "anagrafiche": {
-            "nome": "👤 Anagrafiche Iscritti",
+            "nome": "👤 Gestione Anagrafiche",
             "attivo": true,
             "descrizione": "Visualizza, modifica e gestisci le schede personali e sanitarie dei bambini."
         },
         "presenze": {
-            "nome": "📝 Registro Presenze",
+            "nome": "📝 Elenchi settimanali",
             "attivo": true,
             "descrizione": "Prendi le presenze giornaliere e tieni traccia di chi è entrato o uscito."
         },

@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 def mostra_elenchi_settimanali(df_iscritti, col_cognome, col_nome, col_allergie, col_quali, col_g_tel, prefisso_settimane):
-    st.markdown("## 📅 Elenchi Settimanali e Appello")
+    st.markdown("## 📅 Elenchi Settimanali")
     st.markdown("Seleziona una settimana per visualizzare i bambini frequentanti e scaricare il registro presenze.")
 
     # 1. RILEVAZIONE AUTOMATICA DELLE SETTIMANE

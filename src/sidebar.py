@@ -12,9 +12,9 @@ def disegna_sidebar():
     pagine_disponibili = [("🏠 Home Page", "Home Page")]
     
     if config["moduli"]["anagrafiche"]["attivo"]:
-        pagine_disponibili.append(("👤 Anagrafiche", "Anagrafiche Iscritti"))
+        pagine_disponibili.append(("👤 Gestione Anagrafiche", "Anagrafiche Iscritti"))
     if config["moduli"]["presenze"]["attivo"]:
-        pagine_disponibili.append(("📝 Presenze", "Registro Presenze"))
+        pagine_disponibili.append(("📝 Elenchi settimanali", "Registro Presenze"))
     if config["moduli"]["pagamenti"]["attivo"]:
         pagine_disponibili.append(("💰 Pagamenti", "Gestione Pagamenti"))
     if config["moduli"]["statistiche"]["attivo"]:
