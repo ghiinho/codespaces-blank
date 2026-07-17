@@ -48,7 +48,6 @@ def mostra_impostazioni():
     # --- SALVATAGGIO ---
     if st.button("💾 Salva Impostazioni", type="primary", use_container_width=True):
         config["general"]["nome_campus"] = nuovo_nome
-        config["general"]["mostra_metriche_rapide"] = mostra_metriche
         config["moduli"] = nuovi_moduli
         
         if salva_configurazione(config):
