@@ -48,26 +48,32 @@ if st.session_state.pagina_corrente == "Home Page":
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     mostra_anagrafiche(df_iscritti)
 elif st.session_state.pagina_corrente == "Registro Presenze":
-    # 1. Carichiamo la configurazione dal file JSON
     config = carica_configurazione()
     
-    # 2. Estraiamo il dizionario con i nomi delle colonne (usando un dizionario vuoto come salvagente)
+    # ======= RADAR ISPETTIVO DEL CONFIG =======
+    st.info("🔍 Ispezione del file config.json in corso...")
+    st.write("**Contenuto intero del tuo config.json:**")
+    st.json(config)
+    # ==========================================
+    
     mapping = config.get("mappatura_colonne", {})
-    
-    # 3. Estraiamo il prefisso delle settimane (con il testo di default se manca nel JSON)
     prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip()
-    if not prefisso or prefisso == "None":
-        prefisso = "PERIODI DISPONIBILI"
     
-    # 4. Ora che le variabili esistono tutte, invochiamo la schermata senza errori!
+    col_cf = mapping.get("codice_fiscale_bambino", "Codice Fiscale Bambino")
+    col_cognome = mapping.get("cognome", "Cognome Bambino")
+    col_nome = mapping.get("nome", "Nome Bambino")
+    col_allergie = mapping.get("allergie", "Allergie o Intolleranze alimentari/farmacologiche?")
+    col_quali = mapping.get("note_allergie", "Se hai risposto SÌ, specifica quali:")
+    col_g_tel = mapping.get("telefono", "Telefono Genitore (Emergenze)")
+    
     mostra_elenchi_settimanali(
         df_iscritti=df_iscritti,
-        col_cf=mapping.get("CODICE FISCALE MINORE"),
-        col_cognome=mapping.get("COGNOME MINORE"),
-        col_nome=mapping.get("NOME MINORE"),
-        col_allergie=mapping.get("ALLERGIE O INTOLLERANZE?"),
-        col_quali=mapping.get("SE SI, INDICA QUALI"),
-        col_g_tel=mapping.get("TELEFONO GENITORE"),
+        col_cf=str(col_cf).strip(),
+        col_cognome=str(col_cognome).strip(),
+        col_nome=str(col_nome).strip(),
+        col_allergie=str(col_allergie).strip(),
+        col_quali=str(col_quali).strip(),
+        col_g_tel=str(col_g_tel).strip(),
         prefisso_settimane=prefisso
     )
 elif st.session_state.pagina_corrente == "Impostazioni":
