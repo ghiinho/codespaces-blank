@@ -91,11 +91,11 @@ def mostra_elenchi_settimanali(df_iscritti, col_cognome, col_nome, col_allergie,
         st.session_state.assegnazioni_gruppi = {}
         
     if "lista_gruppi" not in st.session_state:
-        st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
-        
+        st.session_state.lista_gruppi = ["Nessun Gruppo"]
+
     # FORZATURA DI SICUREZZA: Se la lista esiste ma contiene SOLO "Nessun Gruppo"
     if len(st.session_state.lista_gruppi) <= 1:
-        st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
+        st.session_state.lista_gruppi = ["Nessun Gruppo"]
         
     # 2. Recuperiamo i gruppi salvati storicamente per ciascun bambino di questa settimana
     gruppi_bambini = []

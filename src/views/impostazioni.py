@@ -65,6 +65,15 @@ def mostra_impostazioni():
     st.markdown("### 👥 Configurazione Gruppi del Camp")
     st.markdown("Crea i gruppi in cui dividere i bambini (es. *Piccoli, Medi, Grandi* oppure *Squadra Rossa, Squadra Blu*).")
 
+    config = carica_configurazione()
+
+    # Se nel config.json non esiste la chiave dei gruppi, la creiamo con i default
+    if "gruppi_camp" not in config:
+        config["gruppi_camp"] = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
+
+    # Allineiamo il session_state al file config
+    st.session_state.lista_gruppi = config["gruppi_camp"]
+
     # Inizializziamo la lista dei gruppi in memoria se non esiste
     if "lista_gruppi" not in st.session_state:
         st.session_state.lista_gruppi = ["Nessun Gruppo"]
@@ -77,6 +86,7 @@ def mostra_impostazioni():
         if st.button("➕ Aggiungi Gruppo", use_container_width=True):
             if nuovo_gruppo and nuovo_gruppo not in st.session_state.lista_gruppi:
                 st.session_state.lista_gruppi.append(nuovo_gruppo)
+                config["gruppi_camp"] = st.session_state.lista_gruppi
                 st.success(f"Gruppo '{nuovo_gruppo}' aggiunto con successo!")
                 st.rerun()
             elif nuovo_gruppo in st.session_state.lista_gruppi:
@@ -95,4 +105,5 @@ def mostra_impostazioni():
                 c_nome.write(f"• {grp}")
                 if c_canc.button("🗑️", key=f"del_{grp}"):
                     st.session_state.lista_gruppi.remove(grp)
+                    config["gruppi_camp"] = st.session_state.lista_gruppi
                     st.rerun()

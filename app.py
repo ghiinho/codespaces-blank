@@ -15,7 +15,7 @@ if "pagina_corrente" not in st.session_state:
 
 # Inizializzazione globale dei gruppi
 if "lista_gruppi" not in st.session_state:
-    st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
+    st.session_state.lista_gruppi = ["Nessun Gruppo"]
 
 # 1. Configurazione della pagina Streamlit
 st.set_page_config(page_title="Gestionale Camp", layout="wide")
