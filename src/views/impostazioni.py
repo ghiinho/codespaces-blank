@@ -69,7 +69,7 @@ def mostra_impostazioni():
 
     # Se nel config.json non esiste la chiave dei gruppi, la creiamo con i default
     if "gruppi_camp" not in config:
-        config["gruppi_camp"] = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
+        config["gruppi_camp"] = ["Nessun Gruppo"]
 
     # Allineiamo il session_state al file config
     st.session_state.lista_gruppi = config["gruppi_camp"]
