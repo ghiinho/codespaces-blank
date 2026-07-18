@@ -52,7 +52,8 @@ if st.session_state.pagina_corrente == "Home Page":
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
     mostra_anagrafiche(df_iscritti)
 elif st.session_state.pagina_corrente == "Registro Presenze":
-    config = carica_configurazione()    
+    config = carica_configurazione()
+    st.session_state.lista_gruppi = config.get("gruppi_camp", ["Nessun Gruppo"])  
     mapping = config.get("mappatura_colonne", {})
     prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip()
     
