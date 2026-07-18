@@ -82,15 +82,33 @@ def mostra_impostazioni():
     col_nuovo, col_lista = st.columns([2, 2])
 
     with col_nuovo:
-        nuovo_gruppo = st.text_input("✍️ Nome nuovo gruppo:", placeholder="Es. Lupi, Grandi...").strip()
-        if st.button("➕ Aggiungi Gruppo", use_container_width=True):
-            if nuovo_gruppo and nuovo_gruppo not in st.session_state.lista_gruppi:
-                st.session_state.lista_gruppi.append(nuovo_gruppo)
-                config["gruppi_camp"] = st.session_state.lista_gruppi
-                st.success(f"Gruppo '{nuovo_gruppo}' aggiunto con successo!")
-                st.rerun()
-            elif nuovo_gruppo in st.session_state.lista_gruppi:
-                st.warning("Questo gruppo esiste già!")
+        # Creiamo un form per bloccare il testo ed evitare che si svuoti al click
+        with st.form(key="form_aggiungi_gruppo", clear_on_submit=True):
+            nuovo_gruppo = st.text_input("✍️ Nome nuovo gruppo:", placeholder="Es. Lupi, Grandi...").strip()
+            premuto_aggiungi = st.form_submit_button("➕ Aggiungi Gruppo", use_container_width=True)
+            
+        # Gestiamo il click fuori dal form, usando la variabile 'premuto_aggiungi'
+        if premuto_aggiungi:
+            if nuovo_gruppo:
+                # Carichiamo il config fresco per sicurezza
+                config = carica_configurazione()
+                if "gruppi_camp" not in config:
+                    config["gruppi_camp"] = ["Nessun Gruppo"]
+                    
+                if nuovo_gruppo not in config["gruppi_camp"]:
+                    # Aggiungiamo il gruppo sia al config che alla memoria di Streamlit
+                    config["gruppi_camp"].append(nuovo_gruppo)
+                    st.session_state.lista_gruppi = config["gruppi_camp"]
+                    
+                    # 💾 SALVA SU FILE JSON (Usa la tua funzione reale se ha un nome diverso!)
+                    salva_configurazione(config)
+                    
+                    st.success(f"🎉 Gruppo '{nuovo_gruppo}' aggiunto con successo!")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ Questo gruppo esiste già nella lista!")
+            else:
+                st.error("❌ Digita un nome prima di cliccare aggiungi!")
 
     with col_lista:
         st.markdown("**Gruppi Attuali:**")
