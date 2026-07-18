@@ -13,6 +13,10 @@ from src.views.elenchi import mostra_elenchi_settimanali
 if "pagina_corrente" not in st.session_state:
     st.session_state.pagina_corrente = "Home Page"
 
+# Inizializzazione globale dei gruppi
+if "lista_gruppi" not in st.session_state:
+    st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"]
+
 # 1. Configurazione della pagina Streamlit
 st.set_page_config(page_title="Gestionale Camp", layout="wide")
 

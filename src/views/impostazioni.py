@@ -67,7 +67,7 @@ def mostra_impostazioni():
 
     # Inizializziamo la lista dei gruppi in memoria se non esiste
     if "lista_gruppi" not in st.session_state:
-        st.session_state.lista_gruppi = ["Nessun Gruppo", "Gruppo Verde", "Gruppo Giallo"] # Default di prova
+        st.session_state.lista_gruppi = ["Nessun Gruppo"]
 
     # Layout a colonne: una per inserire, una per vedere
     col_nuovo, col_lista = st.columns([2, 2])
