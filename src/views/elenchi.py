@@ -93,19 +93,55 @@ def mostra_elenchi_settimanali(df_iscritti, col_cognome, col_nome, col_allergie,
     df_vista_settimanale.index += 1
     
     st.markdown(f"#### 📋 Elenco Frequentanti — *{settimana_scelta_pulita}*")
-    
-    # Evidenzia allergie
-    def evidenzia_allergie(row):
-        if str(row["Allergie"]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"]:
-            return ['background-color: #fef2f2; color: #991b1b; font-weight: 500;'] * len(row)
-        return [''] * len(row)
-        
-    styled_df = df_vista_settimanale.style.apply(evidenzia_allergie, axis=1)
-    st.dataframe(styled_df, use_container_width=True)
+    st.caption("💡 Puoi assegnare i bambini ai gruppi direttamente dalla colonna 'Gruppo Assegnato' qui sotto.")
+
+    # Assicuriamoci che esista il dizionario delle assegnazioni in memoria globale
+    if "assegnazioni_gruppi" not in st.session_state:
+        st.session_state.assegnazioni_gruppi = {}
+
+    # Assicuriamoci che la lista gruppi esista
+    if "lista_gruppi" not in st.session_state:
+        st.session_state.lista_gruppi = ["Nessun Gruppo"]
+
+    # Prepariamo la colonna Gruppo nel nostro DataFrame prendendo i dati salvati storicamente
+    gruppi_bambini = []
+    for idx, row in df_vista_settimanale.iterrows():
+        # Usiamo Cognome + Nome come chiave univoca per ricordarci il gruppo del bambino
+        chiave_bambino = f"{row['Cognome']}_{row['Nome']}"
+        gruppi_bambini.append(st.session_state.assegnazioni_gruppi.get(chiave_bambino, "Nessun Gruppo"))
+
+    # Inseriamo la colonna dei gruppi come prima colonna della tabella
+    df_vista_settimanale.insert(0, "Gruppo Assegnato", gruppi_bambini)
+
+    # Mostriamo la tabella EDITABILE con il menu a tendina integrato!
+    df_modificato = st.data_editor(
+        df_vista_settimanale,
+        use_container_width=True,
+        column_config={
+            "Gruppo Assegnato": st.column_config.SelectboxColumn(
+                "👥 Gruppo Assegnato",
+                help="Seleziona il gruppo del bambino",
+                width="medium",
+                options=st.session_state.lista_gruppi,
+                required=True,
+            ),
+            "Codice Fiscale": None, # Nasconde la colonna se non serve, altrimenti rimuovi questa riga
+        },
+        disabled=[c for c in df_vista_settimanale.columns if c != "Gruppo Assegnato"], # Blocca le altre colonne per sicurezza
+        key=f"editor_{settimana_scelta_pulita}" # Cambia chiave in base alla settimana per non fare confusione
+    )
+
+    # Salva istantaneamente le modifiche fatte dall'utente nel session_state
+    for idx, row in df_modificato.iterrows():
+        chiave_bambino = f"{row['Cognome']}_{row['Nome']}"
+        st.session_state.assegnazioni_gruppi[chiave_bambino] = row["Gruppo Assegnato"]
     
     # 4. ESPORTAZIONE EXCEL
     st.markdown("### 📥 Esporta Registro")
-    df_appello = df_vista_settimanale[["Cognome", "Nome", "Tipo Frequenza", "Dettaglio Allergie / Note", "Telefono Genitore"]].copy()
+    
+    # Prendiamo il dataframe modificato (che contiene già la colonna "Gruppo Assegnato")
+    df_appello = df_modificato[["Gruppo Assegnato", "Cognome", "Nome", "Tipo Frequenza", "Dettaglio Allergie / Note", "Telefono Genitore"]].copy()
+    
     for giorno in ["LUN", "MAR", "MER", "GIO", "VEN"]:
         df_appello[giorno] = ""
         
