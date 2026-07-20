@@ -31,7 +31,6 @@ DEFAULT_CONFIG = {
         "nome_campus": "Campus Estivo 2026",
         "mostra_metriche_rapide": True
     },
-    # --- NUOVE SEZIONI PER TARIFFE E PACCHETTI ---
     "tariffe": {
         "GIORNATA INTERA": 135.0,
         "MATTINO + PRANZO": 110.0,
