@@ -263,7 +263,7 @@ def mostra_impostazioni():
                     nuovo_pk = {
                         "nome": nome_pck,
                         "min_settimane": min_settimane,
-                        "sconto_percentuale": prezzo_pck
+                        "prezzo_pacchetto": prezzo_pck
                     }
                     config["pacchetti"].append(nuovo_pk)
                     salva_configurazione(config)
@@ -280,7 +280,7 @@ def mostra_impostazioni():
                 for idx_pk, pk in enumerate(config["pacchetti"]):
                     c_pk_nome, c_pk_info, c_pk_del = st.columns([3, 2, 1])
                     c_pk_nome.write(f"• **{pk['nome']}**")
-                    c_pk_info.write(f"≥ {pk['min_settimane']} sett -> **-{pk['sconto_percentuale']}%**")
+                    c_pk_info.write(f"≥ {pk['min_settimane']} sett -> **-{pk['prezzo_pacchetto']}€**")
                     if c_pk_del.button("🗑️", key=f"del_pk_{idx_pk}"):
                         config["pacchetti"].pop(idx_pk)
                         salva_configurazione(config)
