@@ -3,17 +3,18 @@ from src.utils.config_manager import carica_configurazione, salva_configurazione
 
 def mostra_impostazioni():
     st.title("⚙️ Pannello di Controllo & Moduli")
-    st.write("Personalizza la tua dashboard gestendo le impostazioni generali, i moduli e i gruppi.")
+    st.write("Personalizza la tua dashboard gestendo impostazioni, moduli, gruppi e listino prezzi.")
     st.markdown("---")
 
     # Carica la configurazione corrente
     config = carica_configurazione()
 
     # Creazione delle schede (Tab) per dividere i contenuti
-    tab_generali, tab_moduli, tab_gruppi = st.tabs([
+    tab_generali, tab_moduli, tab_gruppi, tab_tariffe = st.tabs([
         "🏫 Generali", 
         "🔌 Moduli Attivi", 
-        "👥 Gruppi Camp"
+        "👥 Gruppi Camp",
+        "💰 Tariffe & Sconti"
     ])
 
     # =====================================================================
@@ -54,7 +55,7 @@ def mostra_impostazioni():
                 st.markdown(f"**{info['nome']}**")
                 st.caption(info['descrizione'])
             with col_toggle:
-                st.write("") # Spazio per allineare il toggle
+                st.write("") 
                 stato_attivo = st.toggle(
                     "Attivo", 
                     value=info['attivo'], 
@@ -87,7 +88,6 @@ def mostra_impostazioni():
         st.subheader("👥 Configurazione Gruppi del Camp")
         st.write("Crea i gruppi in cui dividere i bambini (es. *Piccoli, Medi, Grandi* oppure *Squadra Rossa, Squadra Blu*).")
 
-        # Inizializzazione della lista dei gruppi
         if "gruppi_camp" not in config:
             config["gruppi_camp"] = ["Nessun Gruppo"]
 
@@ -95,7 +95,6 @@ def mostra_impostazioni():
 
         col_nuovo, col_lista = st.columns([2, 2])
 
-        # --- Aggiunta Nuovo Gruppo ---
         with col_nuovo:
             with st.form(key="form_aggiungi_gruppo", clear_on_submit=True):
                 nuovo_gruppo = st.text_input("✍️ Nome nuovo gruppo:", placeholder="Es. Lupi, Grandi...").strip()
@@ -119,11 +118,9 @@ def mostra_impostazioni():
                 else:
                     st.error("❌ Digita un nome prima di cliccare aggiungi!")
 
-        # --- Elenco ed Eliminazione Gruppi ---
         with col_lista:
             st.markdown("**Gruppi Attuali:**")
             
-            # Filtriamo "Nessun Gruppo" per il conteggio
             gruppi_effettivi = [g for g in st.session_state.lista_gruppi if g != "Nessun Gruppo"]
             
             if not gruppi_effettivi:
@@ -140,7 +137,147 @@ def mostra_impostazioni():
                         st.session_state.lista_gruppi.remove(grp)
                         config["gruppi_camp"] = st.session_state.lista_gruppi
                         
-                        # Salvataggio immediato sul file JSON anche durante la cancellazione
                         salva_configurazione(config)
                         st.success(f"Gruppo '{grp}' eliminato!")
+                        st.rerun()
+
+    # =====================================================================
+    # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (NUOVO!)
+    # =====================================================================
+    with tab_tariffe:
+        st.subheader("💰 Gestione Listino Prezzi & Formule")
+        st.write("Configura i costi per tipologia di frequenza, attiva sconti automatici o regola i pacchetti multilivello.")
+
+        # Inizializziamo le strutture dati nel config se non esistono
+        if "tariffe" not in config:
+            config["tariffe"] = {
+                "Tempo Pieno (Con Pranzo)": 110.0,
+                "Solo Mattina (Senza Pranzo)": 70.0,
+                "Solo Pomeriggio": 60.0
+            }
+        if "sconti" not in config:
+            config["sconti"] = []
+        if "pacchetti" not in config:
+            config["pacchetti"] = []
+
+        # --- SEZIONE 4.1: TIPOLOGIE DI FREQUENZA (OPZIONI MODULO GOOGLE) ---
+        st.markdown("### 📋 1. Tipologie di Frequenza & Prezzo Settimanale")
+        st.caption("Queste diciture devono corrispondere a quelle usate nelle opzioni del tuo Modulo Google.")
+
+        col_t1, col_t2 = st.columns([2, 2])
+
+        with col_t1:
+            with st.form(key="form_nuova_tariffa", clear_on_submit=True):
+                nome_freq = st.text_input("✍️ Nome Opzione (come da Modulo Google):", placeholder="Es. Tempo Pieno (Con Pranzo)").strip()
+                prezzo_freq = st.number_input("💶 Costo Settimanale (€):", min_value=0.0, step=5.0, value=100.0)
+                btn_add_tariffa = st.form_submit_button("➕ Aggiungi / Aggiorna Frequenza", use_container_width=True)
+
+            if btn_add_tariffa:
+                if nome_freq:
+                    config["tariffe"][nome_freq] = prezzo_freq
+                    salva_configurazione(config)
+                    st.success(f"Tariffa per '{nome_freq}' salvata ({prezzo_freq}€)!")
+                    st.rerun()
+                else:
+                    st.error("❌ Inserisci il nome dell'opzione!")
+
+        with col_t2:
+            st.markdown("**Listino Prezzi Corrente:**")
+            if not config["tariffe"]:
+                st.info("Nessuna tariffa impostata.")
+            else:
+                for tf, prz in list(config["tariffe"].items()):
+                    c_tf_nome, c_tf_prezzo, c_tf_del = st.columns([3, 2, 1])
+                    c_tf_nome.write(f"• **{tf}**")
+                    c_tf_prezzo.write(f"**{prz:.2f} €** / sett")
+                    if c_tf_del.button("🗑️", key=f"del_tf_{tf}"):
+                        del config["tariffe"][tf]
+                        salva_configurazione(config)
+                        st.rerun()
+
+        st.markdown("---")
+
+        # --- SEZIONE 4.2: GESTIONE SCONTI ---
+        st.markdown("### 🏷️ 2. Sconti & Riduzioni")
+        st.caption("Crea regole di sconto applicabili ai conteggi (es. Sconto Fratello, Iscrizione Anticipata).")
+
+        col_sc1, col_sc2 = st.columns([2, 2])
+
+        with col_sc1:
+            with st.form(key="form_nuovo_sconto", clear_on_submit=True):
+                nome_sconto = st.text_input("✍️ Nome Sconto:", placeholder="Es. Sconto Secondo Fratello").strip()
+                tipo_sconto = st.selectbox("Tipo Sconto:", ["Percentuale (%)", "Fisso (€)"])
+                valore_sconto = st.number_input("Valore Sconto:", min_value=0.0, step=1.0, value=10.0)
+                btn_add_sconto = st.form_submit_button("➕ Aggiungi Sconto", use_container_width=True)
+
+            if btn_add_sconto:
+                if nome_sconto:
+                    nuovo_sc = {
+                        "nome": nome_sconto,
+                        "tipo": "percentuale" if "Percentuale" in tipo_sconto else "fisso",
+                        "valore": valore_sconto
+                    }
+                    config["sconti"].append(nuovo_sc)
+                    salva_configurazione(config)
+                    st.success(f"Sconto '{nome_sconto}' aggiunto!")
+                    st.rerun()
+                else:
+                    st.error("❌ Inserisci il nome dello sconto!")
+
+        with col_sc2:
+            st.markdown("**Sconti Attivi:**")
+            if not config["sconti"]:
+                st.info("Nessun sconto salvato.")
+            else:
+                for idx_sc, sc in enumerate(config["sconti"]):
+                    c_sc_nome, c_sc_val, c_sc_del = st.columns([3, 2, 1])
+                    c_sc_nome.write(f"• **{sc['nome']}**")
+                    unita = "%" if sc["tipo"] == "percentuale" else "€"
+                    c_sc_val.write(f"**-{sc['valore']} {unita}**")
+                    if c_sc_del.button("🗑️", key=f"del_sc_{idx_sc}"):
+                        config["sconti"].pop(idx_sc)
+                        salva_configurazione(config)
+                        st.rerun()
+
+        st.markdown("---")
+
+        # --- SEZIONE 4.3: PACCHETTI MULTI-SETTIMANA ---
+        st.markdown("### 📦 3. Pacchetti Promozionali (Multi-Settimana)")
+        st.caption("Configura gli sconti progressivi in base al numero di settimane prenotate.")
+
+        col_p1, col_p2 = st.columns([2, 2])
+
+        with col_p1:
+            with st.form(key="form_nuovo_pacchetto", clear_on_submit=True):
+                nome_pck = st.text_input("✍️ Nome Pacchetto:", placeholder="Es. Pacchetto 4 Settimane").strip()
+                min_settimane = st.number_input("Minimo settimane iscritte:", min_value=2, max_value=12, value=4)
+                sconto_pck_perc = st.number_input("Sconto applicato sul totale (%):", min_value=1.0, max_value=100.0, value=10.0)
+                btn_add_pck = st.form_submit_button("➕ Aggiungi Pacchetto", use_container_width=True)
+
+            if btn_add_pck:
+                if nome_pck:
+                    nuovo_pk = {
+                        "nome": nome_pck,
+                        "min_settimane": min_settimane,
+                        "sconto_percentuale": sconto_pck_perc
+                    }
+                    config["pacchetti"].append(nuovo_pk)
+                    salva_configurazione(config)
+                    st.success(f"Pacchetto '{nome_pck}' salvato!")
+                    st.rerun()
+                else:
+                    st.error("❌ Inserisci il nome del pacchetto!")
+
+        with col_p2:
+            st.markdown("**Pacchetti Attivi:**")
+            if not config["pacchetti"]:
+                st.info("Nessun pacchetto promozionale configurato.")
+            else:
+                for idx_pk, pk in enumerate(config["pacchetti"]):
+                    c_pk_nome, c_pk_info, c_pk_del = st.columns([3, 2, 1])
+                    c_pk_nome.write(f"• **{pk['nome']}**")
+                    c_pk_info.write(f"≥ {pk['min_settimane']} sett -> **-{pk['sconto_percentuale']}%**")
+                    if c_pk_del.button("🗑️", key=f"del_pk_{idx_pk}"):
+                        config["pacchetti"].pop(idx_pk)
+                        salva_configurazione(config)
                         st.rerun()
