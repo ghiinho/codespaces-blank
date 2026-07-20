@@ -144,21 +144,25 @@ def mostra_impostazioni():
     # =====================================================================
     # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (NUOVO!)
     # =====================================================================
+    # =====================================================================
+    # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (PULITO / SENZA DEFAULT)
+    # =====================================================================
     with tab_tariffe:
         st.subheader("💰 Gestione Listino Prezzi & Formule")
         st.write("Configura i costi per tipologia di frequenza, attiva sconti automatici o regola i pacchetti multilivello.")
 
-        # Inizializziamo le strutture dati nel config se non esistono
+        # Inizializziamo le strutture vuote (senza dati di default)
         if "tariffe" not in config:
-            config["tariffe"] = {
-                "Tempo Pieno (Con Pranzo)": 110.0,
-                "Solo Mattina (Senza Pranzo)": 70.0,
-                "Solo Pomeriggio": 60.0
-            }
+            config["tariffe"] = {}
+            salva_configurazione(config)
+            
         if "sconti" not in config:
             config["sconti"] = []
+            salva_configurazione(config)
+            
         if "pacchetti" not in config:
             config["pacchetti"] = []
+            salva_configurazione(config)
 
         # --- SEZIONE 4.1: TIPOLOGIE DI FREQUENZA (OPZIONI MODULO GOOGLE) ---
         st.markdown("### 📋 1. Tipologie di Frequenza & Prezzo Settimanale")
@@ -169,7 +173,7 @@ def mostra_impostazioni():
         with col_t1:
             with st.form(key="form_nuova_tariffa", clear_on_submit=True):
                 nome_freq = st.text_input("✍️ Nome Opzione (come da Modulo Google):", placeholder="Es. Tempo Pieno (Con Pranzo)").strip()
-                prezzo_freq = st.number_input("💶 Costo Settimanale (€):", min_value=0.0, step=5.0, value=100.0)
+                prezzo_freq = st.number_input("💶 Costo Settimanale (€):", min_value=0.0)
                 btn_add_tariffa = st.form_submit_button("➕ Aggiungi / Aggiorna Frequenza", use_container_width=True)
 
             if btn_add_tariffa:
