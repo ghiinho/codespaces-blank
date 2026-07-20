@@ -78,24 +78,21 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in conteggio_frequenze.items()]) if conteggio_frequenze else "Nessuna"
 
-        # --- APPLICAZIONE PACCHETTI (Migliorata e Tollerante) ---
+        # --- APPLICAZIONE PACCHETTI ---
         totale_netto_calcolato = 0.0
         dettagli_pacchetti_applicati = []
 
         for freq_nome, quantita in conteggio_frequenze.items():
             prezzo_singolo_freq = float(tariffe.get(freq_nome, 0.0))
             
-            # 1. Troviamo i pacchetti compatibili con pulizia completa delle stringhe
             pacchetti_freq = []
             for pk in pacchetti:
                 target_pk = str(pk.get("frequenza_target", pk.get("frequenza", ""))).strip().lower()
                 freq_clean = str(freq_nome).strip().lower()
 
-                # Accetta se il target è identico, contenuto, oppure generico/vuoto
                 if target_pk == freq_clean or target_pk in freq_clean or freq_clean in target_pk or target_pk in ["", "generica", "tutte"]:
                     pacchetti_freq.append(pk)
             
-            # 2. Conversione forzata a INT per il numero di settimane del pacchetto
             def get_num_settimane(pk_dict):
                 val = pk_dict.get("num_settimane", pk_dict.get("min_settimane", 0))
                 try:
@@ -103,7 +100,6 @@ def mostra_pagamenti(df_iscritti):
                 except (ValueError, TypeError):
                     return 0
 
-            # 3. Ordiniamo i pacchetti dal più grande al più piccolo (es. 8 sett, poi 4 sett)
             pacchetti_ordinati = sorted(
                 pacchetti_freq, 
                 key=get_num_settimane, 
@@ -113,10 +109,8 @@ def mostra_pagamenti(df_iscritti):
             quantita_rimanente = quantita
             costo_parziale_freq = 0.0
 
-            # 4. Consumo a cascata delle settimane con i pacchetti
             for pk in pacchetti_ordinati:
                 num_s = get_num_settimane(pk)
-                
                 try:
                     prezzo_pk = float(pk.get("prezzo_pacchetto", 0.0))
                 except (ValueError, TypeError):
@@ -133,11 +127,9 @@ def mostra_pagamenti(df_iscritti):
                     else:
                         dettagli_pacchetti_applicati.append(f"📦 {nome_pck} ({prezzo_pk:.2f} €)")
 
-            # 5. Aggiungiamo le settimane rimanenti fuori pacchetto al prezzo di listino singolo
             costo_parziale_freq += quantita_rimanente * prezzo_singolo_freq
             totale_netto_calcolato += costo_parziale_freq
 
-        # Calcolo finale Sconto e Netto Dovuto
         sconto_applicato = max(0.0, totale_lordo - totale_netto_calcolato)
 
         if sconto_applicato > 0 and dettagli_pacchetti_applicati:
@@ -148,7 +140,6 @@ def mostra_pagamenti(df_iscritti):
         netto_da_pagare = max(0.0, totale_netto_calcolato)
         rimanente = netto_da_pagare - totale_incassato
 
-        # Stato del Pagamento
         if netto_da_pagare == 0:
             stato = "🟢 Esente"
         elif rimanente <= 0:
@@ -186,7 +177,7 @@ def mostra_pagamenti(df_iscritti):
     index_selezionato_default = None
     opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
 
-    if "seleziona_iscritto_pagamenti" in st.session_state and st.session_state["seleziona_iscritto_pagamenti"]:
+    if st.session_state.get("seleziona_iscritto_pagamenti"):
         nome_target = st.session_state["seleziona_iscritto_pagamenti"].strip().upper()
         
         for i, opt in enumerate(opzioni_ricerca):
@@ -195,7 +186,7 @@ def mostra_pagamenti(df_iscritti):
                 break
         
         # Puliamo lo stato per i prossimi caricamenti
-        del st.session_state["seleziona_iscritto_pagamenti"]
+        st.session_state["seleziona_iscritto_pagamenti"] = None
 
     # --- 2. SCHERMATA A TAB ---
     tab_scheda, tab_generale = st.tabs(["🔍 Scheda Singolo Iscritto", "📊 Panoramica Registro Completo"])
@@ -233,10 +224,10 @@ def mostra_pagamenti(df_iscritti):
                 st.markdown(f"### Status:\n### {iscritto['stato']}")
                 
                 # 🔗 PULSANTE DI RITORNO ALL'ANAGRAFICA
-                if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True):
+                if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True, key=f"btn_vai_anag_{chiave_iscritto}"):
                     st.session_state["id_bambino_corrente"] = iscritto["index_df"]
                     st.session_state["scheda_attiva"] = "settimane"
-                    st.session_state["pagina_attiva"] = "anagrafiche"
+                    st.session_state["pagina_corrente"] = "Anagrafiche Iscritti"  # <-- Nome esatto della pagina in app.py
                     st.rerun()
 
             st.markdown("<br>", unsafe_allow_html=True)

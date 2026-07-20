@@ -767,8 +767,10 @@ def mostra_anagrafiche(df_iscritti):
                                 st.error(f"❌ Errore durante il salvataggio: {err}")
 
                     with col_btn_pagamenti:
-                        # 🔗 PULSANTE PER PASSARE AI PAGAMENTI
-                        if st.button(f"💳 Vai ai Pagamenti di {nome_bambino}", use_container_width=True):
-                            st.session_state["seleziona_iscritto_pagamenti"] = nome_completo
-                            st.session_state["pagina_attiva"] = "pagamenti"
+                        # Nel pulsante dentro il Tab Settimane dell'Anagrafica:
+                        nome_completo_bambino = f"{cognome_bambino} {nome_bambino}"
+
+                        if st.button(f"💳 Vai ai Pagamenti di {nome_bambino}", key="btn_vai_a_pagamenti"):
+                            st.session_state["seleziona_iscritto_pagamenti"] = nome_completo_bambino
+                            st.session_state["pagina_corrente"] = "Gestione Pagamenti"  # <-- Nome esatto della pagina in app.py
                             st.rerun()

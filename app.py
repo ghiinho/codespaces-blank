@@ -15,19 +15,15 @@ from src.views.pagamenti import mostra_pagamenti
 st.set_page_config(page_title="Gestionale Camp", layout="wide")
 
 # 2. Inizializzazione Database / Caricamento Dati
-# Inizializziamo il DB solo se non è ancora stato caricato nello stato
 if "df_iscritti" not in st.session_state:
     db_utils.inizializza_database_in_memoria()
     df_caricato = db_utils.ottieni_iscritti()
     
-    # Se db_utils restituisce None o un DataFrame vuoto, leggiamo il file Excel
     if df_caricato is None or df_caricato.empty:
         df_caricato = pd.read_excel("iscrizioni.xlsx")
         
-    # Salva nello stato forzando 'object' su tutte le colonne
     st.session_state.df_iscritti = df_caricato.astype(object)
 
-# Usiamo UNICAMENTE il DataFrame memorizzato nello stato di sessione
 df_iscritti = st.session_state.df_iscritti
 
 # --- INIZIALIZZAZIONE STATO PAGINE E GRUPPI ---
@@ -41,16 +37,18 @@ if "lista_gruppi" not in st.session_state:
 disegna_sidebar()
 
 # 💡 Gestione Svuotamento Ricerca fuori dalle Anagrafiche
+# (Azzeriamo le ricerche solo se non c'è un id_bambino_corrente impostato da un reindirizzamento esterno)
 if st.session_state.pagina_corrente != "Anagrafiche Iscritti":
     st.session_state.risultato_ricerca = None
-    st.session_state.id_bambino_corrente = None
-    if "ricerca_cognome" in st.session_state:
+    if "ricerca_cognome" in st.session_state and not st.session_state.get("id_bambino_corrente"):
         st.session_state["ricerca_cognome"] = ""
 
 # Rileviamo cambi di pagina
 pagina_precedente = st.session_state.get("pagina_precedente")
 if st.session_state.pagina_corrente == "Anagrafiche Iscritti" and pagina_precedente != "Anagrafiche Iscritti":
-    st.session_state.scheda_attiva = "bambino"
+    # Se proveniamo da un'altra pagina e NON c'è già una scheda specifica richiesta (es. "settimane"):
+    if "scheda_attiva" not in st.session_state or not st.session_state.scheda_attiva:
+        st.session_state.scheda_attiva = "bambino"
     st.session_state.modalita_modifica = False
 
 st.session_state.pagina_precedente = st.session_state.pagina_corrente
