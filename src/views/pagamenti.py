@@ -11,7 +11,6 @@ def mostra_pagamenti(df_iscritti):
     config = carica_configurazione()
     tariffe = config.get("tariffe", {})
     pacchetti = config.get("pacchetti", [])
-    sconti_disponibili = config.get("sconti", [])
 
     if not tariffe:
         st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni!")
@@ -45,26 +44,8 @@ def mostra_pagamenti(df_iscritti):
         chiave = f"{cognome}_{nome}".upper()
         etichetta_ricerca = f"{cognome} {nome}"
 
-        # Recupero o inizializzazione dati con storico transazioni
         dati_salvati = st.session_state.registro_pagamenti.get(chiave, {})
-        
-        # Migrazione da vecchio formato ad array di transazioni (se necessario)
         transazioni = dati_salvati.get("transazioni", [])
-        if not transazioni:
-            acc_vecchio = float(dati_salvati.get("acconto", 0.0))
-            sal_vecchio = float(dati_salvati.get("saldo_versato", 0.0))
-            if acc_vecchio > 0:
-                transazioni.append({
-                    "id": "mig_acc", "data": "2026-01-01", "tipo": "Acconto", 
-                    "importo": acc_vecchio, "metodo": dati_salvati.get("metodo_pagamento", "Contanti"), 
-                    "note": "Importo precedente"
-                })
-            if sal_vecchio > 0:
-                transazioni.append({
-                    "id": "mig_sal", "data": "2026-01-01", "tipo": "Saldo", 
-                    "importo": sal_vecchio, "metodo": dati_salvati.get("metodo_pagamento", "Contanti"), 
-                    "note": "Importo precedente"
-                })
 
         totale_incassato = sum(float(t.get("importo", 0.0)) for t in transazioni)
 
@@ -95,18 +76,21 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in dettaglio_frequenze.items()]) if dettaglio_frequenze else "Nessuna"
 
-        # Algoritmo Best Price Automatico
-        valore_pacchetto = 0.0
+        # --- CALCOLO PACCHETTO A PREZZO FISSO ---
+        valore_pacchetto_sconto = 0.0
         nome_pacchetto = ""
+        
         for pk in sorted(pacchetti, key=lambda x: x.get("min_settimane", 0), reverse=True):
-            if num_settimane_tot >= pk.get("min_settimane", 0):
-                perc = pk.get("sconto_percentuale", 0.0)
-                valore_pacchetto = (totale_lordo * perc) / 100.0
-                nome_pacchetto = f"📦 {pk.get('nome')} (-{perc}%)"
+            min_sett = pk.get("min_settimane", 0)
+            prezzo_fisso = float(pk.get("prezzo_pacchetto", 0.0))
+            
+            if min_sett > 0 and num_settimane_tot >= min_sett and prezzo_fisso > 0:
+                valore_pacchetto_sconto = max(0.0, totale_lordo - prezzo_fisso)
+                nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso:.2f} €)"
                 break
 
-        if valore_pacchetto > 0:
-            sconto_applicato = valore_pacchetto
+        if valore_pacchetto_sconto > 0:
+            sconto_applicato = valore_pacchetto_sconto
             descrizione_sconto = nome_pacchetto
         else:
             sconto_applicato = 0.0
@@ -148,7 +132,7 @@ def mostra_pagamenti(df_iscritti):
         st.info("Nessun iscritto trovato nel database.")
         return
 
-    # --- 2. TAB SISTER (SCHEDA ISCRITTO vs PANORAMICA REGISTRO) ---
+    # --- 2. SCHERMATA A TAB ---
     tab_scheda, tab_generale = st.tabs(["🔍 Scheda Singolo Iscritto", "📊 Panoramica Registro Completo"])
 
     # ==========================================
@@ -159,7 +143,7 @@ def mostra_pagamenti(df_iscritti):
         
         opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
         
-        # BARRA DI RICERCA SENZA PRECARICAMENTO (index=None)
+        # Barra di ricerca neutra (senza precaricamento)
         nome_selezionato = st.selectbox(
             "Digitare il cognome o nome dell'iscritto:",
             options=opzioni_ricerca,
@@ -187,7 +171,7 @@ def mostra_pagamenti(df_iscritti):
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Card metriche contabili
+            # Card metriche
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Lordo Listino", f"{iscritto['totale_lordo']:.2f} €")
             c2.metric("Sconto Promo", f"{iscritto['sconto_applicato']:.2f} €")
@@ -196,7 +180,7 @@ def mostra_pagamenti(df_iscritti):
 
             st.markdown("---")
 
-            # SEZIONE: REGISTRA NUOVA TRANSAZIONE
+            # REGISTRA NUOVA TRANSAZIONE
             st.markdown("### ➕ Registra Nuovo Versamento")
             
             with st.form(f"form_nuovo_versamento_{chiave_iscritto}", clear_on_submit=True):
@@ -205,12 +189,21 @@ def mostra_pagamenti(df_iscritti):
                 with col_v1:
                     importo_versato = st.number_input(
                         "Importo Versato (€):",
+                        min_value=0.01,
+                        max_value=max(0.01, float(iscritto["rimanente"] if iscritto["rimanente"] > 0 else 2000.0)),
+                        value=float(iscritto["rimanente"]) if iscritto["rimanente"] > 0 else 10.0,
+                        step=5.0
                     )
-                    tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo"])
+                    tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo", "Integrazione", "Caparra"])
 
                 with col_v2:
                     metodo_pago = st.selectbox("Metodo di Pagamento:", ["Contanti", "POS", "Bonifico", "Satispay"])
-                    data_transazione = st.date_input("Data Versamento:", value=date.today(), format="DD/MM/YYYY")
+                    
+                    data_transazione = st.date_input(
+                        "Data Versamento:", 
+                        value=date.today(),
+                        format="DD/MM/YYYY"
+                    )
 
                 with col_v3:
                     note_transazione = st.text_area("Note / N. Ricevuta:", value="", height=100, placeholder="Es. Ricevuta N° 45, riferimento bonifico...")
@@ -227,7 +220,6 @@ def mostra_pagamenti(df_iscritti):
                         "note": note_transazione
                     }
 
-                    # Aggiunta transazione allo storico
                     transazioni_attuali = st.session_state.registro_pagamenti.get(chiave_iscritto, {}).get("transazioni", [])
                     transazioni_attuali.append(nuova_tx)
 
@@ -244,7 +236,7 @@ def mostra_pagamenti(df_iscritti):
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # SEZIONE: STORICO TRANSAZIONI
+            # STORICO TRANSAZIONI
             st.markdown("### 📜 Storico Transazioni ed Incassi Effettuati")
             
             transazioni_list = iscritto["transazioni"]
@@ -253,7 +245,6 @@ def mostra_pagamenti(df_iscritti):
             else:
                 df_tx = pd.DataFrame(transazioni_list)
                 
-                # Visualizzazione pulita della tabella storico
                 st.dataframe(
                     df_tx[["data", "tipo", "importo", "metodo", "note"]],
                     use_container_width=True,
@@ -267,9 +258,15 @@ def mostra_pagamenti(df_iscritti):
                     hide_index=True
                 )
 
-                # Gestione eventuale storno/eliminazione errore
+                # Gestione eliminazione errore
                 with st.expander("🗑️ Annulla o elimina una transazione errata"):
-                    opzioni_tx = {f"{t['data']} - {t['tipo']} di {t['importo']:.2f}€ ({t['metodo']})": t["id"] for t in transazioni_list}
+                    opzioni_tx = {}
+                    for t in transazioni_list:
+                        d_obj = datetime.strptime(t['data'], "%Y-%m-%d")
+                        d_str_it = d_obj.strftime("%d/%m/%Y")
+                        etichetta = f"{d_str_it} - {t['tipo']} di {t['importo']:.2f}€ ({t['metodo']})"
+                        opzioni_tx[etichetta] = t["id"]
+
                     tx_da_eliminare = st.selectbox("Seleziona versamento da cancellare:", options=list(opzioni_tx.keys()))
                     
                     if st.button("❌ Elimina Transazione Selezionata", type="secondary"):
