@@ -270,4 +270,4 @@ def mostra_pagamenti(df_iscritti):
             st.success("🎉 Registro Pagamenti aggiornato con successo!")
             st.rerun()
         else:
-            st.error("❌ Errore durante il salvataggio.")
+            st.error("❌ Errore durante il salvataggio!")
