@@ -206,15 +206,13 @@ def mostra_pagamenti(df_iscritti):
                     importo_versato = st.number_input(
                         "Importo Versato (€):",
                         min_value=0.01,
-                        max_value=max(0.01, float(iscritto["rimanente"] if iscritto["rimanente"] > 0 else 2000.0)),
-                        value=float(iscritto["rimanente"]) if iscritto["rimanente"] > 0 else 10.0,
-                        step=5.0
+                        max_value=max(0.01, float(iscritto["rimanente"] if iscritto["rimanente"] > 0 else 2000.0))
                     )
-                    tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo", "Integrazione", "Caparra"])
+                    tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo"])
 
                 with col_v2:
                     metodo_pago = st.selectbox("Metodo di Pagamento:", ["Contanti", "POS", "Bonifico", "Satispay"])
-                    data_transazione = st.date_input("Data Versamento:", value=date.today())
+                    data_transazione = st.date_input("Data Versamento:", value=date.today(), format="DD/MM/YYYY")
 
                 with col_v3:
                     note_transazione = st.text_area("Note / N. Ricevuta:", value="", height=100, placeholder="Es. Ricevuta N° 45, riferimento bonifico...")
