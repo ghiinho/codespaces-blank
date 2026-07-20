@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
+from datetime import datetime, date
 from src.utils.config_manager import carica_configurazione, salva_configurazione
 
 def mostra_pagamenti(df_iscritti):
     st.title("💳 Gestione Pagamenti & Incassi")
-    st.caption("Calcolo automatico con la regola del Prezzo Più Conveniente (Miglior Tariffa per l'iscritto).")
+    st.caption("Registro contabile essenziale per il monitoraggio dei saldi e l'incasso rapido.")
     st.markdown("---")
 
     config = carica_configurazione()
@@ -13,9 +14,9 @@ def mostra_pagamenti(df_iscritti):
     sconti_disponibili = config.get("sconti", [])
 
     if not tariffe:
-        st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni! I calcoli automatici potrebbero risultare pari a 0 €.")
+        st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni! Configurale per avere i conteggi automatici.")
 
-    # --- 1. MAPPATURA COLONNE ---
+    # --- 1. MAPPATURA COLONNE E LETTURA DATI ---
     mapping = config.get("mappatura_colonne", {})
     colonne_reali = list(df_iscritti.columns)
 
@@ -28,11 +29,9 @@ def mostra_pagamenti(df_iscritti):
         if "settiman" in str(col).lower() or prefisso in str(col).lower()
     ]
 
-    # Recupero o Inizializzazione registro pagamenti in session_state
     if "registro_pagamenti" not in st.session_state:
         st.session_state.registro_pagamenti = config.get("registro_pagamenti", {})
 
-    # --- 2. ALGORITMO BEST PRICE PER CIASCUN ISCRITTO ---
     dati_contabili = []
 
     for idx, row in df_iscritti.iterrows():
@@ -44,52 +43,71 @@ def mostra_pagamenti(df_iscritti):
 
         chiave_bambino = f"{cognome}_{nome}".upper()
 
-        # Recupero dati di pagamento salvati
+        # Recupero registrazioni precedenti
         dati_salvati = st.session_state.registro_pagamenti.get(chiave_bambino, {
             "acconto": 0.0,
             "saldo_versato": 0.0,
             "sconto_selezionato": "Nessuno (Standard)",
-            "sconto_manuale_extra": 0.0,
-            "note_sconto": ""
+            "sconto_extra": 0.0,
+            "metodo_pagamento": "Contanti",
+            "data_saldo": None
         })
 
         acconto = float(dati_salvati.get("acconto", 0.0))
         saldo_versato = float(dati_salvati.get("saldo_versato", 0.0))
         sconto_scelto_utente = dati_salvati.get("sconto_selezionato", "Nessuno (Standard)")
-        sconto_extra = float(dati_salvati.get("sconto_manuale_extra", 0.0))
-        note_sconto = dati_salvati.get("note_sconto", "")
+        sconto_extra = float(dati_salvati.get("sconto_extra", 0.0))
+        metodo_pago = dati_salvati.get("metodo_pagamento", "Contanti")
+        
+        # Conversione data per st.data_editor
+        data_s = dati_salvati.get("data_saldo")
+        if data_s and isinstance(data_s, str):
+            try:
+                data_s = datetime.strptime(data_s, "%Y-%m-%d").date()
+            except ValueError:
+                data_s = None
+        elif not isinstance(data_s, date):
+            data_s = None
 
-        # A) CALCOLO TARIFFA BASE (LORDO)
-        num_settimane = 0
+        # --- A) CONTEGGIO SETTIMANE DIVISE PER TIPOLOGIA ---
+        dettaglio_frequenze = {}
         totale_lordo = 0.0
+        num_settimane_tot = 0
 
         for col_s in colonne_settimane:
             valore_scelta = str(row.get(col_s, "")).strip()
             if valore_scelta and valore_scelta.lower() not in ["nan", "", "no", "non frequenta", "none"]:
-                num_settimane += 1
+                num_settimane_tot += 1
                 
+                # Identificazione tipologia di frequenza scelta
+                tipo_trovato = "Generica"
                 costo_sett = 0.0
                 for opzione_tariffa, prezzo in tariffe.items():
                     if opzione_tariffa.lower() in valore_scelta.lower():
+                        tipo_trovato = opzione_tariffa
                         costo_sett = prezzo
                         break
                 
                 if costo_sett == 0.0 and tariffe:
+                    tipo_trovato = list(tariffe.keys())[0]
                     costo_sett = list(tariffe.values())[0]
 
+                dettaglio_frequenze[tipo_trovato] = dettaglio_frequenze.get(tipo_trovato, 0) + 1
                 totale_lordo += costo_sett
 
-        # B) SCENARIO 1: PACCHETTO PROMO MULTI-SETTIMANA
+        # Formattazione stringa "3 Full-time, 1 Mattina"
+        stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in dettaglio_frequenze.items()]) if dettaglio_frequenze else "Nessuna"
+
+        # --- B) CALCOLO BEST PRICE / SCONTI ---
         valore_pacchetto = 0.0
-        nome_pacchetto = "Nessun Pacchetto"
+        nome_pacchetto = ""
         for pk in sorted(pacchetti, key=lambda x: x.get("min_settimane", 0), reverse=True):
-            if num_settimane >= pk.get("min_settimane", 0):
+            if num_settimane_tot >= pk.get("min_settimane", 0):
                 perc = pk.get("sconto_percentuale", 0.0)
                 valore_pacchetto = (totale_lordo * perc) / 100.0
-                nome_pacchetto = f"{pk.get('nome')} (-{perc}%)"
+                nome_pacchetto = f"📦 {pk.get('nome')} (-{perc}%)"
                 break
 
-        # C) SCENARIO 2: SCONTO CONVENZIONE / SELEZIONATO
         valore_sconto_convenzione = 0.0
         if sconto_scelto_utente != "Nessuno (Standard)":
             for sc in sconti_disponibili:
@@ -100,55 +118,51 @@ def mostra_pagamenti(df_iscritti):
                         valore_sconto_convenzione = float(sc["valore"])
                     break
 
-        # D) VALUTAZIONE ALGORITMICA PREZZO PIÙ CONVENIENTE
-        sconto_applicato = 0.0
-        formula_applicata = ""
-
-        # Confronto: Pacchetto Promo vs Sconto Convenzione Selezionato
+        # Scelta del miglior sconto
         if valore_pacchetto >= valore_sconto_convenzione and valore_pacchetto > 0:
             sconto_applicato = valore_pacchetto
-            formula_applicata = f"📦 {nome_pacchetto}"
+            descrizione_sconto = nome_pacchetto
         elif valore_sconto_convenzione > 0:
             sconto_applicato = valore_sconto_convenzione
-            formula_applicata = f"🏷️ {sconto_scelto_utente}"
+            descrizione_sconto = f"🏷️ {sconto_scelto_utente}"
         else:
             sconto_applicato = 0.0
-            formula_applicata = "Standard"
+            descrizione_sconto = "Nessuno"
 
-        # Totale Sconto Complessivo (Sconto Migliore + Eventuale Extra Manuale)
-        totale_sconti_finali = sconto_applicato + sconto_extra
-        netto_da_pagare = max(0.0, totale_lordo - totale_sconti_finali)
-        
+        if sconto_extra > 0:
+            descrizione_sconto += f" (+{sconto_extra:.0f}€ extra)"
+
+        # Prezzo finale Netto
+        totale_sconti = sconto_applicato + sconto_extra
+        netto_da_pagare = max(0.0, totale_lordo - totale_sconti)
+
         totale_incassato = acconto + saldo_versato
         rimanente = netto_da_pagare - totale_incassato
 
-        # Stato del Pagamento
+        # Flag grafico di feedback
         if netto_da_pagare == 0:
-            stato = "🟢 Gratuito / Esente"
+            stato = "🟢 Esente"
         elif rimanente <= 0:
             stato = "🟢 Saldato"
         elif totale_incassato > 0:
-            stato = "🟡 Acconto Versato"
+            stato = "🟡 Acconto"
         else:
             stato = "🔴 Da Pagare"
 
         dati_contabili.append({
-            "chiave": chiave_bambino,
             "Cognome": cognome,
             "Nome": nome,
-            "Settimane": num_settimane,
-            "Lordo (€)": totale_lordo,
-            "Formula Applicata": formula_applicata,
-            "Sconto Applicato (€)": sconto_applicato,
-            "Sconto Extra (€)": sconto_extra,
-            "Netto Dovuto (€)": netto_da_pagare,
+            "Frequenze": stringa_frequenze,
+            "Sconto / Promo": descrizione_sconto,
+            "Netto da Pagare (€)": netto_da_pagare,
             "Acconto (€)": acconto,
             "Saldo Versato (€)": saldo_versato,
-            "Totale Incassato (€)": totale_incassato,
             "Rimanente (€)": rimanente,
             "Stato": stato,
+            "Metodo Pagamento": metodo_pago,
+            "Data Saldo": data_s,
             "Sconto_Selezionato_Ref": sconto_scelto_utente,
-            "Note Sconto": note_sconto
+            "Sconto_Extra_Ref": sconto_extra
         })
 
     df_pagamenti = pd.DataFrame(dati_contabili)
@@ -157,27 +171,24 @@ def mostra_pagamenti(df_iscritti):
         st.info("Nessun iscritto trovato per la gestione dei pagamenti.")
         return
 
-    # --- 3. METRICHE RIEPILOGATIVE (KPI CONTABILI) ---
-    tot_lordo_camp = df_pagamenti["Lordo (€)"].sum()
-    tot_sconti_camp = df_pagamenti["Sconto Applicato (€)"].sum() + df_pagamenti["Sconto Extra (€)"].sum()
-    tot_netto_camp = df_pagamenti["Netto Dovuto (€)"].sum()
-    tot_incassato_camp = df_pagamenti["Totale Incassato (€)"].sum()
-    tot_rimanente_camp = df_pagamenti["Rimanente (€)"].sum()
+    # --- 2. METRICHE RIEPILOGATIVE RAPIDE ---
+    tot_netto = df_pagamenti["Netto da Pagare (€)"].sum()
+    tot_incassato = df_pagamenti["Acconto (€)"].sum() + df_pagamenti["Saldo Versato (€)"].sum()
+    tot_rimanente = df_pagamenti["Rimanente (€)"].sum()
 
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.metric("💶 Netto Atteso", f"{tot_netto_camp:.2f} €", delta=f"Lordo: {tot_lordo_camp:.2f} €")
-    col_m2.metric("🏷️ Risparmio Famiglie", f"{tot_sconti_camp:.2f} €")
-    col_m3.metric("✅ Totale Incassato", f"{tot_incassato_camp:.2f} €", delta=f"{(tot_incassato_camp/tot_netto_camp*100 if tot_netto_camp>0 else 0):.1f}% del totale")
-    col_m4.metric("⏳ Ancora Da Incassare", f"{tot_rimanente_camp:.2f} €", delta_color="inverse")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("💶 Totale Dovuto", f"{tot_netto:.2f} €")
+    m2.metric("✅ Totale Incassato", f"{tot_incassato:.2f} €", delta=f"{(tot_incassato/tot_netto*100 if tot_netto>0 else 0):.1f}%")
+    m3.metric("⏳ Rimanente Da Incassare", f"{tot_rimanente:.2f} €", delta_color="inverse")
 
     st.markdown("---")
 
-    # --- 4. FILTRI ED EDITOR INTERATTIVO ---
+    # --- 3. FILTRI DI RICERCA ---
     col_f1, col_f2 = st.columns([2, 2])
     with col_f1:
-        cerca = st.text_input("🔍 Cerca Minore (Cognome o Nome):", "").strip().lower()
+        cerca = st.text_input("🔍 Cerca Minore:", "").strip().lower()
     with col_f2:
-        filtro_stato = st.selectbox("📌 Filtra per Stato Pagamento:", ["Tutti", "🔴 Da Pagare / Acconto Versato", "🟢 Saldato"])
+        filtro_stato = st.selectbox("📌 Filtra per Stato:", ["Tutti", "🔴 Da Pagare / Acconto", "🟢 Saldato"])
 
     df_filtrato = df_pagamenti.copy()
     if cerca:
@@ -186,69 +197,77 @@ def mostra_pagamenti(df_iscritti):
             df_filtrato["Nome"].str.lower().str.contains(cerca)
         ]
     
-    if filtro_stato == "🔴 Da Pagare / Acconto Versato":
+    if filtro_stato == "🔴 Da Pagare / Acconto":
         df_filtrato = df_filtrato[df_filtrato["Rimanente (€)"] > 0]
     elif filtro_stato == "🟢 Saldato":
         df_filtrato = df_filtrato[df_filtrato["Rimanente (€)"] <= 0]
 
-    st.subheader("📝 Registro Contabile (Valutazione Miglior Tariffa)")
-    st.caption("Il sistema applica automaticamente lo sconto più vantaggioso tra Pacchetti e Convenzioni. Puoi aggiungere uno Sconto Extra manuale, acconti e saldi.")
+    st.subheader("📝 Registro Contabile")
 
-    # Opzioni sconti convenzione disponibili per il menu a tendina
-    opzioni_sconto_dropdown = ["Nessuno (Standard)"] + [s["nome"] for s in sconti_disponibili]
-
-    colonne_editabili = ["Sconto Convenzione", "Sconto Extra (€)", "Acconto (€)", "Saldo Versato (€)", "Note Sconto"]
-    
-    # Aggiungiamo la colonna per selezionare lo sconto dal menu
-    df_filtrato["Sconto Convenzione"] = df_filtrato["Sconto_Selezionato_Ref"]
+    # --- 4. DATA EDITOR SNELLO E PULITO ---
+    opzioni_metodo = ["Contanti", "POS", "Bonifico", "Satispay"]
+    colonne_editabili = ["Acconto (€)", "Saldo Versato (€)", "Metodo Pagamento", "Data Saldo"]
 
     df_editor = st.data_editor(
         df_filtrato[[
-            "Cognome", "Nome", "Settimane", "Lordo (€)", "Formula Applicata",
-            "Sconto Convenzione", "Sconto Applicato (€)", "Sconto Extra (€)",
-            "Netto Dovuto (€)", "Acconto (€)", "Saldo Versato (€)", 
-            "Totale Incassato (€)", "Rimanente (€)", "Stato", "Note Sconto"
+            "Cognome", "Nome", "Frequenze", "Sconto / Promo", 
+            "Netto da Pagare (€)", "Acconto (€)", "Saldo Versato (€)", 
+            "Rimanente (€)", "Stato", "Metodo Pagamento", "Data Saldo"
         ]],
         use_container_width=True,
         column_config={
-            "Lordo (€)": st.column_config.NumberColumn(format="%.2f €"),
-            "Formula Applicata": st.column_config.TextColumn("Miglior Opzione Trova", help="Opzione applicata in automatico perché più conveniente"),
-            "Sconto Convenzione": st.column_config.SelectboxColumn(
-                "🏷️ Convenzione",
-                options=opzioni_sconto_dropdown,
-                help="Seleziona una convenzione (es. Fratello, Dipendente) da mettere a confronto",
-                width="medium"
-            ),
-            "Sconto Applicato (€)": st.column_config.NumberColumn("✨ Sconto Migliore (€)", format="%.2f €"),
-            "Sconto Extra (€)": st.column_config.NumberColumn("✏️ Extra Manuale (€)", format="%.2f €", min_value=0.0),
-            "Netto Dovuto (€)": st.column_config.NumberColumn(format="%.2f €"),
+            "Frequenze": st.column_config.TextColumn("Frequenze Svolte", width="medium"),
+            "Sconto / Promo": st.column_config.TextColumn("Sconto / Pacchetto", width="medium"),
+            "Netto da Pagare (€)": st.column_config.NumberColumn("Totale (€)", format="%.2f €"),
             "Acconto (€)": st.column_config.NumberColumn("💵 Acconto (€)", format="%.2f €", min_value=0.0),
             "Saldo Versato (€)": st.column_config.NumberColumn("💳 Saldo (€)", format="%.2f €", min_value=0.0),
-            "Totale Incassato (€)": st.column_config.NumberColumn(format="%.2f €"),
-            "Rimanente (€)": st.column_config.NumberColumn(format="%.2f €"),
-            "Stato": st.column_config.TextColumn("Status", width="medium"),
+            "Rimanente (€)": st.column_config.NumberColumn("⏳ Rimanente (€)", format="%.2f €"),
+            "Stato": st.column_config.TextColumn("Status", width="small"),
+            "Metodo Pagamento": st.column_config.SelectboxColumn(
+                "🏦 Metodo",
+                options=opzioni_metodo,
+                width="small",
+                required=True
+            ),
+            "Data Saldo": st.column_config.DateColumn(
+                "📅 Data Saldo",
+                format="DD/MM/YYYY",
+                width="small"
+            )
         },
         disabled=[col for col in df_filtrato.columns if col not in colonne_editabili],
-        key="editor_pagamenti_best_price"
+        key="editor_pagamenti_snello"
     )
 
-    # --- 5. SALVATAGGIO MODIFICHE ---
+    # --- 5. SALVATAGGIO ---
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 Salva Registro Incassi", type="primary", use_container_width=True):
+    if st.button("💾 Salva Modifiche Incassi", type="primary", use_container_width=True):
         for idx_ed, row_ed in df_editor.iterrows():
             chiave = f"{row_ed['Cognome']}_{row_ed['Nome']}".upper()
             
+            # Formattazione data per il salvataggio in JSON
+            d_saldo = row_ed["Data Saldo"]
+            if isinstance(d_saldo, (date, datetime)):
+                d_saldo_str = d_saldo.strftime("%Y-%m-%d")
+            else:
+                d_saldo_str = None
+
+            # Manteniamo i rif degli sconti già impostati
+            s_ref = df_filtrato.loc[df_filtrato["Cognome"] == row_ed["Cognome"], "Sconto_Selezionato_Ref"].values
+            e_ref = df_filtrato.loc[df_filtrato["Cognome"] == row_ed["Cognome"], "Sconto_Extra_Ref"].values
+
             st.session_state.registro_pagamenti[chiave] = {
                 "acconto": float(row_ed["Acconto (€)"]),
                 "saldo_versato": float(row_ed["Saldo Versato (€)"]),
-                "sconto_selezionato": str(row_ed["Sconto Convenzione"]),
-                "sconto_manuale_extra": float(row_ed["Sconto Extra (€)"]),
-                "note_sconto": str(row_ed["Note Sconto"])
+                "sconto_selezionato": s_ref[0] if len(s_ref) > 0 else "Nessuno (Standard)",
+                "sconto_extra": float(e_ref[0]) if len(e_ref) > 0 else 0.0,
+                "metodo_pagamento": str(row_ed["Metodo Pagamento"]),
+                "data_saldo": d_saldo_str
             }
 
         config["registro_pagamenti"] = st.session_state.registro_pagamenti
         if salva_configurazione(config):
-            st.success("🎉 Registro Pagamenti aggiornato e ricalcolato con successo!")
+            st.success("🎉 Registro Pagamenti aggiornato con successo!")
             st.rerun()
         else:
-            st.error("❌ Errore durante il salvataggio dei dati.")
+            st.error("❌ Errore durante il salvataggio.")
