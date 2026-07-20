@@ -450,7 +450,8 @@ def mostra_pagamenti(df_iscritti):
             options=opzioni_ricerca,
             index=None,
             placeholder="Inizia a digitare il cognome o il nome...",
-            help="Seleziona un iscritto per aprire la sua scheda contabile e gestire i pagamenti."
+            help="Seleziona un iscritto per aprire la sua scheda contabile e gestire i pagamenti.",
+            key="selectbox_ricerca_iscritto_pagamenti"
         )
 
         if not nome_selezionato:
