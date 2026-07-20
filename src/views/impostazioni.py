@@ -248,40 +248,75 @@ def mostra_impostazioni():
         # --- SEZIONE 4.3: PACCHETTI MULTI-SETTIMANA ---
         st.markdown("### 📦 3. Pacchetti Promozionali (Multi-Settimana)")
         st.caption("Configura gli sconti progressivi in base al numero di settimane prenotate.")
+    
+        # 1. Recuperiamo le frequenze disponibili e la lista dei pacchetti dal config
+        # Se non esistono ancora nel config, usiamo liste vuote
+        tariffe_singole = config.get("tariffe_frequenze", {})  # es. {"GIORNATA INTERA": 135, ...}
+        pacchetti = config.get("pacchetti_promozionali", [])   # lista dei pacchetti salvati
+        
+        opzioni_frequenza = [f for f in tariffe_singole.keys() if f != "NON ISCRITTO ❌"]
 
-        col_p1, col_p2 = st.columns([2, 2])
+        if not opzioni_frequenza:
+            st.warning("⚠️ Imposta prima le tariffe singole per ciascuna frequenza per poter creare i pacchetti.")
+            return
 
-        with col_p1:
-            with st.form(key="form_nuovo_pacchetto", clear_on_submit=True):
-                nome_pck = st.text_input("✍️ Nome Pacchetto:", placeholder="Es. Pacchetto 4 Settimane").strip()
-                min_settimane = st.number_input("Minimo settimane iscritte:", min_value=2, max_value=12, value=4)
-                prezzo_pck = st.number_input("Prezzo totale del pacchetto (€):", min_value=0.0)
-                btn_add_pck = st.form_submit_button("➕ Aggiungi Pacchetto", use_container_width=True)
+        # --- FORM CREAZIONE DINAMICA PACCHETTO ---
+        st.write("#### Aggiungi Nuovo Pacchetto")
+        with st.form("form_nuovo_pacchetto", clear_on_submit=True):
+            col1, col2, col3, col4 = st.columns([3, 3, 2, 2])
+            
+            with col1:
+                nome_p = st.text_input("Nome Pacchetto", placeholder="es. Promo 4 Settimane Full")
+            
+            with col2:
+                # Scegli a quale frequenza attiva applicare il pacchetto
+                freq_target = st.selectbox("Si applica a:", options=opzioni_frequenza)
+                
+            with col3:
+                num_sett = st.number_input("N° Settimane", min_value=2, max_value=12, value=4, step=1)
+                
+            with col4:
+                prezzo_p = st.number_input("Prezzo Totale (€)", min_value=0.0, value=0.0, step=10.0)
 
-            if btn_add_pck:
-                if nome_pck:
-                    nuovo_pk = {
-                        "nome": nome_pck,
-                        "min_settimane": min_settimane,
-                        "prezzo_pacchetto": prezzo_pck
+            submit_p = st.form_submit_button("➕ Salva Pacchetto", type="primary", use_container_width=True)
+
+            if submit_p:
+                if nome_p.strip():
+                    nuovo_pacchetto = {
+                        "id": f"pck_{len(pacchetti) + 1}",
+                        "nome": nome_p.strip(),
+                        "frequenza_target": freq_target,
+                        "num_settimane": int(num_sett),
+                        "prezzo_pacchetto": float(prezzo_p)
                     }
-                    config["pacchetti"].append(nuovo_pk)
+                    pacchetti.append(nuovo_pacchetto)
+                    config["pacchetti_promozionali"] = pacchetti
                     salva_configurazione(config)
-                    st.success(f"Pacchetto '{nome_pck}' salvato!")
+                    st.success(f"✅ Pacchetto '{nome_p}' salvato con successo!")
                     st.rerun()
                 else:
-                    st.error("❌ Inserisci il nome del pacchetto!")
+                    st.error("Inserisci un nome per il pacchetto.")
 
-        with col_p2:
-            st.markdown("**Pacchetti Attivi:**")
-            if not config["pacchetti"]:
-                st.info("Nessun pacchetto promozionale configurato.")
-            else:
-                for idx_pk, pk in enumerate(config["pacchetti"]):
-                    c_pk_nome, c_pk_info, c_pk_del = st.columns([3, 2, 1])
-                    c_pk_nome.write(f"• **{pk['nome']}**")
-                    c_pk_info.write(f"≥ {pk['min_settimane']} sett -> **-{pk['prezzo_pacchetto']}€**")
-                    if c_pk_del.button("🗑️", key=f"del_pk_{idx_pk}"):
-                        config["pacchetti"].pop(idx_pk)
-                        salva_configurazione(config)
-                        st.rerun()
+        # --- TABELLA / LISTA PACCHETTI ESISTENTI CON POSSIBILITÀ DI ELIMINARE ---
+        if pacchetti:
+            st.markdown("---")
+            st.write("#### Pacchetti Attivi")
+            
+            idx_da_eliminare = None
+            for i, p in enumerate(pacchetti):
+                col_info, col_del = st.columns([5, 1])
+                with col_info:
+                    st.info(
+                        f"**{p['nome']}** — Valido per **{p['num_settimane']} settimane** di tipo "
+                        f"`{p['frequenza_target']}` a **{p['prezzo_pacchetto']:.2f} €**"
+                    )
+                with col_del:
+                    if st.button("🗑️", key=f"del_pck_{i}"):
+                        idx_da_eliminare = i
+
+            if idx_da_eliminare is not None:
+                pacchetti.pop(idx_da_eliminare)
+                config["pacchetti_promozionali"] = pacchetti
+                salva_configurazione(config)
+                st.success("Pacchetto rimosso!")
+                st.rerun()

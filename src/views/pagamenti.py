@@ -9,6 +9,8 @@ def mostra_pagamenti(df_iscritti):
     st.markdown("---")
 
     config = carica_configurazione()
+    
+    # 💡 Lettura dinamica di tariffe e pacchetti dal config
     tariffe = config.get("tariffe", {})
     pacchetti = config.get("pacchetti", [])
 
@@ -49,8 +51,10 @@ def mostra_pagamenti(df_iscritti):
 
         totale_incassato = sum(float(t.get("importo", 0.0)) for t in transazioni)
 
-        # Conteggio frequenze e Lordo Listino
-        dettaglio_frequenze = {}
+        # -------------------------------------------------------------
+        # --- CALCOLO DINAMICO DELLE FREQUENZE E DEI PACCHETTI TARGET ---
+        # -------------------------------------------------------------
+        conteggio_frequenze = {}
         totale_lordo = 0.0
         num_settimane_tot = 0
 
@@ -64,47 +68,67 @@ def mostra_pagamenti(df_iscritti):
                 for opzione_tariffa, prezzo in tariffe.items():
                     if opzione_tariffa.lower() in valore_scelta.lower():
                         tipo_trovato = opzione_tariffa
-                        costo_sett = prezzo
+                        costo_sett = float(prezzo)
                         break
                 
                 if costo_sett == 0.0 and tariffe:
                     tipo_trovato = list(tariffe.keys())[0]
-                    costo_sett = list(tariffe.values())[0]
+                    costo_sett = float(list(tariffe.values())[0])
 
-                dettaglio_frequenze[tipo_trovato] = dettaglio_frequenze.get(tipo_trovato, 0) + 1
+                conteggio_frequenze[tipo_trovato] = conteggio_frequenze.get(tipo_trovato, 0) + 1
                 totale_lordo += costo_sett
 
-        stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in dettaglio_frequenze.items()]) if dettaglio_frequenze else "Nessuna"
+        stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in conteggio_frequenze.items()]) if conteggio_frequenze else "Nessuna"
 
-        # --- CALCOLO PACCHETTO FISSO + SETTIMANE EXTRA ---
-        valore_pacchetto_sconto = 0.0
-        nome_pacchetto = ""
-        
-        for pk in sorted(pacchetti, key=lambda x: x.get("min_settimane", 0), reverse=True):
-            min_sett = pk.get("min_settimane", 0)
-            prezzo_fisso_pk = float(pk.get("prezzo_pacchetto", 0.0))
+        # --- APPLICAZIONE PACCHETTI PER SPECIFICA FREQUENZA ---
+        totale_netto_calcolato = 0.0
+        dettagli_pacchetti_applicati = []
+
+        for freq_nome, quantita in conteggio_frequenze.items():
+            prezzo_singolo_freq = float(tariffe.get(freq_nome, 0.0))
             
-            if min_sett > 0 and num_settimane_tot >= min_sett and prezzo_fisso_pk > 0:
-                settimane_extra = num_settimane_tot - min_sett
-                prezzo_medio_settimana = totale_lordo / num_settimane_tot if num_settimane_tot > 0 else 0.0
-                
-                costo_totale_con_pacchetto = prezzo_fisso_pk + (settimane_extra * prezzo_medio_settimana)
-                valore_pacchetto_sconto = max(0.0, totale_lordo - costo_totale_con_pacchetto)
-                
-                if settimane_extra > 0:
-                    nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso_pk:.2f} €) + {settimane_extra} sett. extra"
-                else:
-                    nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso_pk:.2f} €)"
-                break
+            # Filtriamo i pacchetti creati per QUESTA specifica frequenza
+            # Supporta sia la chiave 'frequenza_target' sia 'frequenza'
+            pacchetti_freq = [
+                pk for pk in pacchetti 
+                if pk.get("frequenza_target", pk.get("frequenza")) == freq_nome
+            ]
+            
+            # Ordiniamo i pacchetti per numero di settimane decrescente (es. 8, poi 4)
+            pacchetti_ordinati = sorted(
+                pacchetti_freq, 
+                key=lambda x: x.get("num_settimane", x.get("min_settimane", 0)), 
+                reverse=True
+            )
 
-        if valore_pacchetto_sconto > 0:
-            sconto_applicato = valore_pacchetto_sconto
-            descrizione_sconto = nome_pacchetto
+            quantita_rimanente = quantita
+            costo_parziale_freq = 0.0
+
+            for pk in pacchetti_ordinati:
+                num_s = pk.get("num_settimane", pk.get("min_settimane", 0))
+                prezzo_pk = float(pk.get("prezzo_pacchetto", 0.0))
+
+                if num_s > 0 and quantita_rimanente >= num_s:
+                    num_volte = quantita_rimanente // num_s
+                    costo_parziale_freq += num_volte * prezzo_pk
+                    quantita_rimanente = quantita_rimanente % num_s
+                    
+                    nome_pck = pk.get("nome", f"Pacchetto {num_s} sett.")
+                    dettagli_pacchetti_applicati.append(f"📦 {nome_pck} ({prezzo_pk:.2f} €)")
+
+            # Le settimane che avanzano fuori dal pacchetto pagano la tariffa singola
+            costo_parziale_freq += quantita_rimanente * prezzo_singolo_freq
+            totale_netto_calcolato += costo_parziale_freq
+
+        # Calcolo sconto totale ed etichetta per l'interfaccia
+        sconto_applicato = max(0.0, totale_lordo - totale_netto_calcolato)
+
+        if sconto_applicato > 0 and dettagli_pacchetti_applicati:
+            descrizione_sconto = " + ".join(dettagli_pacchetti_applicati)
         else:
-            sconto_applicato = 0.0
             descrizione_sconto = "Standard (Nessuno)"
 
-        netto_da_pagare = max(0.0, totale_lordo - sconto_applicato)
+        netto_da_pagare = max(0.0, totale_netto_calcolato)
         rimanente = netto_da_pagare - totale_incassato
 
         # Stato del Pagamento
