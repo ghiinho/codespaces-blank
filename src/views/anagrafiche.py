@@ -653,6 +653,12 @@ def mostra_anagrafiche(df_iscritti):
             st.write("Seleziona il tipo di iscrizione per ciascuna settimana e salva.")
 
             if colonne_settimane:
+                # --- SOLUZIONE ERRORE PANDAS ---
+                # Convertiamo PREVENTIVAMENTE tutte le colonne delle settimane in tipo 'object' (testo)
+                # in modo che Pandas non vada in crash se nel nuovo Excel erano colonne numeriche/vuote.
+                for col in colonne_settimane:
+                    df_iscritti[col] = df_iscritti[col].astype(object)
+
                 opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
 
                 with st.form("form_modifica_settimane"):
@@ -692,13 +698,10 @@ def mostra_anagrafiche(df_iscritti):
                     
                     if salva_settimane:
                         for col_settimana, valore in nuovi_valori.items():
-                            val_salva = "" if valore == "NON ISCRITTO ❌" else valore
+                            val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
                             
-                            # 1. Assicuriamo che la colonna accetti stringhe/vuoti senza andare in TypeError
-                            df_iscritti[col_settimana] = df_iscritti[col_settimana].astype(object)
-                            
-                            # 2. Assegniamo il nuovo valore
-                            df_iscritti.at[riga_index, col_settimana] = val_salva
+                            # Usiamo .loc invece di .at per una gestione dei dtypes più tollerante
+                            df_iscritti.loc[riga_index, col_settimana] = val_salva
                         
                         try:
                             df_iscritti.to_excel("iscrizioni.xlsx", index=False)
