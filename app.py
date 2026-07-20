@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-import database_utils as db_utils  # Le tue utility esistenti
+import database_utils as db_utils
 
-# IMPORTIAMO I NUOVI MODULI CHE ABBIAMO CREATO
+# IMPORTIAMO I NUOVI MODULI
 from src.sidebar import disegna_sidebar
 from src.views.home import mostra_home
 from src.views.anagrafiche import mostra_anagrafiche
@@ -11,58 +11,57 @@ from src.views.impostazioni import mostra_impostazioni
 from src.views.elenchi import mostra_elenchi_settimanali
 from src.views.pagamenti import mostra_pagamenti
 
-# --- CARICAMENTO CORRETTO E PERSISTENTE ---
-if "df_iscritti" not in st.session_state:
-    # 1. Carichiamo l'excel solo la prima volta che si apre l'app
-    df_iscritti = pd.read_excel("iscrizioni.xlsx")
-    # 2. Forziamo il tipo 'object' su tutte le colonne per evitare blocchi
-    st.session_state.df_iscritti = df_iscritti.astype(object)
+# 1. Configurazione della pagina Streamlit (DEVE ESSERE LA PRIMA ISTRUZIONE STREAMLIT)
+st.set_page_config(page_title="Gestionale Camp", layout="wide")
 
-# Usiamo SEMPRE la versione memorizzata nello stato
+# 2. Inizializzazione Database / Caricamento Dati
+# Inizializziamo il DB solo se non è ancora stato caricato nello stato
+if "df_iscritti" not in st.session_state:
+    db_utils.inizializza_database_in_memoria()
+    df_caricato = db_utils.ottieni_iscritti()
+    
+    # Se db_utils restituisce None o un DataFrame vuoto, leggiamo il file Excel
+    if df_caricato is None or df_caricato.empty:
+        df_caricato = pd.read_excel("iscrizioni.xlsx")
+        
+    # Salva nello stato forzando 'object' su tutte le colonne
+    st.session_state.df_iscritti = df_caricato.astype(object)
+
+# Usiamo UNICAMENTE il DataFrame memorizzato nello stato di sessione
 df_iscritti = st.session_state.df_iscritti
 
-# --- INIZIALIZZAZIONE STATO ---
+# --- INIZIALIZZAZIONE STATO PAGINE E GRUPPI ---
 if "pagina_corrente" not in st.session_state:
     st.session_state.pagina_corrente = "Home Page"
 
-# Inizializzazione globale dei gruppi
 if "lista_gruppi" not in st.session_state:
     st.session_state.lista_gruppi = ["Nessun Gruppo"]
-
-# 1. Configurazione della pagina Streamlit
-st.set_page_config(page_title="Gestionale Camp", layout="wide")
-
-# 2. Inizializzazione e caricamento dati (usando il tuo metodo originale!)
-db_utils.inizializza_database_in_memoria()
-df_iscritti = db_utils.ottieni_iscritti()
 
 # 3. Disegniamo la barra laterale di navigazione
 disegna_sidebar()
 
-# 💡 IL SEGRETO: Se la pagina corrente NON è le Anagrafiche, 
-# svuotiamo completamente i dati di ricerca in modo che non rimangano in memoria!
+# 💡 Gestione Svuotamento Ricerca fuori dalle Anagrafiche
 if st.session_state.pagina_corrente != "Anagrafiche Iscritti":
     st.session_state.risultato_ricerca = None
     st.session_state.id_bambino_corrente = None
-    # Svuotiamo anche il testo scritto nel box di ricerca
     if "ricerca_cognome" in st.session_state:
         st.session_state["ricerca_cognome"] = ""
 
-# Rileviamo cambi di pagina per eseguire azioni una-tantum al cambio di vista
+# Rileviamo cambi di pagina
 pagina_precedente = st.session_state.get("pagina_precedente")
 if st.session_state.pagina_corrente == "Anagrafiche Iscritti" and pagina_precedente != "Anagrafiche Iscritti":
-    # Forziamo l'apertura sui Dati Bambino quando si accede alla pagina Anagrafiche
     st.session_state.scheda_attiva = "bambino"
     st.session_state.modalita_modifica = False
 
-# Aggiorniamo la pagina precedente
 st.session_state.pagina_precedente = st.session_state.pagina_corrente
 
-# Ora mostriamo la pagina corretta in totale sicurezza
+# --- ROUTING PAGINE ---
 if st.session_state.pagina_corrente == "Home Page":
     mostra_home()
+
 elif st.session_state.pagina_corrente == "Anagrafiche Iscritti":
-    mostra_anagrafiche(df_iscritti)
+    mostra_anagrafiche(st.session_state.df_iscritti)
+
 elif st.session_state.pagina_corrente == "Registro Presenze":
     config = carica_configurazione()
     st.session_state.lista_gruppi = config.get("gruppi_camp", ["Nessun Gruppo"])  
@@ -74,11 +73,9 @@ elif st.session_state.pagina_corrente == "Registro Presenze":
     col_allergie = mapping.get("allergie", "ALLERGIE O INTOLLERANZE?")
     col_quali = mapping.get("note_allergie", "SE SI, INDICA QUALI")
     col_g_tel = mapping.get("recapito", "TELEFONO GENITORE")
-    
-    col_cf = "CODICE FISCALE"
 
     mostra_elenchi_settimanali(
-        df_iscritti=df_iscritti,
+        df_iscritti=st.session_state.df_iscritti,
         col_cognome=str(col_cognome).strip(),
         col_nome=str(col_nome).strip(),
         col_allergie=str(col_allergie).strip(),
@@ -86,11 +83,9 @@ elif st.session_state.pagina_corrente == "Registro Presenze":
         col_g_tel=str(col_g_tel).strip(),
         prefisso_settimane=prefisso
     )
+
 elif st.session_state.pagina_corrente == "Impostazioni":
     mostra_impostazioni()
     
-# ==========================================
-# 4. SEZIONE: GESTIONE PAGAMENTI
-# ==========================================
 elif st.session_state.pagina_corrente == "Gestione Pagamenti":
-    mostra_pagamenti(df_iscritti)
+    mostra_pagamenti(st.session_state.df_iscritti)
