@@ -76,17 +76,25 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in dettaglio_frequenze.items()]) if dettaglio_frequenze else "Nessuna"
 
-        # --- CALCOLO PACCHETTO A PREZZO FISSO ---
+        # --- CALCOLO PACCHETTO FISSO + SETTIMANE EXTRA ---
         valore_pacchetto_sconto = 0.0
         nome_pacchetto = ""
         
         for pk in sorted(pacchetti, key=lambda x: x.get("min_settimane", 0), reverse=True):
             min_sett = pk.get("min_settimane", 0)
-            prezzo_fisso = float(pk.get("prezzo_pacchetto", 0.0))
+            prezzo_fisso_pk = float(pk.get("prezzo_pacchetto", 0.0))
             
-            if min_sett > 0 and num_settimane_tot >= min_sett and prezzo_fisso > 0:
-                valore_pacchetto_sconto = max(0.0, totale_lordo - prezzo_fisso)
-                nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso:.2f} €)"
+            if min_sett > 0 and num_settimane_tot >= min_sett and prezzo_fisso_pk > 0:
+                settimane_extra = num_settimane_tot - min_sett
+                prezzo_medio_settimana = totale_lordo / num_settimane_tot if num_settimane_tot > 0 else 0.0
+                
+                costo_totale_con_pacchetto = prezzo_fisso_pk + (settimane_extra * prezzo_medio_settimana)
+                valore_pacchetto_sconto = max(0.0, totale_lordo - costo_totale_con_pacchetto)
+                
+                if settimane_extra > 0:
+                    nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso_pk:.2f} €) + {settimane_extra} sett. extra"
+                else:
+                    nome_pacchetto = f"📦 {pk.get('nome')} ({prezzo_fisso_pk:.2f} €)"
                 break
 
         if valore_pacchetto_sconto > 0:
@@ -143,7 +151,6 @@ def mostra_pagamenti(df_iscritti):
         
         opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
         
-        # Barra di ricerca neutra (senza precaricamento)
         nome_selezionato = st.selectbox(
             "Digitare il cognome o nome dell'iscritto:",
             options=opzioni_ricerca,
