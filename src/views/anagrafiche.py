@@ -645,7 +645,7 @@ def mostra_anagrafiche(df_iscritti):
                                 st.session_state.scheda_attiva = "bambino"
                                 st.rerun()
 
-        # ==========================================
+# ==========================================
         # 3. TAB: SETTIMANE (RICOSTRUITO DA CAPO)
         # ==========================================
         elif st.session_state.scheda_attiva == "settimane":
@@ -725,32 +725,50 @@ def mostra_anagrafiche(df_iscritti):
 
                     st.markdown("---")
 
-                    # 3. PULSANTE DI SALVATAGGIO UNICO E RIGIDO
-                    if st.button("💾 Salva Modifiche Settimane", type="primary", use_container_width=True):
-                        try:
-                            # a. Convertiamo preventivamente tutte le colonne settimane in object per sbloccare i dtypes
-                            for c in colonne_settimane:
-                                df_iscritti[c] = df_iscritti[c].astype(object)
+                    # =========================================================
+                    # 🔗 NAVEGAZIONE RAPIDA AI PAGAMENTI + SALVATAGGIO
+                    # =========================================================
+                    # Recuperiamo Cognome e Nome del bambino per la selezione
+                    cognome_bambino = str(riga_dati.get("COGNOME MINORE", riga_dati.get("COGNOME", ""))).strip()
+                    nome_bambino = str(riga_dati.get("NOME MINORE", riga_dati.get("NOME", ""))).strip()
+                    nome_completo = f"{cognome_bambino} {nome_bambino}".strip().upper()
 
-                            # b. Scrittura diretta dei dati nel DataFrame
-                            for col_sett, val_scelto in nuovi_valori.items():
-                                val_finale = "" if val_scelto == "NON ISCRITTO ❌" else str(val_scelto)
-                                df_iscritti.at[riga_idx, col_sett] = val_finale
+                    col_btn_salva, col_btn_pagamenti = st.columns([1, 1])
 
-                            # c. Scrittura fisica su disco
-                            df_iscritti.to_excel("iscrizioni.xlsx", index=False)
+                    with col_btn_salva:
+                        # 3. PULSANTE DI SALVATAGGIO UNICO E RIGIDO
+                        if st.button("💾 Salva Modifiche Settimane", type="primary", use_container_width=True):
+                            try:
+                                # a. Convertiamo preventivamente tutte le colonne settimane in object per sbloccare i dtypes
+                                for c in colonne_settimane:
+                                    df_iscritti[c] = df_iscritti[c].astype(object)
 
-                            # d. Aggiornamento degli Stati di Sessione
-                            if "df_iscritti" in st.session_state:
-                                st.session_state.df_iscritti = df_iscritti
-                            
-                            st.session_state.risultato_ricerca = df_iscritti.loc[[riga_idx]]
+                                # b. Scrittura diretta dei dati nel DataFrame
+                                for col_sett, val_scelto in nuovi_valori.items():
+                                    val_finale = "" if val_scelto == "NON ISCRITTO ❌" else str(val_scelto)
+                                    df_iscritti.at[riga_idx, col_sett] = val_finale
 
-                            # e. Pulizia cache lettura Streamlit
-                            st.cache_data.clear()
+                                # c. Scrittura fisica su disco
+                                df_iscritti.to_excel("iscrizioni.xlsx", index=False)
 
-                            st.success("🎉 Settimane salvate con successo nel file Excel!")
+                                # d. Aggiornamento degli Stati di Sessione
+                                if "df_iscritti" in st.session_state:
+                                    st.session_state.df_iscritti = df_iscritti
+                                
+                                st.session_state.risultato_ricerca = df_iscritti.loc[[riga_idx]]
+
+                                # e. Pulizia cache lettura Streamlit
+                                st.cache_data.clear()
+
+                                st.success("🎉 Settimane salvate con successo nel file Excel!")
+                                st.rerun()
+
+                            except Exception as err:
+                                st.error(f"❌ Errore durante il salvataggio: {err}")
+
+                    with col_btn_pagamenti:
+                        # 🔗 PULSANTE PER PASSARE AI PAGAMENTI
+                        if st.button(f"💳 Vai ai Pagamenti di {nome_bambino}", use_container_width=True):
+                            st.session_state["seleziona_iscritto_pagamenti"] = nome_completo
+                            st.session_state["pagina_attiva"] = "pagamenti"
                             st.rerun()
-
-                        except Exception as err:
-                            st.error(f"❌ Errore durante il salvataggio: {err}")

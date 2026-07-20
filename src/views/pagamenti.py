@@ -159,6 +159,7 @@ def mostra_pagamenti(df_iscritti):
             stato = "🔴 Da Pagare"
 
         info_iscritto = {
+            "index_df": idx,
             "chiave": chiave,
             "cognome": cognome,
             "nome": nome,
@@ -181,6 +182,21 @@ def mostra_pagamenti(df_iscritti):
         st.info("Nessun iscritto trovato nel database.")
         return
 
+    # --- CONTROLLO REINDIRIZZAMENTO DA ANAGRAFICA ---
+    index_selezionato_default = None
+    opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
+
+    if "seleziona_iscritto_pagamenti" in st.session_state and st.session_state["seleziona_iscritto_pagamenti"]:
+        nome_target = st.session_state["seleziona_iscritto_pagamenti"].strip().upper()
+        
+        for i, opt in enumerate(opzioni_ricerca):
+            if opt.strip().upper() == nome_target:
+                index_selezionato_default = i
+                break
+        
+        # Puliamo lo stato per i prossimi caricamenti
+        del st.session_state["seleziona_iscritto_pagamenti"]
+
     # --- 2. SCHERMATA A TAB ---
     tab_scheda, tab_generale = st.tabs(["🔍 Scheda Singolo Iscritto", "📊 Panoramica Registro Completo"])
 
@@ -190,12 +206,10 @@ def mostra_pagamenti(df_iscritti):
     with tab_scheda:
         st.subheader("🔍 Cerca e Gestisci Iscritto")
         
-        opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
-        
         nome_selezionato = st.selectbox(
             "Digitare il cognome o nome dell'iscritto:",
             options=opzioni_ricerca,
-            index=None,
+            index=index_selezionato_default,
             placeholder="Inizia a digitare il cognome o il nome...",
             help="Seleziona un iscritto per aprire la sua scheda contabile e gestire i pagamenti.",
             key="selectbox_ricerca_iscritto_pagamenti"
@@ -210,13 +224,20 @@ def mostra_pagamenti(df_iscritti):
             st.markdown("---")
             
             # Intestazione Scheda
-            col_head1, col_head2 = st.columns([3, 1])
+            col_head1, col_head2 = st.columns([3, 2])
             with col_head1:
                 st.markdown(f"## 👤 {iscritto['cognome']} {iscritto['nome']}")
                 st.write(f"🗓️ **Frequenze ({iscritto['num_settimane']} sett.):** {iscritto['frequenze_str']}")
                 st.write(f"🏷️ **Tariffa/Promo Applicata:** {iscritto['descrizione_sconto']}")
             with col_head2:
                 st.markdown(f"### Status:\n### {iscritto['stato']}")
+                
+                # 🔗 PULSANTE DI RITORNO ALL'ANAGRAFICA
+                if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True):
+                    st.session_state["id_bambino_corrente"] = iscritto["index_df"]
+                    st.session_state["scheda_attiva"] = "settimane"
+                    st.session_state["pagina_attiva"] = "anagrafiche"
+                    st.rerun()
 
             st.markdown("<br>", unsafe_allow_html=True)
 
