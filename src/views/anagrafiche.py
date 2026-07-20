@@ -697,16 +697,28 @@ def mostra_anagrafiche(df_iscritti):
                     salva_settimane = st.form_submit_button("💾 Salva Settimane", type="primary", use_container_width=True)
                     
                     if salva_settimane:
+                        # 1. Applichiamo le modifiche al DataFrame corrente
                         for col_settimana, valore in nuovi_valori.items():
                             val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
-                            
-                            # Usiamo .loc invece di .at per una gestione dei dtypes più tollerante
                             df_iscritti.loc[riga_index, col_settimana] = val_salva
                         
                         try:
+                            # 2. Salviamo il file Excel su disco
                             df_iscritti.to_excel("iscrizioni.xlsx", index=False)
-                            st.success("✅ Settimane di frequenza salvate correttamente!")
+                            
+                            # 3. AGGIORNAMENTO FONDAMENTALE DELLO STATO:
+                            # Se in st.session_state salvi il dataframe generale (es. st.session_state.df_iscritti),
+                            # aggiornalo direttamente per riflettere le modifiche al rerun:
+                            if "df_iscritti" in st.session_state:
+                                st.session_state.df_iscritti = df_iscritti
+                                
+                            # Se usi una cache per leggere l'excel, puliscila:
+                            st.cache_data.clear()
+                            
+                            # Aggiorniamo la riga cercata nello stato
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
+                            
+                            st.success("✅ Settimane di frequenza salvate correttamente!")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Errore durante il salvataggio: {e}")
