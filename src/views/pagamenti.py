@@ -226,7 +226,7 @@ def mostra_pagamenti(df_iscritti):
                 # 🔗 PULSANTE DI RITORNO ALL'ANAGRAFICA
                 if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True, key=f"btn_vai_anag_{chiave_iscritto}"):
                     st.session_state["id_bambino_corrente"] = iscritto["index_df"]
-                    st.session_state["scheda_attiva"] = "settimane"
+                    st.session_state["scheda_attiva"] = "bambino"
                     st.session_state["pagina_corrente"] = "Anagrafiche Iscritti"  # <-- Nome esatto della pagina in app.py
                     st.rerun()
 
