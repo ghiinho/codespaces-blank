@@ -8,6 +8,7 @@ from src.views.anagrafiche import mostra_anagrafiche
 from src.utils.config_manager import carica_configurazione
 from src.views.impostazioni import mostra_impostazioni
 from src.views.elenchi import mostra_elenchi_settimanali
+from src.views.pagamenti import mostra_pagamenti
 
 # --- INIZIALIZZAZIONE STATO ---
 if "pagina_corrente" not in st.session_state:
@@ -78,8 +79,7 @@ elif st.session_state.pagina_corrente == "Impostazioni":
     mostra_impostazioni()
     
 # ==========================================
-# 4. SEZIONE: GESTIONE PAGAMENTI (Futura)
+# 4. SEZIONE: GESTIONE PAGAMENTI
 # ==========================================
 elif st.session_state.pagina_corrente == "Gestione Pagamenti":
-    st.title("💳 Gestione Pagamenti")
-    st.info("🚧 Questa sezione è in fase di sviluppo. Qui potrai monitorare le quote di iscrizione, i saldi e registrare i pagamenti ricevuti.")
+    mostra_pagamenti(df_iscritti)

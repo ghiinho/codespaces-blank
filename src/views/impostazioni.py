@@ -2,8 +2,8 @@ import streamlit as st
 from src.utils.config_manager import carica_configurazione, salva_configurazione
 
 def mostra_impostazioni():
-    st.title("⚙️ Pannello di Controllo & Moduli")
-    st.write("Personalizza la tua dashboard gestendo impostazioni, moduli, gruppi e listino prezzi.")
+    st.title("⚙️ Pannello di Controllo")
+    st.write("Personalizza la tua dashboard gestendo impostazioni, moduli attivi, gruppi e listino prezzi.")
     st.markdown("---")
 
     # Carica la configurazione corrente
