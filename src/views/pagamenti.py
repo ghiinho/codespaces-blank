@@ -78,32 +78,49 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in conteggio_frequenze.items()]) if conteggio_frequenze else "Nessuna"
 
-        # Applicazione pacchetti sconto
+        # --- APPLICAZIONE PACCHETTI (Migliorata e Tollerante) ---
         totale_netto_calcolato = 0.0
         dettagli_pacchetti_applicati = []
 
         for freq_nome, quantita in conteggio_frequenze.items():
             prezzo_singolo_freq = float(tariffe.get(freq_nome, 0.0))
             
-            # Match flessibile ignorando maiuscole e spazi
+            # 1. Troviamo i pacchetti compatibili con pulizia completa delle stringhe
             pacchetti_freq = []
             for pk in pacchetti:
-                target = str(pk.get("frequenza_target", pk.get("frequenza", ""))).strip().lower()
-                if target == freq_nome.strip().lower() or target in ["", "generica"]:
+                target_pk = str(pk.get("frequenza_target", pk.get("frequenza", ""))).strip().lower()
+                freq_clean = str(freq_nome).strip().lower()
+
+                # Accetta se il target è identico, contenuto, oppure generico/vuoto
+                if target_pk == freq_clean or target_pk in freq_clean or freq_clean in target_pk or target_pk in ["", "generica", "tutte"]:
                     pacchetti_freq.append(pk)
             
+            # 2. Conversione forzata a INT per il numero di settimane del pacchetto
+            def get_num_settimane(pk_dict):
+                val = pk_dict.get("num_settimane", pk_dict.get("min_settimane", 0))
+                try:
+                    return int(val)
+                except (ValueError, TypeError):
+                    return 0
+
+            # 3. Ordiniamo i pacchetti dal più grande al più piccolo (es. 8 sett, poi 4 sett)
             pacchetti_ordinati = sorted(
                 pacchetti_freq, 
-                key=lambda x: int(x.get("num_settimane", x.get("min_settimane", 0))), 
+                key=get_num_settimane, 
                 reverse=True
             )
 
             quantita_rimanente = quantita
             costo_parziale_freq = 0.0
 
+            # 4. Consumo a cascata delle settimane con i pacchetti
             for pk in pacchetti_ordinati:
-                num_s = int(pk.get("num_settimane", pk.get("min_settimane", 0)))
-                prezzo_pk = float(pk.get("prezzo_pacchetto", 0.0))
+                num_s = get_num_settimane(pk)
+                
+                try:
+                    prezzo_pk = float(pk.get("prezzo_pacchetto", 0.0))
+                except (ValueError, TypeError):
+                    prezzo_pk = 0.0
 
                 if num_s > 0 and quantita_rimanente >= num_s:
                     num_volte = quantita_rimanente // num_s
@@ -116,9 +133,11 @@ def mostra_pagamenti(df_iscritti):
                     else:
                         dettagli_pacchetti_applicati.append(f"📦 {nome_pck} ({prezzo_pk:.2f} €)")
 
+            # 5. Aggiungiamo le settimane rimanenti fuori pacchetto al prezzo di listino singolo
             costo_parziale_freq += quantita_rimanente * prezzo_singolo_freq
             totale_netto_calcolato += costo_parziale_freq
 
+        # Calcolo finale Sconto e Netto Dovuto
         sconto_applicato = max(0.0, totale_lordo - totale_netto_calcolato)
 
         if sconto_applicato > 0 and dettagli_pacchetti_applicati:
