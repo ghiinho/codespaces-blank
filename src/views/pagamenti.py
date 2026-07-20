@@ -5,7 +5,7 @@ from src.utils.config_manager import carica_configurazione, salva_configurazione
 
 def mostra_pagamenti(df_iscritti):
     st.title("💳 Gestione Pagamenti & Incassi")
-    st.caption("Cerca un iscritto per aprire la sua scheda contabile dettagliata o consulta il registro generale.")
+    st.caption("Cerca un iscritto per visualizzare la sua scheda, registrare un versamento o consultare lo storico transazioni.")
     st.markdown("---")
 
     config = carica_configurazione()
@@ -16,7 +16,7 @@ def mostra_pagamenti(df_iscritti):
     if not tariffe:
         st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni!")
 
-    # --- 1. MAPPATURA E PREPARAZIONE DATI ---
+    # --- 1. MAPPATURA COLONNE E PREPARAZIONE DATI ---
     mapping = config.get("mappatura_colonne", {})
     colonne_reali = list(df_iscritti.columns)
 
@@ -32,7 +32,6 @@ def mostra_pagamenti(df_iscritti):
     if "registro_pagamenti" not in st.session_state:
         st.session_state.registro_pagamenti = config.get("registro_pagamenti", {})
 
-    # Costruzione struttura dati contabili per ogni iscritto
     elenco_iscritti_dettaglio = {}
     dati_contabili_lista = []
 
@@ -46,33 +45,30 @@ def mostra_pagamenti(df_iscritti):
         chiave = f"{cognome}_{nome}".upper()
         etichetta_ricerca = f"{cognome} {nome}"
 
-        dati_salvati = st.session_state.registro_pagamenti.get(chiave, {
-            "acconto": 0.0,
-            "saldo_versato": 0.0,
-            "sconto_selezionato": "Nessuno (Standard)",
-            "sconto_extra": 0.0,
-            "metodo_pagamento": "Contanti",
-            "data_saldo": None,
-            "note": ""
-        })
-
-        acconto = float(dati_salvati.get("acconto", 0.0))
-        saldo_versato = float(dati_salvati.get("saldo_versato", 0.0))
-        sconto_scelto_utente = dati_salvati.get("sconto_selezionato", "Nessuno (Standard)")
-        sconto_extra = float(dati_salvati.get("sconto_extra", 0.0))
-        metodo_pago = dati_salvati.get("metodo_pagamento", "Contanti")
-        note = dati_salvati.get("note", "")
+        # Recupero o inizializzazione dati con storico transazioni
+        dati_salvati = st.session_state.registro_pagamenti.get(chiave, {})
         
-        data_s = dati_salvati.get("data_saldo")
-        if data_s and isinstance(data_s, str):
-            try:
-                data_s = datetime.strptime(data_s, "%Y-%m-%d").date()
-            except ValueError:
-                data_s = None
-        elif not isinstance(data_s, date):
-            data_s = None
+        # Migrazione da vecchio formato ad array di transazioni (se necessario)
+        transazioni = dati_salvati.get("transazioni", [])
+        if not transazioni:
+            acc_vecchio = float(dati_salvati.get("acconto", 0.0))
+            sal_vecchio = float(dati_salvati.get("saldo_versato", 0.0))
+            if acc_vecchio > 0:
+                transazioni.append({
+                    "id": "mig_acc", "data": "2026-01-01", "tipo": "Acconto", 
+                    "importo": acc_vecchio, "metodo": dati_salvati.get("metodo_pagamento", "Contanti"), 
+                    "note": "Importo precedente"
+                })
+            if sal_vecchio > 0:
+                transazioni.append({
+                    "id": "mig_sal", "data": "2026-01-01", "tipo": "Saldo", 
+                    "importo": sal_vecchio, "metodo": dati_salvati.get("metodo_pagamento", "Contanti"), 
+                    "note": "Importo precedente"
+                })
 
-        # Conteggio frequenze e Lordo
+        totale_incassato = sum(float(t.get("importo", 0.0)) for t in transazioni)
+
+        # Conteggio frequenze e Lordo Listino
         dettaglio_frequenze = {}
         totale_lordo = 0.0
         num_settimane_tot = 0
@@ -99,7 +95,7 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in dettaglio_frequenze.items()]) if dettaglio_frequenze else "Nessuna"
 
-        # Calcolo Miglior Sconto
+        # Algoritmo Best Price Automatico
         valore_pacchetto = 0.0
         nome_pacchetto = ""
         for pk in sorted(pacchetti, key=lambda x: x.get("min_settimane", 0), reverse=True):
@@ -109,38 +105,23 @@ def mostra_pagamenti(df_iscritti):
                 nome_pacchetto = f"📦 {pk.get('nome')} (-{perc}%)"
                 break
 
-        valore_sconto_convenzione = 0.0
-        if sconto_scelto_utente != "Nessuno (Standard)":
-            for sc in sconti_disponibili:
-                if sc["nome"] == sconto_scelto_utente:
-                    if sc["tipo"] == "percentuale":
-                        valore_sconto_convenzione = (totale_lordo * sc["valore"]) / 100.0
-                    else:
-                        valore_sconto_convenzione = float(sc["valore"])
-                    break
-
-        if valore_pacchetto >= valore_sconto_convenzione and valore_pacchetto > 0:
+        if valore_pacchetto > 0:
             sconto_applicato = valore_pacchetto
             descrizione_sconto = nome_pacchetto
-        elif valore_sconto_convenzione > 0:
-            sconto_applicato = valore_sconto_convenzione
-            descrizione_sconto = f"🏷️ {sconto_scelto_utente}"
         else:
             sconto_applicato = 0.0
-            descrizione_sconto = "Nessuno"
+            descrizione_sconto = "Standard (Nessuno)"
 
-        totale_sconti = sconto_applicato + sconto_extra
-        netto_da_pagare = max(0.0, totale_lordo - totale_sconti)
-
-        totale_incassato = acconto + saldo_versato
+        netto_da_pagare = max(0.0, totale_lordo - sconto_applicato)
         rimanente = netto_da_pagare - totale_incassato
 
+        # Stato del Pagamento
         if netto_da_pagare == 0:
             stato = "🟢 Esente"
         elif rimanente <= 0:
             stato = "🟢 Saldato"
         elif totale_incassato > 0:
-            stato = "🟡 Acconto"
+            stato = "🟡 Acconto Versato"
         else:
             stato = "🔴 Da Pagare"
 
@@ -153,17 +134,11 @@ def mostra_pagamenti(df_iscritti):
             "totale_lordo": totale_lordo,
             "descrizione_sconto": descrizione_sconto,
             "sconto_applicato": sconto_applicato,
-            "sconto_extra": sconto_extra,
-            "sconto_selezionato": sconto_scelto_utente,
             "netto_da_pagare": netto_da_pagare,
-            "acconto": acconto,
-            "saldo_versato": saldo_versato,
             "totale_incassato": totale_incassato,
             "rimanente": rimanente,
             "stato": stato,
-            "metodo_pagamento": metodo_pago,
-            "data_saldo": data_s,
-            "note": note
+            "transazioni": transazioni
         }
 
         elenco_iscritti_dettaglio[etichetta_ricerca] = info_iscritto
@@ -173,26 +148,29 @@ def mostra_pagamenti(df_iscritti):
         st.info("Nessun iscritto trovato nel database.")
         return
 
-    # --- 2. SCHERMATA A TAB (SCHEDA DETTAGLIO vs TABELLA GENERALE) ---
+    # --- 2. TAB SISTER (SCHEDA ISCRITTO vs PANORAMICA REGISTRO) ---
     tab_scheda, tab_generale = st.tabs(["🔍 Scheda Singolo Iscritto", "📊 Panoramica Registro Completo"])
 
     # ==========================================
     # TAB 1: SCHEDA DETTAGLIO ISCRITTO
     # ==========================================
     with tab_scheda:
-        st.subheader("🔍 Ricerca e Gestione Scheda Iscritto")
+        st.subheader("🔍 Cerca e Gestisci Iscritto")
         
         opzioni_ricerca = sorted(list(elenco_iscritti_dettaglio.keys()))
         
-        # Barra di ricerca autocompletante
+        # BARRA DI RICERCA SENZA PRECARICAMENTO (index=None)
         nome_selezionato = st.selectbox(
-            "Cerca iscritto (digita Cognome o Nome):",
+            "Digitare il cognome o nome dell'iscritto:",
             options=opzioni_ricerca,
-            index=0,
-            help="Inizia a digitare il cognome o nome dell'iscritto per aprire la sua scheda contabile"
+            index=None,
+            placeholder="Inizia a digitare il cognome o il nome...",
+            help="Seleziona un iscritto per aprire la sua scheda contabile e gestire i pagamenti."
         )
 
-        if nome_selezionato:
+        if not nome_selezionato:
+            st.info("💡 Inizia a digitare il nome dell'iscritto nella barra di ricerca in alto per caricare la scheda dettagliata.")
+        else:
             iscritto = elenco_iscritti_dettaglio[nome_selezionato]
             chiave_iscritto = iscritto["chiave"]
 
@@ -202,103 +180,111 @@ def mostra_pagamenti(df_iscritti):
             col_head1, col_head2 = st.columns([3, 1])
             with col_head1:
                 st.markdown(f"## 👤 {iscritto['cognome']} {iscritto['nome']}")
-                st.write(f"🗓️ **Frequenze Svolte ({iscritto['num_settimane']} sett.):** {iscritto['frequenze_str']}")
+                st.write(f"🗓️ **Frequenze ({iscritto['num_settimane']} sett.):** {iscritto['frequenze_str']}")
+                st.write(f"🏷️ **Tariffa/Promo Applicata:** {iscritto['descrizione_sconto']}")
             with col_head2:
-                st.markdown(f"### Stato: {iscritto['stato']}")
+                st.markdown(f"### Status:\n### {iscritto['stato']}")
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Riepilogo Economico a Card (KPI)
+            # Card metriche contabili
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Lordo Listino", f"{iscritto['totale_lordo']:.2f} €")
-            c2.metric("Sconto Applicato", f"{(iscritto['sconto_applicato'] + iscritto['sconto_extra']):.2f} €", delta=iscritto['descrizione_sconto'])
+            c2.metric("Sconto Promo", f"{iscritto['sconto_applicato']:.2f} €")
             c3.metric("Netto Dovuto", f"{iscritto['netto_da_pagare']:.2f} €")
             c4.metric("Rimanente da Pagare", f"{iscritto['rimanente']:.2f} €", delta_color="inverse")
 
             st.markdown("---")
 
-            # Form d'Incasso e Gestione Sconti
-            st.markdown("### 📝 Aggiorna Incasso e Convenzioni")
+            # SEZIONE: REGISTRA NUOVA TRANSAZIONE
+            st.markdown("### ➕ Registra Nuovo Versamento")
             
-            with st.form(f"form_pagamento_{chiave_iscritto}"):
-                col_f1, col_f2 = st.columns(2)
+            with st.form(f"form_nuovo_versamento_{chiave_iscritto}", clear_on_submit=True):
+                col_v1, col_v2, col_v3 = st.columns(3)
                 
-                with col_f1:
-                    st.markdown("##### 🏷️ Convenzioni & Sconti Extra")
-                    
-                    opzioni_sconto = ["Nessuno (Standard)"] + [s["nome"] for s in sconti_disponibili]
-                    idx_sconto = opzioni_sconto.index(iscritto["sconto_selezionato"]) if iscritto["sconto_selezionato"] in opzioni_sconto else 0
-                    
-                    nuovo_sconto_sel = st.selectbox(
-                        "Seleziona Convenzione/Categoria:",
-                        options=opzioni_sconto,
-                        index=idx_sconto,
-                        help="Il sistema confronterà la convenzione con i pacchetti promozionali per applicare il prezzo migliore."
-                    )
-
-                    nuovo_sconto_extra = st.number_input(
-                        "Sconto Extra Manuale (€):",
-                        min_value=0.0,
-                        value=float(iscritto["sconto_extra"]),
+                with col_v1:
+                    importo_versato = st.number_input(
+                        "Importo Versato (€):",
+                        min_value=0.01,
+                        max_value=max(0.01, float(iscritto["rimanente"] if iscritto["rimanente"] > 0 else 2000.0)),
+                        value=float(iscritto["rimanente"]) if iscritto["rimanente"] > 0 else 10.0,
                         step=5.0
                     )
+                    tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo", "Integrazione", "Caparra"])
 
-                    nuove_note = st.text_area("Note / Ragione Sconto:", value=iscritto["note"], height=100)
+                with col_v2:
+                    metodo_pago = st.selectbox("Metodo di Pagamento:", ["Contanti", "POS", "Bonifico", "Satispay"])
+                    data_transazione = st.date_input("Data Versamento:", value=date.today())
 
-                with col_f2:
-                    st.markdown("##### 💵 Registrazione Importi e Saldo")
+                with col_v3:
+                    note_transazione = st.text_area("Note / N. Ricevuta:", value="", height=100, placeholder="Es. Ricevuta N° 45, riferimento bonifico...")
 
-                    nuovo_acconto = st.number_input(
-                        "Acconto Versato (€):",
-                        min_value=0.0,
-                        value=float(iscritto["acconto"]),
-                        step=10.0
-                    )
+                btn_registra = st.form_submit_button("💳 Salva e Registra Versamento", type="primary", use_container_width=True)
 
-                    nuovo_saldo = st.number_input(
-                        "Saldo Versato (€):",
-                        min_value=0.0,
-                        value=float(iscritto["saldo_versato"]),
-                        step=10.0
-                    )
+                if btn_registra:
+                    nuova_tx = {
+                        "id": datetime.now().strftime("%Y%m%d_%H%M%S"),
+                        "data": data_transazione.strftime("%Y-%m-%d"),
+                        "tipo": tipo_transazione,
+                        "importo": float(importo_versato),
+                        "metodo": metodo_pago,
+                        "note": note_transazione
+                    }
 
-                    opzioni_metodo = ["Contanti", "POS", "Bonifico", "Satispay"]
-                    idx_metodo = opzioni_metodo.index(iscritto["metodo_pagamento"]) if iscritto["metodo_pagamento"] in opzioni_metodo else 0
-                    
-                    nuovo_metodo = st.selectbox(
-                        "Metodo di Pagamento:",
-                        options=opzioni_metodo,
-                        index=idx_metodo
-                    )
-
-                    valore_data_def = iscritto["data_saldo"] if iscritto["data_saldo"] else date.today()
-                    nuova_data = st.date_input(
-                        "Data Saldo:",
-                        value=valore_data_def
-                    )
-
-                st.markdown("<br>", unsafe_allow_html=True)
-                btn_salva = st.form_submit_button("💾 Salva Scheda Iscritto", type="primary", use_container_width=True)
-
-                if btn_salva:
-                    d_saldo_str = nuova_data.strftime("%Y-%m-%d") if nuova_data else None
+                    # Aggiunta transazione allo storico
+                    transazioni_attuali = st.session_state.registro_pagamenti.get(chiave_iscritto, {}).get("transazioni", [])
+                    transazioni_attuali.append(nuova_tx)
 
                     st.session_state.registro_pagamenti[chiave_iscritto] = {
-                        "acconto": float(nuovo_acconto),
-                        "saldo_versato": float(nuovo_saldo),
-                        "sconto_selezionato": nuovo_sconto_sel,
-                        "sconto_extra": float(nuovo_sconto_extra),
-                        "metodo_pagamento": nuovo_metodo,
-                        "data_saldo": d_saldo_str,
-                        "note": nuove_note
+                        "transazioni": transazioni_attuali
                     }
 
                     config["registro_pagamenti"] = st.session_state.registro_pagamenti
                     if salva_configurazione(config):
-                        st.success(f"🎉 Pagamento di {iscritto['cognome']} {iscritto['nome']} salvato con successo!")
+                        st.success(f"🎉 Versamento di {importo_versato:.2f} € registrato con successo per {iscritto['cognome']} {iscritto['nome']}!")
                         st.rerun()
                     else:
                         st.error("❌ Errore durante il salvataggio.")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # SEZIONE: STORICO TRANSAZIONI
+            st.markdown("### 📜 Storico Transazioni ed Incassi Effettuati")
+            
+            transazioni_list = iscritto["transazioni"]
+            if not transazioni_list:
+                st.info("Nessun versamento ancora registrato per questo iscritto.")
+            else:
+                df_tx = pd.DataFrame(transazioni_list)
+                
+                # Visualizzazione pulita della tabella storico
+                st.dataframe(
+                    df_tx[["data", "tipo", "importo", "metodo", "note"]],
+                    use_container_width=True,
+                    column_config={
+                        "data": st.column_config.DateColumn("Data Versamento", format="DD/MM/YYYY"),
+                        "tipo": "Causale",
+                        "importo": st.column_config.NumberColumn("Importo (€)", format="%.2f €"),
+                        "metodo": "Metodo",
+                        "note": "Note / Ricevuta"
+                    },
+                    hide_index=True
+                )
+
+                # Gestione eventuale storno/eliminazione errore
+                with st.expander("🗑️ Annulla o elimina una transazione errata"):
+                    opzioni_tx = {f"{t['data']} - {t['tipo']} di {t['importo']:.2f}€ ({t['metodo']})": t["id"] for t in transazioni_list}
+                    tx_da_eliminare = st.selectbox("Seleziona versamento da cancellare:", options=list(opzioni_tx.keys()))
+                    
+                    if st.button("❌ Elimina Transazione Selezionata", type="secondary"):
+                        id_target = opzioni_tx[tx_da_eliminare]
+                        nuove_tx = [t for t in transazioni_list if t["id"] != id_target]
+                        
+                        st.session_state.registro_pagamenti[chiave_iscritto]["transazioni"] = nuove_tx
+                        config["registro_pagamenti"] = st.session_state.registro_pagamenti
+                        salva_configurazione(config)
+                        st.warning("Transazione eliminata ed importi ricalcolati.")
+                        st.rerun()
 
     # ==========================================
     # TAB 2: TABELLA GENERALE
@@ -313,7 +299,7 @@ def mostra_pagamenti(df_iscritti):
         tot_rimanente = df_gen["rimanente"].sum()
 
         m1, m2, m3 = st.columns(3)
-        m1.metric("Totale Dovuto", f"{tot_dovuto:.2f} €")
+        m1.metric("Totale Atteso", f"{tot_dovuto:.2f} €")
         m2.metric("Totale Incassato", f"{tot_incassato:.2f} €", delta=f"{(tot_incassato/tot_dovuto*100 if tot_dovuto>0 else 0):.1f}%")
         m3.metric("Rimanente Da Incassare", f"{tot_rimanente:.2f} €", delta_color="inverse")
 
@@ -322,8 +308,7 @@ def mostra_pagamenti(df_iscritti):
         st.dataframe(
             df_gen[[
                 "cognome", "nome", "frequenze_str", "descrizione_sconto",
-                "netto_da_pagare", "acconto", "saldo_versato", "rimanente",
-                "stato", "metodo_pagamento", "data_saldo"
+                "netto_da_pagare", "totale_incassato", "rimanente", "stato"
             ]],
             use_container_width=True,
             column_config={
@@ -332,12 +317,9 @@ def mostra_pagamenti(df_iscritti):
                 "frequenze_str": "Frequenze",
                 "descrizione_sconto": "Sconto / Promo",
                 "netto_da_pagare": st.column_config.NumberColumn("Totale Dovuto (€)", format="%.2f €"),
-                "acconto": st.column_config.NumberColumn("Acconto (€)", format="%.2f €"),
-                "saldo_versato": st.column_config.NumberColumn("Saldo (€)", format="%.2f €"),
+                "totale_incassato": st.column_config.NumberColumn("Totale Incassato (€)", format="%.2f €"),
                 "rimanente": st.column_config.NumberColumn("Rimanente (€)", format="%.2f €"),
-                "stato": "Stato",
-                "metodo_pagamento": "Metodo",
-                "data_saldo": st.column_config.DateColumn("Data Saldo", format="DD/MM/YYYY")
+                "stato": "Stato"
             },
             hide_index=True
         )
