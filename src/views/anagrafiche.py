@@ -46,33 +46,71 @@ def mostra_anagrafiche(df_iscritti):
     if "modalita_modifica" not in st.session_state:
         st.session_state.modalita_modifica = False
 
-    # --- MAPPATURA COLONNE ---
+    # --- MAPPATURA COLONNE (DINAMICA DA CONFIG E FALLBACK SICURO) ---
+    config = carica_configurazione()
+    mapping = config.get("mappatura_colonne", {})
     colonne_reali = list(df_iscritti.columns)
-    id_colonna = colonne_reali[0] # ID/Timestamp o prima colonna univoca
     
-    # Genitore (B - G)
-    col_g_email = colonne_reali[1]
-    col_g_cognome = colonne_reali[2]
-    col_g_nome = colonne_reali[3]
-    col_g_tel = colonne_reali[4]
-    col_g_nascita = colonne_reali[5]
-    col_g_cf = colonne_reali[6]
+    # 1. ID / Timestamp univoco (usiamo la prima colonna se non specificata)
+    id_colonna = colonne_reali[0]
 
-    # Bambino (H - R)
-    col_cognome = colonne_reali[7]
-    col_nome = colonne_reali[8]
-    col_nascita = colonne_reali[9]
-    col_luogo = colonne_reali[10]
-    col_via = colonne_reali[11]
-    col_civico = colonne_reali[12]
-    col_cap = colonne_reali[13]
-    col_citta = colonne_reali[14]
-    col_cf = colonne_reali[15]
-    col_allergie = colonne_reali[16]
-    col_quali = colonne_reali[17]
+    # 2. Dati Genitore
+    col_g_email = mapping.get("email_genitore", "INDIRIZZO EMAIL")
+    col_g_cognome = mapping.get("cognome_genitore", "COGNOME GENITORE")
+    col_g_nome = mapping.get("nome_genitore", "NOME GENITORE")
+    col_g_tel = mapping.get("recapito", "TELEFONO GENITORE")
+    col_g_nascita = mapping.get("data_nascita_genitore", "DATA DI NASCITA GENITORE")
+    col_g_cf = mapping.get("cf_genitore", "CODICE FISCALE GENITORE")
 
-    # Settimane (Dinamica)
-    colonne_settimane = [col for col in colonne_reali if "settiman" in str(col).lower()]
+    # 3. Dati Bambino / Minore
+    col_cognome = mapping.get("cognome", "COGNOME MINORE")
+    col_nome = mapping.get("nome", "NOME MINORE")
+    col_nascita = mapping.get("data_nascita", "DATA DI NASCITA MINORE")
+    col_luogo = mapping.get("luogo_nascita", "LUOGO DI NASCITA MINORE")
+    col_via = mapping.get("indirizzo", "INDIRIZZO DI RESIDENZA")
+    col_civico = mapping.get("civico", "N. CIVICO")
+    col_cap = mapping.get("cap", "CAP")
+    col_citta = mapping.get("citta", "CITTA'")
+    col_cf = mapping.get("codice_fiscale", "CODICE FISCALE MINORE")
+    col_allergie = mapping.get("allergie", "ALLERGIE O INTOLLERANZE?")
+    col_quali = mapping.get("note_allergie", "SE SI, INDICA QUALI")
+
+    # Funzione di aiuto per verificare se la colonna esiste realmente nel file caricato
+    def recupera_colonna_valida(nome_cercato, indice_fallback):
+        # Se la colonna mappata esiste nel file Excel, usiamo quella
+        if nome_cercato in colonne_reali:
+            return nome_cercato
+        # Altrimenti, usiamo la posizione d'emergenza
+        if len(colonne_reali) > indice_fallback:
+            return colonne_reali[indice_fallback]
+        return nome_cercato
+
+    # Assegnazione blindata
+    col_g_email = recupera_colonna_valida(col_g_email, 1)
+    col_g_cognome = recupera_colonna_valida(col_g_cognome, 2)
+    col_g_nome = recupera_colonna_valida(col_g_nome, 3)
+    col_g_tel = recupera_colonna_valida(col_g_tel, 4)
+    col_g_nascita = recupera_colonna_valida(col_g_nascita, 5)
+    col_g_cf = recupera_colonna_valida(col_g_cf, 6)
+
+    col_cognome = recupera_colonna_valida(col_cognome, 7)
+    col_nome = recupera_colonna_valida(col_nome, 8)
+    col_nascita = recupera_colonna_valida(col_nascita, 9)
+    col_luogo = recupera_colonna_valida(col_luogo, 10)
+    col_via = recupera_colonna_valida(col_via, 11)
+    col_civico = recupera_colonna_valida(col_civico, 12)
+    col_cap = recupera_colonna_valida(col_cap, 13)
+    col_citta = recupera_colonna_valida(col_citta, 14)
+    col_cf = recupera_colonna_valida(col_cf, 15)
+    col_allergie = recupera_colonna_valida(col_allergie, 16)
+    col_quali = recupera_colonna_valida(col_quali, 17)
+
+    # 4. Settimane (Rilevamento automatico e flessibile)
+    prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip().lower()
+    colonne_settimane = [
+        col for col in colonne_reali 
+        if "settiman" in str(col).lower() or prefisso in str(col).lower()
+    ]
 
     # ==========================================
     # 1. PREPARAZIONE DELLA LISTA DI RICERCA
