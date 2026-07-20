@@ -653,21 +653,22 @@ def mostra_anagrafiche(df_iscritti):
             st.write("Seleziona il tipo di iscrizione per ciascuna settimana e salva.")
 
             if colonne_settimane:
-                # --- SOLUZIONE ERRORE PANDAS ---
-                # Convertiamo PREVENTIVAMENTE tutte le colonne delle settimane in tipo 'object' (testo)
-                # in modo che Pandas non vada in crash se nel nuovo Excel erano colonne numeriche/vuote.
+                # 1. Pulizia preventiva dei tipi di colonna
                 for col in colonne_settimane:
                     df_iscritti[col] = df_iscritti[col].astype(object)
 
                 opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
+
+                # Rileggiamo la riga aggiornata corrente dal DataFrame
+                riga_corrente = df_iscritti.loc[riga_index]
 
                 with st.form("form_modifica_settimane"):
                     col_cards = st.columns(4)
                     nuovi_valori = {}
 
                     for i, col_settimana in enumerate(colonne_settimane):
-                        valore_grezzo = riga_bambino[col_settimana]
-                        valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) else ""
+                        valore_grezzo = riga_corrente[col_settimana]
+                        valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) and str(valore_grezzo).strip() != "nan" else ""
                         
                         nome_pulito = col_settimana.replace("SETTIMANE DISPONIBILI", "").strip()
                         if not nome_pulito: nome_pulito = col_settimana
@@ -697,25 +698,22 @@ def mostra_anagrafiche(df_iscritti):
                     salva_settimane = st.form_submit_button("💾 Salva Settimane", type="primary", use_container_width=True)
                     
                     if salva_settimane:
-                        # 1. Applichiamo le modifiche al DataFrame corrente
+                        # 2. Aggiorniamo i valori nella riga corretta di df_iscritti
                         for col_settimana, valore in nuovi_valori.items():
                             val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
-                            df_iscritti.loc[riga_index, col_settimana] = val_salva
+                            df_iscritti.at[riga_index, col_settimana] = val_salva
                         
                         try:
-                            # 2. Salviamo il file Excel su disco
+                            # 3. Salviamo su file Excel
                             df_iscritti.to_excel("iscrizioni.xlsx", index=False)
                             
-                            # 3. AGGIORNAMENTO FONDAMENTALE DELLO STATO:
-                            # Se in st.session_state salvi il dataframe generale (es. st.session_state.df_iscritti),
-                            # aggiornalo direttamente per riflettere le modifiche al rerun:
-                            if "df_iscritti" in st.session_state:
-                                st.session_state.df_iscritti = df_iscritti
-                                
-                            # Se usi una cache per leggere l'excel, puliscila:
+                            # 4. Svuotiamo la cache per azzerare eventuali vecchie letture
                             st.cache_data.clear()
                             
-                            # Aggiorniamo la riga cercata nello stato
+                            # 5. Aggiorniamo sia df_iscritti che risultato_ricerca in session_state
+                            if "df_iscritti" in st.session_state:
+                                st.session_state.df_iscritti = df_iscritti
+                            
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
                             
                             st.success("✅ Settimane di frequenza salvate correttamente!")
