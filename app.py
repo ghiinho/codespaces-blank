@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import database_utils as db_utils  # Le tue utility esistenti
 
 # IMPORTIAMO I NUOVI MODULI CHE ABBIAMO CREATO
@@ -9,6 +10,16 @@ from src.utils.config_manager import carica_configurazione
 from src.views.impostazioni import mostra_impostazioni
 from src.views.elenchi import mostra_elenchi_settimanali
 from src.views.pagamenti import mostra_pagamenti
+
+# --- CARICAMENTO CORRETTO E PERSISTENTE ---
+if "df_iscritti" not in st.session_state:
+    # 1. Carichiamo l'excel solo la prima volta che si apre l'app
+    df_iscritti = pd.read_excel("iscrizioni.xlsx")
+    # 2. Forziamo il tipo 'object' su tutte le colonne per evitare blocchi
+    st.session_state.df_iscritti = df_iscritti.astype(object)
+
+# Usiamo SEMPRE la versione memorizzata nello stato
+df_iscritti = st.session_state.df_iscritti
 
 # --- INIZIALIZZAZIONE STATO ---
 if "pagina_corrente" not in st.session_state:

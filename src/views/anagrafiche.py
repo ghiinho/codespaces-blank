@@ -652,7 +652,7 @@ def mostra_anagrafiche(df_iscritti):
             st.markdown(f"### 📅 Gestione Iscrizioni Settimanali")
             st.write("Seleziona il tipo di iscrizione per ciascuna settimana e salva.")
 
-            # Rileviamo le nuove colonne che contengono "PERIODI DISPONIBILI" o "SETTIMAN"
+            # Rileviamo le colonne delle settimane del nuovo Master
             colonne_settimane = [
                 col for col in df_iscritti.columns 
                 if "PERIODI DISPONIBILI" in str(col).upper() or "SETTIMAN" in str(col).upper()
@@ -661,73 +661,70 @@ def mostra_anagrafiche(df_iscritti):
             if colonne_settimane:
                 opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
 
-                # Rileggiamo l'indice reale del bambino
+                # Indice del bambino selezionato
                 riga_index = st.session_state.id_bambino_corrente
 
-                with st.form("form_modifica_settimane"):
-                    col_cards = st.columns(4)
-                    nuovi_valori = {}
+                col_cards = st.columns(4)
+                nuovi_valori = {}
 
-                    for i, col_settimana in enumerate(colonne_settimane):
-                        # Valore corrente nel DataFrame
-                        valore_grezzo = df_iscritti.at[riga_index, col_settimana]
-                        valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) and str(valore_grezzo).strip() not in ["nan", "None"] else ""
-                        
-                        # Creiamo un nome pulito ed elegante per la card (es. "Settimana 1", "Settimana 2", ecc.)
-                        nome_pulito = str(col_settimana).replace("PERIODI DISPONIBILI", "").replace("SETTIMANE DISPONIBILI", "").strip()
-                        if not nome_pulito:
-                            nome_pulito = f"Settimana {i+1}"
-                        else:
-                            nome_pulito = f"Settimana {i+1} ({nome_pulito})"
-
-                        indice_default = opzioni_frequenza.index(valore_cella) if valore_cella in opzioni_frequenza else 0
-                        col_index = i % 4
-                        
-                        with col_cards[col_index]:
-                            colore_b_s, colore_f_s = ("#10b981", "#f0fdf4") if indice_default > 0 else ("#cbd5e1", "#f8fafc")
-                            st.markdown(
-                                f"""
-                                <div style="background-color: {colore_f_s}; border-top: 4px solid {colore_b_s}; padding: 10px; border-radius: 6px 6px 0 0; text-align: center;">
-                                    <span style="font-weight: bold; font-size: 13px; color: #1e293b;">{nome_pulito}</span>
-                                </div>
-                                """, unsafe_allow_html=True
-                            )
-                            scelta = st.selectbox(
-                                label=f"Stato {col_settimana}",
-                                options=opzioni_frequenza,
-                                index=indice_default,
-                                key=f"sel_{i}_{riga_index}",
-                                label_visibility="collapsed"
-                            )
-                            nuovi_valori[col_settimana] = scelta
-
-                    st.markdown("---")
-                    salva_settimane = st.form_submit_button("💾 Salva Settimane", type="primary", use_container_width=True)
+                for i, col_settimana in enumerate(colonne_settimane):
+                    # Forziamo la colonna in object per sicurezza
+                    df_iscritti[col_settimana] = df_iscritti[col_settimana].astype(object)
                     
-                    if salva_settimane:
-                        # 1. Convertiamo le colonne interessate in tipo object prima di scriverci
-                        for col_settimana in nuovi_valori.keys():
-                            df_iscritti[col_settimana] = df_iscritti[col_settimana].astype(object)
+                    # Recupero valore
+                    valore_grezzo = df_iscritti.at[riga_index, col_settimana]
+                    valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) and str(valore_grezzo).strip() not in ["nan", "None", "<NA>"] else ""
+                    
+                    # Nome pulito della settimana
+                    nome_pulito = str(col_settimana).replace("PERIODI DISPONIBILI", "").replace("SETTIMANE DISPONIBILI", "").strip()
+                    if not nome_pulito:
+                        nome_pulito = f"Settimana {i+1}"
+                    else:
+                        nome_pulito = f"Settimana {i+1} ({nome_pulito})"
 
-                        # 2. Assegniamo i nuovi valori
-                        for col_settimana, valore in nuovi_valori.items():
-                            val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
-                            df_iscritti.at[riga_index, col_settimana] = val_salva
+                    indice_default = opzioni_frequenza.index(valore_cella) if valore_cella in opzioni_frequenza else 0
+                    col_index = i % 4
+                    
+                    with col_cards[col_index]:
+                        # Se è iscritto (indice > 0) -> Verde, altrimenti Grigio
+                        colore_b_s, colore_f_s = ("#10b981", "#f0fdf4") if indice_default > 0 else ("#cbd5e1", "#f8fafc")
+                        st.markdown(
+                            f"""
+                            <div style="background-color: {colore_f_s}; border-top: 4px solid {colore_b_s}; padding: 10px; border-radius: 6px 6px 0 0; text-align: center;">
+                                <span style="font-weight: bold; font-size: 13px; color: #1e293b;">{nome_pulito}</span>
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
                         
-                        try:
-                            # 3. Salviamo il file Excel
-                            df_iscritti.to_excel("iscrizioni.xlsx", index=False)
-                            
-                            # 4. Aggiorniamo lo stato di Streamlit
-                            if "df_iscritti" in st.session_state:
-                                st.session_state.df_iscritti = df_iscritti
-                            
-                            st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
-                            st.cache_data.clear()
-                            
-                            st.success("✅ Settimane di frequenza salvate correttamente!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Errore durante il salvataggio: {e}")
+                        # Selectbox con chiave unica basata su valore e riga
+                        scelta = st.selectbox(
+                            label=f"Stato {col_settimana}",
+                            options=opzioni_frequenza,
+                            index=indice_default,
+                            key=f"sel_sett_{i}_{riga_index}",
+                            label_visibility="collapsed"
+                        )
+                        nuovi_valori[col_settimana] = scelta
+
+                st.markdown("---")
+                
+                # BOTTORE SALVA FUORI DAL FORM
+                if st.button("💾 Salva Settimane", type="primary", use_container_width=True):
+                    # 1. Aggiorniamo il DataFrame in memoria
+                    for col_settimana, valore in nuovi_valori.items():
+                        val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
+                        df_iscritti.at[riga_index, col_settimana] = val_salva
+                    
+                    # 2. Aggiorniamo lo stato di sessione principale
+                    st.session_state.df_iscritti = df_iscritti
+                    st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
+
+                    # 3. Scrittura fisica su Excel
+                    try:
+                        df_iscritti.to_excel("iscrizioni.xlsx", index=False)
+                        st.success("✅ Settimane salvate con successo!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Errore durante la scrittura del file Excel: {e}")
             else:
                 st.warning("⚠️ Nessuna colonna 'PERIODI DISPONIBILI' trovata nel file Excel.")
