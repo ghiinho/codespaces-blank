@@ -652,26 +652,33 @@ def mostra_anagrafiche(df_iscritti):
             st.markdown(f"### 📅 Gestione Iscrizioni Settimanali")
             st.write("Seleziona il tipo di iscrizione per ciascuna settimana e salva.")
 
-            if colonne_settimane:
-                # 1. Pulizia preventiva dei tipi di colonna
-                for col in colonne_settimane:
-                    df_iscritti[col] = df_iscritti[col].astype(object)
+            # Rileviamo le nuove colonne che contengono "PERIODI DISPONIBILI" o "SETTIMAN"
+            colonne_settimane = [
+                col for col in df_iscritti.columns 
+                if "PERIODI DISPONIBILI" in str(col).upper() or "SETTIMAN" in str(col).upper()
+            ]
 
+            if colonne_settimane:
                 opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
 
-                # Rileggiamo la riga aggiornata corrente dal DataFrame
-                riga_corrente = df_iscritti.loc[riga_index]
+                # Rileggiamo l'indice reale del bambino
+                riga_index = st.session_state.id_bambino_corrente
 
                 with st.form("form_modifica_settimane"):
                     col_cards = st.columns(4)
                     nuovi_valori = {}
 
                     for i, col_settimana in enumerate(colonne_settimane):
-                        valore_grezzo = riga_corrente[col_settimana]
-                        valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) and str(valore_grezzo).strip() != "nan" else ""
+                        # Valore corrente nel DataFrame
+                        valore_grezzo = df_iscritti.at[riga_index, col_settimana]
+                        valore_cella = str(valore_grezzo).strip() if pd.notnull(valore_grezzo) and str(valore_grezzo).strip() not in ["nan", "None"] else ""
                         
-                        nome_pulito = col_settimana.replace("SETTIMANE DISPONIBILI", "").strip()
-                        if not nome_pulito: nome_pulito = col_settimana
+                        # Creiamo un nome pulito ed elegante per la card (es. "Settimana 1", "Settimana 2", ecc.)
+                        nome_pulito = str(col_settimana).replace("PERIODI DISPONIBILI", "").replace("SETTIMANE DISPONIBILI", "").strip()
+                        if not nome_pulito:
+                            nome_pulito = f"Settimana {i+1}"
+                        else:
+                            nome_pulito = f"Settimana {i+1} ({nome_pulito})"
 
                         indice_default = opzioni_frequenza.index(valore_cella) if valore_cella in opzioni_frequenza else 0
                         col_index = i % 4
@@ -686,10 +693,10 @@ def mostra_anagrafiche(df_iscritti):
                                 """, unsafe_allow_html=True
                             )
                             scelta = st.selectbox(
-                                label=f"Stato {nome_pulito}",
+                                label=f"Stato {col_settimana}",
                                 options=opzioni_frequenza,
                                 index=indice_default,
-                                key=f"sel_{col_settimana}",
+                                key=f"sel_{i}_{riga_index}",
                                 label_visibility="collapsed"
                             )
                             nuovi_valori[col_settimana] = scelta
@@ -698,25 +705,29 @@ def mostra_anagrafiche(df_iscritti):
                     salva_settimane = st.form_submit_button("💾 Salva Settimane", type="primary", use_container_width=True)
                     
                     if salva_settimane:
-                        # 2. Aggiorniamo i valori nella riga corretta di df_iscritti
+                        # 1. Convertiamo le colonne interessate in tipo object prima di scriverci
+                        for col_settimana in nuovi_valori.keys():
+                            df_iscritti[col_settimana] = df_iscritti[col_settimana].astype(object)
+
+                        # 2. Assegniamo i nuovi valori
                         for col_settimana, valore in nuovi_valori.items():
                             val_salva = "" if valore == "NON ISCRITTO ❌" else str(valore)
                             df_iscritti.at[riga_index, col_settimana] = val_salva
                         
                         try:
-                            # 3. Salviamo su file Excel
+                            # 3. Salviamo il file Excel
                             df_iscritti.to_excel("iscrizioni.xlsx", index=False)
                             
-                            # 4. Svuotiamo la cache per azzerare eventuali vecchie letture
-                            st.cache_data.clear()
-                            
-                            # 5. Aggiorniamo sia df_iscritti che risultato_ricerca in session_state
+                            # 4. Aggiorniamo lo stato di Streamlit
                             if "df_iscritti" in st.session_state:
                                 st.session_state.df_iscritti = df_iscritti
                             
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
+                            st.cache_data.clear()
                             
                             st.success("✅ Settimane di frequenza salvate correttamente!")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Errore durante il salvataggio: {e}")
+            else:
+                st.warning("⚠️ Nessuna colonna 'PERIODI DISPONIBILI' trovata nel file Excel.")
