@@ -205,8 +205,6 @@ def mostra_pagamenti(df_iscritti):
                 with col_v1:
                     importo_versato = st.number_input(
                         "Importo Versato (€):",
-                        min_value=0.01,
-                        max_value=max(0.01, float(iscritto["rimanente"] if iscritto["rimanente"] > 0 else 2000.0))
                     )
                     tipo_transazione = st.selectbox("Causale Versamento:", ["Acconto", "Saldo"])
 
