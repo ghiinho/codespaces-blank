@@ -251,10 +251,10 @@ def mostra_impostazioni():
     
         # 1. Recuperiamo le frequenze disponibili e la lista dei pacchetti dal config
         # Se non esistono ancora nel config, usiamo liste vuote
-        tariffe_singole = config.get("tariffe_frequenze", {})  # es. {"GIORNATA INTERA": 135, ...}
+        tariffe = config.get("tariffe", {})  # es. {"GIORNATA INTERA": 135, ...}
         pacchetti = config.get("pacchetti_promozionali", [])   # lista dei pacchetti salvati
         
-        opzioni_frequenza = [f for f in tariffe_singole.keys() if f != "NON ISCRITTO ❌"]
+        opzioni_frequenza = [f for f in tariffe.keys() if f != "NON ISCRITTO ❌"]
 
         if not opzioni_frequenza:
             st.warning("⚠️ Imposta prima le tariffe singole per ciascuna frequenza per poter creare i pacchetti.")
