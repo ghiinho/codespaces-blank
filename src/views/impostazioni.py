@@ -209,9 +209,9 @@ def mostra_impostazioni():
 
         with col_sc1:
             with st.form(key="form_nuovo_sconto", clear_on_submit=True):
-                nome_sconto = st.text_input("✍️ Nome Sconto:", placeholder="Es. Sconto Secondo Fratello").strip()
+                nome_sconto = st.text_input("✍️ Nome Sconto:", placeholder="Es. Sconto Fratello").strip()
                 tipo_sconto = st.selectbox("Tipo Sconto:", ["Percentuale (%)", "Fisso (€)"])
-                valore_sconto = st.number_input("Valore Sconto:", min_value=0.0, step=1.0, value=10.0)
+                valore_sconto = st.number_input("Valore Sconto:", min_value=0.0)
                 btn_add_sconto = st.form_submit_button("➕ Aggiungi Sconto", use_container_width=True)
 
             if btn_add_sconto:
@@ -255,7 +255,7 @@ def mostra_impostazioni():
             with st.form(key="form_nuovo_pacchetto", clear_on_submit=True):
                 nome_pck = st.text_input("✍️ Nome Pacchetto:", placeholder="Es. Pacchetto 4 Settimane").strip()
                 min_settimane = st.number_input("Minimo settimane iscritte:", min_value=2, max_value=12, value=4)
-                sconto_pck_perc = st.number_input("Sconto applicato sul totale (%):", min_value=1.0, max_value=100.0, value=10.0)
+                prezzo_pck = st.number_input("Prezzo totale del pacchetto (€):", min_value=0.0)
                 btn_add_pck = st.form_submit_button("➕ Aggiungi Pacchetto", use_container_width=True)
 
             if btn_add_pck:
@@ -263,7 +263,7 @@ def mostra_impostazioni():
                     nuovo_pk = {
                         "nome": nome_pck,
                         "min_settimane": min_settimane,
-                        "sconto_percentuale": sconto_pck_perc
+                        "sconto_percentuale": prezzo_pck
                     }
                     config["pacchetti"].append(nuovo_pk)
                     salva_configurazione(config)
