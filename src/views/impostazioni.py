@@ -148,8 +148,8 @@ def mostra_impostazioni():
     # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (PULITO / SENZA DEFAULT)
     # =====================================================================
     with tab_tariffe:
-        st.subheader("💰 Gestione Listino Prezzi & Formule")
-        st.write("Configura i costi per tipologia di frequenza, attiva sconti automatici o regola i pacchetti multilivello.")
+        st.subheader("💰 Gestione Listino Prezzi & Sconti")
+        st.write("Configura i costi per tipologia di frequenza, attiva sconti automatici o regola i pacchetti.")
 
         # Inizializziamo le strutture vuote (senza dati di default)
         if "tariffe" not in config:
