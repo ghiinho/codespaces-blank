@@ -33,7 +33,10 @@ st.markdown(
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
     st.write("Visualizza, modifica o aggiorna i dati personali, sanitari e i contatti di ciascun iscritto.")
-    
+    df_iscritti = df_iscritti.astype(object)
+    # Sostituiamo eventuali valori NaN/None con stringhe vuote per pulizia
+    df_iscritti.fillna("", inplace=True)
+
     if df_iscritti.empty:
         st.info("Carica il file Excel per abilitare la gestione anagrafica.")
         return
@@ -689,11 +692,16 @@ def mostra_anagrafiche(df_iscritti):
                     
                     if salva_settimane:
                         for col_settimana, valore in nuovi_valori.items():
-                            val_salva = None if valore == "NON ISCRITTO ❌" else valore
+                            val_salva = "" if valore == "NON ISCRITTO ❌" else valore
+                            
+                            # 1. Assicuriamo che la colonna accetti stringhe/vuoti senza andare in TypeError
+                            df_iscritti[col_settimana] = df_iscritti[col_settimana].astype(object)
+                            
+                            # 2. Assegniamo il nuovo valore
                             df_iscritti.at[riga_index, col_settimana] = val_salva
                         
                         try:
-                            df_iscritti.to_excel("gestionale.xlsx", index=False)
+                            df_iscritti.to_excel("iscrizioni.xlsx", index=False)
                             st.success("✅ Settimane di frequenza salvate correttamente!")
                             st.session_state.risultato_ricerca = df_iscritti.loc[[riga_index]]
                             st.rerun()

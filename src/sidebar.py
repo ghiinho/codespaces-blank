@@ -16,7 +16,7 @@ def disegna_sidebar():
     if config["moduli"]["presenze"]["attivo"]:
         pagine_disponibili.append(("📝 Elenchi settimanali", "Registro Presenze"))
     if config["moduli"]["pagamenti"]["attivo"]:
-        pagine_disponibili.append(("💰 Pagamenti", "Gestione Pagamenti"))
+        pagine_disponibili.append(("💰 Gestione Pagamenti", "Gestione Pagamenti"))
     if config["moduli"]["statistiche"]["attivo"]:
         pagine_disponibili.append(("📊 Statistiche", "Statistiche"))
         
