@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 
+from src.utils.config_manager import carica_configurazione
+
 # Riduciamo gli spazi verticali nativi di Streamlit per compattare la pagina
 st.markdown(
     """
