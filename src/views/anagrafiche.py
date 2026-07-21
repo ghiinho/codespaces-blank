@@ -27,17 +27,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-def formatta_data_ita(valore_data):
-    """Converti qualsiasi formato data in GG/MM/AAAA"""
-    if pd.isna(valore_data) or str(valore_data).strip() in ["", "nan", "None", "NaT"]:
+def formatta_data_ita(valore):
+    """Converte qualsiasi formato (Timestamp, stringa YYYY-MM-DD, ecc.) in GG/MM/AAAA"""
+    if pd.isna(valore) or str(valore).strip().lower() in ["", "nan", "none", "nat"]:
         return "N/D"
+    
     try:
-        # Convertiamo in oggetto datetime e poi stringa formattata
-        data_dt = pd.to_datetime(valore_data, dayfirst=True)
-        return data_dt.strftime("%d/%m/%Y")
+        # 1. Se è già un Timestamp di Pandas o datetime
+        if isinstance(valore, (pd.Timestamp, pd.DatetimeIndex)):
+            return valore.strftime("%d/%m/%Y")
+        
+        # 2. Se è una stringa, proviamo prima a togliere l'eventuale orario "00:00:00"
+        val_str = str(valore).split()[0].strip()
+        
+        # 3. Forziamo il parsing intelligente della data
+        dt = pd.to_datetime(val_str, dayfirst=True, errors='coerce')
+        
+        if pd.notna(dt):
+            return dt.strftime("%d/%m/%Y")
+        
+        return val_str
     except Exception:
-        # Se la conversione fallisce, restituiamo il valore pulito
-        return str(valore_data).split()[0]
+        return str(valore)
 
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
@@ -47,6 +58,7 @@ def mostra_anagrafiche(df_iscritti):
         st.info("Nessun iscritto presente nel database. Carica un file per abilitare la gestione.")
         return
 
+    df_iscritti = pd.read_excel("iscrizioni.xlsx", dtype=str)
     df_iscritti = df_iscritti.astype(object)
     df_iscritti.fillna("", inplace=True)
 
@@ -221,34 +233,6 @@ def mostra_anagrafiche(df_iscritti):
                     st.session_state.scheda_attiva = "settimane"
                     st.session_state.modalita_modifica = False
                     st.rerun()
-
-            # =========================================================
-            # 🐞 BLOCCO DEBUG (Rimuovilo o nascondilo dopo le verifiche)
-            # =========================================================
-            with st.expander("🐞 TRACCIAMENTO ED ISPEZIONE DATI (Debug)", expanded=False):
-                st.markdown("#### 1. Mappatura Variabile ➡️ Nome Colonna")
-                mappatura_corrente = {
-                    "col_cognome": col_cognome,
-                    "col_nome": col_nome,
-                    "col_cf": col_cf,
-                    "col_nascita": col_nascita,
-                    "col_luogo": col_luogo,
-                    "col_has_fratelli": col_has_fratelli,
-                    "col_deleghe": col_deleghe,
-                    "col_note_segnalazioni": col_note_segnalazioni,
-                    "col_consenso_privacy": col_consenso_privacy,
-                    "col_allergie": col_allergie,
-                    "col_quali": col_quali,
-                }
-                st.json(mappatura_corrente)
-
-                st.markdown("#### 2. Dati letti per questa riga (`riga_bambino`)")
-                # Mostriamo solo le colonne mappate e i relativi valori letti
-                dati_estratti = {var: riga_bambino.get(col_nome, "⚠️ NON TROVATO") for var, col_nome in mappatura_corrente.items()}
-                st.json(dati_estratti)
-
-                st.markdown("#### 3. Tutte le colonne presenti nel file Excel")
-                st.write(list(df_iscritti.columns))
 
             # --- SUB-TAB 1: BAMBINO ---
             if st.session_state.scheda_attiva == "bambino":
