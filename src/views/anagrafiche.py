@@ -53,11 +53,31 @@ def mostra_anagrafiche(df_iscritti):
     mapping = config.get("mappatura_colonne", {})
     colonne_reali = list(df_iscritti.columns)
     
-    def recupera_colonna_valida(nome_cercato, indice_fallback):
-        if nome_cercato in colonne_reali:
+    def recupera_colonna_valida(nome_cercato, indice_fallback=None):
+        """
+        Cerca una colonna nel DataFrame ignorando spazi e maiuscole/minuscole.
+        Se non la trova, restituisce la prima colonna disponibile o None (MAI l'indice fisso se rischia di prendere le settimane).
+        """
+        if not nome_cercato:
+            return df_iscritti.columns[indice_fallback] if (indice_fallback is not None and indice_fallback < len(df_iscritti.columns)) else df_iscritti.columns[0]
+        
+        # 1. Ricerca Esatta
+        if nome_cercato in df_iscritti.columns:
             return nome_cercato
-        if len(colonne_reali) > indice_fallback:
-            return colonne_reali[indice_fallback]
+        
+        # 2. Ricerca Flessibile (ignora spazi iniziali/finali e maiuscole)
+        nome_pulito = str(nome_cercato).strip().upper()
+        for col in df_iscritti.columns:
+            if str(col).strip().upper() == nome_pulito:
+                return col
+                
+        # 3. Ricerca per Contenuto (es. se la colonna contiene la parola chiave)
+        for col in df_iscritti.columns:
+            if nome_pulito in str(col).strip().upper():
+                return col
+
+        # 4. Fallback estremo: restituisce il nome cercato per evitare crash, ma notifica
+        st.warning(f"⚠️ Attenzione: Impossibile trovare la colonna '{nome_cercato}' nell'Excel.")
         return nome_cercato
 
     # Mappatura Dati Genitore
