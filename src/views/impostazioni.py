@@ -205,39 +205,64 @@ def mostra_impostazioni():
         st.markdown("### 🏷️ 2. Sconti & Riduzioni")
         st.caption("Crea regole di sconto applicabili ai conteggi (es. Sconto Fratello, Iscrizione Anticipata).")
 
+        # Recuperiamo la lista delle tariffe disponibili per la selectbox
+        opzioni_frequenze_sconto = ["Tutte (Generico)"] + list(config.get("tariffe", {}).keys())
+
         col_sc1, col_sc2 = st.columns([2, 2])
 
         with col_sc1:
             with st.form(key="form_nuovo_sconto", clear_on_submit=True):
                 nome_sconto = st.text_input("✍️ Nome Sconto:", placeholder="Es. Sconto Fratello").strip()
+                
+                # 🎯 NUOVO CAMPO: Selezione della Frequenza Target
+                freq_target_sconto = st.selectbox(
+                    "Frequenza / Tariffa Applicabile:",
+                    options=opzioni_frequenze_sconto,
+                    help="Seleziona 'Tutte' per applicare lo sconto sul totale oppure una frequenza specifica."
+                )
+
                 tipo_sconto = st.selectbox("Tipo Sconto:", ["Percentuale (%)", "Fisso (€)"])
-                valore_sconto = st.number_input("Valore Sconto:", min_value=0.0)
+                valore_sconto = st.number_input("Valore Sconto:", min_value=0.0, step=1.0)
                 btn_add_sconto = st.form_submit_button("➕ Aggiungi Sconto", use_container_width=True)
 
             if btn_add_sconto:
                 if nome_sconto:
                     nuovo_sc = {
                         "nome": nome_sconto,
+                        "frequenza_target": "generica" if freq_target_sconto == "Tutte (Generico)" else freq_target_sconto,
                         "tipo": "percentuale" if "Percentuale" in tipo_sconto else "fisso",
                         "valore": valore_sconto
                     }
+                    
+                    if "sconti" not in config:
+                        config["sconti"] = []
+                        
                     config["sconti"].append(nuovo_sc)
                     salva_configurazione(config)
-                    st.success(f"Sconto '{nome_sconto}' aggiunto!")
+                    st.success(f"Sconto '{nome_sconto}' aggiunto con successo!")
                     st.rerun()
                 else:
                     st.error("❌ Inserisci il nome dello sconto!")
 
         with col_sc2:
             st.markdown("**Sconti Attivi:**")
-            if not config["sconti"]:
+            sconti_salvati = config.get("sconti", [])
+            
+            if not sconti_salvati:
                 st.info("Nessun sconto salvato.")
             else:
-                for idx_sc, sc in enumerate(config["sconti"]):
+                for idx_sc, sc in enumerate(sconti_salvati):
                     c_sc_nome, c_sc_val, c_sc_del = st.columns([3, 2, 1])
-                    c_sc_nome.write(f"• **{sc['nome']}**")
-                    unita = "%" if sc["tipo"] == "percentuale" else "€"
+                    
+                    # Formattazione target frequenza
+                    target_display = sc.get("frequenza_target", "generica")
+                    target_label = "Tutte" if target_display == "generica" else target_display
+
+                    c_sc_nome.write(f"• **{sc['nome']}**\n  *(Applica a: {target_label})*")
+                    
+                    unita = "%" if sc.get("tipo") == "percentuale" else "€"
                     c_sc_val.write(f"**-{sc['valore']} {unita}**")
+                    
                     if c_sc_del.button("🗑️", key=f"del_sc_{idx_sc}"):
                         config["sconti"].pop(idx_sc)
                         salva_configurazione(config)
