@@ -343,16 +343,16 @@ def mostra_anagrafiche(df_iscritti):
 
                     # --- BOX 1: DATI ANAGRAFICI E RESIDENZA ---
                     with box_anagrafica:
-                        st.markdown("#### 👤 Dati anagrafici e residenza")
+                        st.markdown("#### 👤 Dati anagrafici")
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
-                                <p style="margin: 0 0 6px 0; font-size: 14px;">Cognome e nome: <br><b style="font-size: 15px;">{nome_completo_bambino}</b></p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">Cognome e nome: <b style="font-size: 15px;">{nome_completo_bambino}</b></p>
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Nato/a il: <b>{riga_bambino[col_nascita]}</b> a <b>{riga_bambino[col_luogo]}</b></p>
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
                                 <hr style="margin: 8px 0 !important;">
-                                <p style="margin: 0 0 4px 0; font-size: 16px;"><b>Dati residenza</b></p>
-                                <p style="margin: 0 0 4px 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}</b></p>
+                                <p style="margin: 0 0 4px 0; font-size: 18px;"><b>Residenza</b></p>
+                                <p style="margin: 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}</b></p>
                                 <p style="margin: 0; font-size: 14px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
                             </div>
                             """, unsafe_allow_html=True
