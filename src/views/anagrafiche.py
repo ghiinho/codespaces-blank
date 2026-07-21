@@ -197,13 +197,15 @@ def mostra_anagrafiche(df_iscritti):
                 if st.session_state.modalita_modifica:
                     with st.form("form_modifica_bambino"):
                         st.markdown("#### 📝 Modifica Scheda Anagrafica")
-                        col_sinistra_bambino, col_destra_genitore = st.columns(2)
+                        
+                        # BOX 1 & 2: Dati Anagrafici e Info Varie
+                        col1_mod, col2_mod = st.columns(2)
 
-                        with col_sinistra_bambino:
-                            st.markdown("##### 👦 Dati Bambino")
-                            e_cognome = st.text_input("Cognome", value=str(riga_bambino[col_cognome]))
-                            e_nome = st.text_input("Nome", value=str(riga_bambino[col_nome]))
-                            e_cf = st.text_input("Codice Fiscale", value=str(riga_bambino[col_cf]).upper())
+                        with col1_mod:
+                            st.markdown("##### 👤 1. Dati Anagrafici e Residenza")
+                            e_cognome = st.text_input("Cognome Minore", value=str(riga_bambino[col_cognome]))
+                            e_nome = st.text_input("Nome Minore", value=str(riga_bambino[col_nome]))
+                            e_cf = st.text_input("Codice Fiscale Minore", value=str(riga_bambino[col_cf]).upper())
 
                             c_nasc1, c_nasc2 = st.columns(2)
                             with c_nasc1:
@@ -223,31 +225,44 @@ def mostra_anagrafiche(df_iscritti):
                             with c_res4:
                                 e_citta = st.text_input("Città", value=str(riga_bambino[col_citta]))
 
-                            st.markdown("---")
-                            st.markdown("##### 🩺 Informazioni Sanitarie & Note")
-                            e_allergie = st.selectbox("Allergie/Intolleranze?", ["SÌ", "NO"], index=0 if str(riga_bambino.get(col_allergie, "")).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1)
-                            e_quali = st.text_area("Specificare allergie:", value=str(riga_bambino.get(col_quali, "")), height=60)
-                            e_note = st.text_area("Eventuali altre segnalazioni/note:", value=str(riga_bambino.get(col_note_segnalazioni, "")), height=60)
+                        with col2_mod:
+                            st.markdown("##### ℹ️ 2. Informazioni Varie")
+                            e_has_fratelli = st.selectbox(
+                                "Sconto Fratello? (Altri fratelli iscritti)", 
+                                ["SÌ", "NO"], 
+                                index=0 if str(riga_bambino.get(col_has_fratelli, "")).strip().upper() in ["SÌ", "SI", "YES"] else 1
+                            )
+                            e_privacy = st.selectbox(
+                                "Consenso Privacy e Foto:", 
+                                ["ACCONSENTE", "NON ACCONSENTE"], 
+                                index=0 if "NON" not in str(riga_bambino.get(col_consenso_privacy, "")).upper() else 1
+                            )
+                            e_deleghe = st.text_area("Persone Autorizzate al Ritiro (Deleghe):", value=str(riga_bambino.get(col_deleghe, "")), height=70)
+                            e_note = st.text_area("Eventuali altre segnalazioni / note:", value=str(riga_bambino.get(col_note_segnalazioni, "")), height=70)
 
-                        with col_destra_genitore:
-                            st.markdown("##### 👨‍👩‍👧 Dati Genitore, Sconti & Privacy")
-                            e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
-                            e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
-                            e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
-                            e_g_nascita = st.text_input("Data Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
+                        st.markdown("---")
+                        
+                        # BOX 3: Sanitario
+                        st.markdown("##### 🩺 3. Informazioni Sanitarie")
+                        c_san1, c_san2 = st.columns([1, 3])
+                        with c_san1:
+                            e_allergie = st.selectbox(
+                                "Allergie/Intolleranze?", 
+                                ["SÌ", "NO"], 
+                                index=0 if str(riga_bambino.get(col_allergie, "")).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1
+                            )
+                        with c_san2:
+                            e_quali = st.text_input("Specificare allergie o farmaci salvavita:", value=str(riga_bambino.get(col_quali, "")))
 
-                            c_gen1, c_gen2 = st.columns(2)
-                            with c_gen1:
-                                e_g_tel = st.text_input("Telefono Genitore", value=str(riga_bambino[col_g_tel]))
-                            with c_gen2:
-                                e_g_email = st.text_input("Email Genitore", value=str(riga_bambino[col_g_email]))
+                        # Manteniamo la gestione genitore nascosta/sincronizzata per non rompere il salvataggio
+                        e_g_cognome = riga_bambino[col_g_cognome]
+                        e_g_nome = riga_bambino[col_g_nome]
+                        e_g_cf = riga_bambino[col_g_cf]
+                        e_g_nascita = riga_bambino[col_g_nascita]
+                        e_g_tel = riga_bambino[col_g_tel]
+                        e_g_email = riga_bambino[col_g_email]
 
-                            st.markdown("---")
-                            e_has_fratelli = st.selectbox("Ha altri fratelli iscritti? (Diritto a sconti)", ["SÌ", "NO"], index=0 if str(riga_bambino.get(col_has_fratelli, "")).strip().upper() in ["SÌ", "SI", "YES"] else 1)
-                            e_deleghe = st.text_area("Persone Autorizzate al Ritiro (Deleghe):", value=str(riga_bambino.get(col_deleghe, "")), height=60)
-                            e_privacy = st.selectbox("Consenso Privacy e Foto:", ["ACCONSENTE", "NON ACCONSENTE"], index=0 if "NON" not in str(riga_bambino.get(col_consenso_privacy, "")).upper() else 1)
-
-                        salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
+                        salva_bambino = st.form_submit_button("💾 Salva Modifiche Scheda Iscritto", use_container_width=True, type="primary")
 
                         if salva_bambino:
                             if not e_cognome.strip() or not e_nome.strip():
@@ -265,14 +280,6 @@ def mostra_anagrafiche(df_iscritti):
                                 df_iscritti.at[riga_index, col_allergie] = e_allergie
                                 df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
                                 df_iscritti.at[riga_index, col_note_segnalazioni] = e_note.strip()
-
-                                df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip()
-                                df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip()
-                                df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
-                                df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
-                                df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
-                                df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
-
                                 df_iscritti.at[riga_index, col_has_fratelli] = e_has_fratelli
                                 df_iscritti.at[riga_index, col_deleghe] = e_deleghe.strip()
                                 df_iscritti.at[riga_index, col_consenso_privacy] = e_privacy
@@ -284,44 +291,60 @@ def mostra_anagrafiche(df_iscritti):
                                     st.rerun()
                                 except Exception as e:
                                     st.error(f"Errore durante il salvataggio: {e}")
+
                 else:
-                    box_anagrafica, box_residenza, box_sanitario = st.columns(3)
-                    stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; height: 250px; box-sizing: border-box;"
+                    # =========================================================
+                    # VISUALIZZAZIONE SCHEDA A 3 BOX
+                    # =========================================================
+                    box_anagrafica, box_info_varie, box_sanitario = st.columns(3)
+                    stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; min-height: 280px; box-sizing: border-box;"
 
-                    has_fratelli_val = str(riga_bambino.get(col_has_fratelli, "")).strip().upper()
-                    badge_sconto = "🏷️ <b>SCONTO FRATELLO: SÌ</b>" if has_fratelli_val in ["SÌ", "SI", "YES"] else "🏷️ Sconto Fratello: No"
-
+                    # --- BOX 1: DATI ANAGRAFICI E RESIDENZA ---
                     with box_anagrafica:
-                        st.markdown("#### 👤 Dati anagrafici")
+                        st.markdown("#### 👤 Dati anagrafici e residenza")
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Cognome e nome: <b>{nome_completo_bambino}</b></p>
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Data di nascita: <b>{riga_bambino[col_nascita]}</b></p>
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Luogo di nascita: <b>{riga_bambino[col_luogo]}</b></p>
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
-                                <hr style="margin: 6px 0 !important;">
-                                <p style="margin: 0; font-size: 14px; color: #0284c7;">{badge_sconto}</p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">Cognome e nome: <br><b style="font-size: 15px;">{nome_completo_bambino}</b></p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">Nato/a il: <b>{riga_bambino[col_nascita]}</b> a <b>{riga_bambino[col_luogo]}</b></p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
+                                <hr style="margin: 8px 0 !important;">
+                                <p style="margin: 0 0 4px 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}, {riga_bambino[col_civico]}</b></p>
+                                <p style="margin: 0; font-size: 14px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
                             </div>
                             """, unsafe_allow_html=True
                         )
 
-                    with box_residenza:
-                        st.markdown("#### 📍 Residenza e Privacy")
+                    # --- BOX 2: INFORMAZIONI VARIE ---
+                    has_fratelli_val = str(riga_bambino.get(col_has_fratelli, "")).strip().upper()
+                    is_sconto = has_fratelli_val in ["SÌ", "SI", "YES"]
+                    badge_sconto = "<span style='color: #0284c7; font-weight: bold;'>🏷️ Sconto Fratello: SÌ</span>" if is_sconto else "<span style='color: #64748b;'>🏷️ Sconto Fratello: No</span>"
+                    
+                    delegati_val = str(riga_bambino.get(col_deleghe, "")).strip()
+                    delegati_txt = delegati_val if delegati_val else "Nessun delegato (Solo genitori)"
+                    
+                    note_val = str(riga_bambino.get(col_note_segnalazioni, "")).strip()
+                    note_txt = note_val if note_val else "Nessuna segnalazione"
+
+                    with box_info_varie:
+                        st.markdown("#### ℹ️ Informazioni varie")
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Indirizzo: <b>{riga_bambino[col_via]}, {riga_bambino[col_civico]}</b></p>
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
-                                <p style="margin: 0 0 6px 0; font-size: 15px;">Genitore: <b>{nome_completo_genitore}</b></p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">{badge_sconto}</p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">🔒 Privacy & Foto: <b>{riga_bambino.get(col_consenso_privacy, 'N/D')}</b></p>
                                 <hr style="margin: 6px 0 !important;">
-                                <p style="margin: 0; font-size: 13px;">🔒 Privacy: <b>{riga_bambino.get(col_consenso_privacy, 'N/D')}</b></p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px;">🚗 <b>Delegati al ritiro:</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 13px; color: #334155;"><i>{delegati_txt}</i></p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px;">📝 <b>Segnalazioni / Note:</b></p>
+                                <p style="margin: 0; font-size: 13px; color: #334155;"><i>{note_txt}</i></p>
                             </div>
                             """, unsafe_allow_html=True
                         )
 
+                    # --- BOX 3: INFORMAZIONI SANITARIE ---
                     with box_sanitario:
-                        st.markdown("#### ⚠️ Sanitario e Note")
+                        st.markdown("#### ⚠️ Informazioni sanitarie")
                         ha_allergie = str(riga_bambino.get(col_allergie, "")).strip().upper()
                         is_allergico = ha_allergie in ["SÌ", "SI", "YES", "TRUE"]
                         colore_sfondo = "#fef2f2" if is_allergico else "#f0fdf4"
@@ -331,17 +354,17 @@ def mostra_anagrafiche(df_iscritti):
                         st.markdown(
                             f"""
                             <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_box}">
-                                <p style="margin: 0 0 2px 0; font-size: 13px; font-weight: 600;">ALLERGIE / INTOLLERANZE</p>
-                                <p style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700;">{icona} {ha_allergie}</p>
-                                <p style="margin: 0 0 6px 0; font-size: 13px;">{riga_bambino.get(col_quali, '') if is_allergico else 'Nessuna allergia.'}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #475569;">ALLERGIE / INTOLLERANZE</p>
+                                <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">{icona} {ha_allergie}</p>
                                 <hr style="margin: 6px 0 !important;">
-                                <p style="margin: 0; font-size: 13px;">📝 <b>Note:</b> {riga_bambino.get(col_note_segnalazioni, 'Nessuna note presente.')}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 13px;"><b>Dettagli / Farmaci:</b></p>
+                                <p style="margin: 0; font-size: 14px;">{riga_bambino.get(col_quali, 'Nessuna indicazione presente.') if is_allergico else 'Nessuna allergia o intolleranza segnalata.'}</p>
                             </div>
                             """, unsafe_allow_html=True
                         )
 
                     st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica"):
+                    if st.button("✏️ Modifica Scheda Iscritto", key="btn_attiva_modifica"):
                         st.session_state.modalita_modifica = True
                         st.rerun()
 
