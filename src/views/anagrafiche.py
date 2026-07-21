@@ -374,7 +374,7 @@ def mostra_anagrafiche(df_iscritti):
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">{badge_sconto}</p>
-                                <p style="margin: 0 0 6px 0; font-size: 14px;">🔒 Privacy & Foto: <b>{riga_bambino.get(col_consenso_privacy, 'N/D')}</b></p>
+                                <p style="margin: 0 0 6px 0; font-size: 14px;">🔒 Consenso trattamento dati personali: <b>{riga_bambino.get(col_consenso_privacy, 'N/D')}</b></p>
                                 <hr style="margin: 6px 0 !important;">
                                 <p style="margin: 0 0 4px 0; font-size: 13px;">🚗 <b>Delegati al ritiro:</b></p>
                                 <p style="margin: 0 0 8px 0; font-size: 13px; color: #334155;"><i>{delegati_txt}</i></p>
@@ -410,37 +410,63 @@ def mostra_anagrafiche(df_iscritti):
                         st.session_state.modalita_modifica = True
                         st.rerun()
 
-            # --- SUB-TAB 2: GENITORE E DELEGHE ---
+            # --- SUB-TAB 2: GENITORE E FRATELLI ISCRITTI ---
+            # --- SUB-TAB 2: GENITORE ---
             elif st.session_state.scheda_attiva == "genitore":
-                g_col1, g_col2 = st.columns(2)
-                with g_col1:
-                    st.markdown("#### 👤 Dati genitore")
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            <p><b>Nome Completo:</b> {nome_completo_genitore}</p>
-                            <p><b>Codice Fiscale:</b> {riga_bambino[col_g_cf]}</p>
-                            <p><b>📞 Telefono:</b> <a href="tel:{riga_bambino[col_g_tel]}">{riga_bambino[col_g_tel]}</a></p>
-                            <p><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}">{riga_bambino[col_g_email]}</a></p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
+                if st.session_state.modalita_modifica:
+                    with st.form("form_modifica_genitore"):
+                        st.markdown("#### 📝 Modifica Dati Genitore / Tutore")
+                        
+                        g_mod1, g_mod2 = st.columns(2)
+                        with g_mod1:
+                            e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
+                            e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
+                            e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
+                            
+                        with g_mod2:
+                            e_g_tel = st.text_input("📞 Telefono / Cellulare", value=str(riga_bambino[col_g_tel]))
+                            e_g_email = st.text_input("✉️ Indirizzo Email", value=str(riga_bambino[col_g_email]))
 
-                with g_col2:
-                    st.markdown("#### 🚗 Autorizzazioni al Ritiro (Deleghe)")
-                    deleghe_txt = riga_bambino.get(col_deleghe, "")
-                    if not deleghe_txt or pd.isna(deleghe_txt):
-                        deleghe_txt = "Nessuna persona autorizzata registrata (Ritiro consentito solo ai genitori)."
+                        salva_genitore = st.form_submit_button("💾 Salva Modifiche Genitore", use_container_width=True, type="primary")
 
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4;">
-                            <p style="margin: 0 0 10px 0; font-weight: bold; color: #0f766e;">📜 Persone Delegate:</p>
-                            <p style="margin: 0; white-space: pre-line;">{deleghe_txt}</p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
+                        if salva_genitore:
+                            df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip().upper()
+                            df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip().title()
+                            df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
+                            df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
+                            df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
 
+                            try:
+                                df_iscritti.to_excel("iscrizioni.xlsx", index=False)
+                                st.success("✅ Dati genitore aggiornati con successo!")
+                                st.session_state.modalita_modifica = False
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Errore durante il salvataggio: {e}")
+
+                else:
+                    # Visualizzazione pulita dei dati del genitore
+                    g_col_main, _ = st.columns([2, 1])
+                    with g_col_main:
+                        st.markdown("#### 👤 Dati Referente / Genitore")
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <p style="margin: 0 0 8px 0; font-size: 15px;">Nome Completo: <b style="font-size: 16px;">{nome_completo_genitore}</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 15px;">Codice Fiscale: <b>{riga_bambino[col_g_cf]}</b></p>
+                                <hr style="margin: 12px 0 !important;">
+                                <p style="margin: 0 0 8px 0; font-size: 15px;">📞 Telefono: <a href="tel:{riga_bambino[col_g_tel]}" style="font-weight: bold; color: #0284c7;">{riga_bambino[col_g_tel]}</a></p>
+                                <p style="margin: 0; font-size: 15px;">✉️ Email: <a href="mailto:{riga_bambino[col_g_email]}" style="font-weight: bold; color: #0284c7;">{riga_bambino[col_g_email]}</a></p>
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("✏️ Modifica Dati Genitore", key="btn_attiva_modifica_genitore"):
+                        st.session_state.modalita_modifica = True
+                        st.rerun()
+
+                # --- FRATELLI ISCRITTI ---
                 if not fratelli.empty:
                     st.markdown("---")
                     st.markdown("### 👦 Altri figli iscritti nel sistema:")
