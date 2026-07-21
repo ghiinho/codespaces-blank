@@ -5,14 +5,20 @@ from src.utils.config_manager import carica_configurazione, salva_configurazione
 
 def mostra_pagamenti(df_iscritti):
     st.title("💳 Gestione Pagamenti & Incassi")
-    st.caption("Cerca un iscritto per visualizzare la sua scheda, registrare un versamento o consultare lo storico transazioni.")
+    st.caption("Cerca un iscritto per visualizzare la sua scheda, applicare sconti personalizzati, registrare un versamento o consultare lo storico transazioni.")
     st.markdown("---")
 
     config = carica_configurazione()
     
-    # 💡 Lettura dinamica di tariffe e pacchetti dal config
+    # 💡 Lettura dinamica di tariffe, pacchetti e sconti dal config
     tariffe = config.get("tariffe", {})
     pacchetti = config.get("pacchetti", [])
+    catalogo_sconti = config.get("catalogo_sconti", [
+        {"id": "sconto_fratelli", "nome": "Sconto Fratelli (-15%)", "tipo": "percentuale", "valore": 15.0},
+        {"id": "sconto_convenzione", "nome": "Sconto Convenzione (-10%)", "tipo": "percentuale", "valore": 10.0},
+        {"id": "sconto_fisso_10", "nome": "Sconto Promo Speciale (-10€)", "tipo": "fisso", "valore": 10.0},
+        {"id": "sconto_borsa_studio", "nome": "Borsa di Studio (-50€)", "tipo": "fisso", "valore": 50.0},
+    ])
 
     if not tariffe:
         st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni!")
@@ -36,6 +42,9 @@ def mostra_pagamenti(df_iscritti):
     elenco_iscritti_dettaglio = {}
     dati_contabili_lista = []
 
+    # Mappa per ricerca rapida sconti per ID
+    mappa_catalogo_sconti = {s["id"]: s for s in catalogo_sconti}
+
     # --- CICLO ELABORAZIONE ISCRITTI ---
     for idx, row in df_iscritti.iterrows():
         cognome = str(row.get(col_cognome, "")).strip().upper()
@@ -49,6 +58,8 @@ def mostra_pagamenti(df_iscritti):
 
         dati_salvati = st.session_state.registro_pagamenti.get(chiave, {})
         transazioni = dati_salvati.get("transazioni", [])
+        sconti_manuali_ids = dati_salvati.get("sconti_manuali", [])
+        
         totale_incassato = sum(float(t.get("importo", 0.0)) for t in transazioni)
 
         # Conteggio delle frequenze scelte
@@ -78,8 +89,8 @@ def mostra_pagamenti(df_iscritti):
 
         stringa_frequenze = ", ".join([f"{v}x {k}" for k, v in conteggio_frequenze.items()]) if conteggio_frequenze else "Nessuna"
 
-        # --- APPLICAZIONE PACCHETTI ---
-        totale_netto_calcolato = 0.0
+        # --- A. APPLICAZIONE PACCHETTI AUTOMATICI ---
+        totale_netto_pacchetti = 0.0
         dettagli_pacchetti_applicati = []
 
         for freq_nome, quantita in conteggio_frequenze.items():
@@ -128,16 +139,40 @@ def mostra_pagamenti(df_iscritti):
                         dettagli_pacchetti_applicati.append(f"📦 {nome_pck} ({prezzo_pk:.2f} €)")
 
             costo_parziale_freq += quantita_rimanente * prezzo_singolo_freq
-            totale_netto_calcolato += costo_parziale_freq
+            totale_netto_pacchetti += costo_parziale_freq
 
-        sconto_applicato = max(0.0, totale_lordo - totale_netto_calcolato)
+        sconto_pacchetti = max(0.0, totale_lordo - totale_netto_pacchetti)
 
-        if sconto_applicato > 0 and dettagli_pacchetti_applicati:
-            descrizione_sconto = " + ".join(dettagli_pacchetti_applicati)
+        # --- B. APPLICAZIONE SCONTI MANUALI/CONFIGURATI ---
+        totale_sconti_manuali = 0.0
+        dettagli_sconti_manuali = []
+
+        for s_id in sconti_manuali_ids:
+            s_obj = mappa_catalogo_sconti.get(s_id)
+            if s_obj:
+                valore = float(s_obj.get("valore", 0.0))
+                tipo = s_obj.get("tipo", "percentuale")
+                nome_sconto = s_obj.get("nome", "Sconto")
+
+                if tipo == "percentuale":
+                    importo_sconto = (totale_netto_pacchetti * valore) / 100.0
+                    dettagli_sconti_manuali.append(f"🎟️ {nome_sconto} (-{importo_sconto:.2f} €)")
+                else:  # fisso
+                    importo_sconto = valore
+                    dettagli_sconti_manuali.append(f"🎟️ {nome_sconto} (-{importo_sconto:.2f} €)")
+
+                totale_sconti_manuali += importo_sconto
+
+        # COMPOSIZIONE DESCRIZIONE SCONTI E CALCOLO TOTALE NETTO FINALE
+        sconto_totale_complessivo = sconto_pacchetti + totale_sconti_manuali
+        
+        tutte_descrizioni = dettagli_pacchetti_applicati + dettagli_sconti_manuali
+        if tutte_descrizioni:
+            descrizione_sconto = " + ".join(tutte_descrizioni)
         else:
             descrizione_sconto = "Standard (Nessuno)"
 
-        netto_da_pagare = max(0.0, totale_netto_calcolato)
+        netto_da_pagare = max(0.0, totale_lordo - sconto_totale_complessivo)
         rimanente = netto_da_pagare - totale_incassato
 
         if netto_da_pagare == 0:
@@ -158,7 +193,10 @@ def mostra_pagamenti(df_iscritti):
             "num_settimane": num_settimane_tot,
             "totale_lordo": totale_lordo,
             "descrizione_sconto": descrizione_sconto,
-            "sconto_applicato": sconto_applicato,
+            "sconto_pacchetti": sconto_pacchetti,
+            "sconto_manuale": totale_sconti_manuali,
+            "sconto_applicato": sconto_totale_complessivo,
+            "sconti_manuali_ids": sconti_manuali_ids,
             "netto_da_pagare": netto_da_pagare,
             "totale_incassato": totale_incassato,
             "rimanente": rimanente,
@@ -185,7 +223,6 @@ def mostra_pagamenti(df_iscritti):
                 index_selezionato_default = i
                 break
         
-        # Puliamo lo stato per i prossimi caricamenti
         st.session_state["seleziona_iscritto_pagamenti"] = None
 
     # --- 2. SCHERMATA A TAB ---
@@ -219,7 +256,7 @@ def mostra_pagamenti(df_iscritti):
             with col_head1:
                 st.markdown(f"## 👤 {iscritto['cognome']} {iscritto['nome']}")
                 st.write(f"🗓️ **Frequenze ({iscritto['num_settimane']} sett.):** {iscritto['frequenze_str']}")
-                st.write(f"🏷️ **Tariffa/Promo Applicata:** {iscritto['descrizione_sconto']}")
+                st.write(f"🏷️ **Tariffa/Sconti Applicati:** {iscritto['descrizione_sconto']}")
             with col_head2:
                 st.markdown(f"### Status:\n### {iscritto['stato']}")
                 
@@ -227,15 +264,50 @@ def mostra_pagamenti(df_iscritti):
                 if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True, key=f"btn_vai_anag_{chiave_iscritto}"):
                     st.session_state["id_bambino_corrente"] = iscritto["index_df"]
                     st.session_state["scheda_attiva"] = "bambino"
-                    st.session_state["pagina_corrente"] = "Anagrafiche Iscritti"  # <-- Nome esatto della pagina in app.py
+                    st.session_state["pagina_corrente"] = "Anagrafiche Iscritti"
                     st.rerun()
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # Card metriche
+            # --- SEZIONE GESTIONE SCONTI PERSONALIZZATI / MANUALI ---
+            with st.expander("🎟️ **Gestisci Sconti Personalizzati e Promozioni**", expanded=False):
+                st.markdown("Seleziona uno o più sconti da applicare al totale di questo iscritto:")
+                
+                mappa_nomi_sconti = {s["nome"]: s["id"] for s in catalogo_sconti}
+                nomi_opzioni_sconti = list(mappa_nomi_sconti.keys())
+                
+                # Recupera gli sconti già selezionati per questo iscritto
+                sconti_selezionati_ids = iscritto["sconti_manuali_ids"]
+                nomi_selezionati_default = [
+                    s["nome"] for s in catalogo_sconti if s["id"] in sconti_selezionati_ids
+                ]
+
+                sconti_scelti_nomi = st.multiselect(
+                    "Sconti applicabili:",
+                    options=nomi_opzioni_sconti,
+                    default=nomi_selezionati_default,
+                    key=f"ms_sconti_{chiave_iscritto}",
+                    help="Puoi aggiungere o rimuovere sconti personalizzati. Gli importi e i saldi verranno ricalcolati automaticamente."
+                )
+
+                # Pulsante di salvataggio modifiche sconti
+                if st.button("💾 Salva e Aggiorna Sconti Applicati", key=f"btn_salva_sconti_{chiave_iscritto}", type="primary"):
+                    nuovi_ids_sconti = [mappa_nomi_sconti[nome] for nome in sconti_scelti_nomi]
+                    
+                    if chiave_iscritto not in st.session_state.registro_pagamenti:
+                        st.session_state.registro_pagamenti[chiave_iscritto] = {"transazioni": []}
+                    
+                    st.session_state.registro_pagamenti[chiave_iscritto]["sconti_manuali"] = nuovi_ids_sconti
+                    
+                    config["registro_pagamenti"] = st.session_state.registro_pagamenti
+                    salva_configurazione(config)
+                    st.success("✅ Sconti aggiornati con successo!")
+                    st.rerun()
+
+            # Card metriche ricalcolate
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Lordo Listino", f"{iscritto['totale_lordo']:.2f} €")
-            c2.metric("Sconto Promo", f"{iscritto['sconto_applicato']:.2f} €")
+            c2.metric("Sconto Totale", f"{iscritto['sconto_applicato']:.2f} €")
             c3.metric("Netto Dovuto", f"{iscritto['netto_da_pagare']:.2f} €")
             c4.metric("Rimanente da Pagare", f"{iscritto['rimanente']:.2f} €", delta_color="inverse")
 
@@ -281,12 +353,12 @@ def mostra_pagamenti(df_iscritti):
                         "note": note_transazione
                     }
 
-                    transazioni_attuali = st.session_state.registro_pagamenti.get(chiave_iscritto, {}).get("transazioni", [])
+                    dati_reg = st.session_state.registro_pagamenti.get(chiave_iscritto, {})
+                    transazioni_attuali = dati_reg.get("transazioni", [])
                     transazioni_attuali.append(nuova_tx)
 
-                    st.session_state.registro_pagamenti[chiave_iscritto] = {
-                        "transazioni": transazioni_attuali
-                    }
+                    dati_reg["transazioni"] = transazioni_attuali
+                    st.session_state.registro_pagamenti[chiave_iscritto] = dati_reg
 
                     config["registro_pagamenti"] = st.session_state.registro_pagamenti
                     if salva_configurazione(config):
@@ -348,10 +420,6 @@ def mostra_pagamenti(df_iscritti):
         
         df_gen = pd.DataFrame(dati_contabili_lista)
         
-        tot_dovuto = df_gen["netto_da_pagare"].sum()
-        tot_incassato = df_gen["totale_incassato"].sum()
-        tot_rimanente = df_gen["rimanente"].sum()
-
         st.dataframe(
             df_gen[[
                 "cognome", "nome", "frequenze_str", "descrizione_sconto",
