@@ -22,6 +22,17 @@ if "df_iscritti" not in st.session_state:
     if df_caricato is None or df_caricato.empty:
         df_caricato = pd.read_excel("iscrizioni.xlsx")
         
+    # --- CONVERSIONE AUTOMATICA DELLE DATE IN FORMATO DD/MM/YYYY ---
+    for col in df_caricato.columns:
+        # Cerca automaticamente qualsiasi colonna che parli di "nascita" o "data"
+        if "NASCITA" in str(col).upper() or "DATA" in str(col).upper():
+            df_caricato[col] = (
+                pd.to_datetime(df_caricato[col], dayfirst=True, errors='coerce')
+                .dt.strftime('%d/%m/%Y')
+                .fillna(df_caricato[col])
+            )
+    # -----------------------------------------------------------------
+        
     st.session_state.df_iscritti = df_caricato.astype(object)
 
 df_iscritti = st.session_state.df_iscritti

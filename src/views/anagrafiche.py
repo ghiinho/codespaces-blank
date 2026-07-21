@@ -27,29 +27,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-def formatta_data_ita(valore):
-    """Converte qualsiasi formato (Timestamp, stringa YYYY-MM-DD, ecc.) in GG/MM/AAAA"""
-    if pd.isna(valore) or str(valore).strip().lower() in ["", "nan", "none", "nat"]:
-        return "N/D"
-    
-    try:
-        # 1. Se è già un Timestamp di Pandas o datetime
-        if isinstance(valore, (pd.Timestamp, pd.DatetimeIndex)):
-            return valore.strftime("%d/%m/%Y")
-        
-        # 2. Se è una stringa, proviamo prima a togliere l'eventuale orario "00:00:00"
-        val_str = str(valore).split()[0].strip()
-        
-        # 3. Forziamo il parsing intelligente della data
-        dt = pd.to_datetime(val_str, dayfirst=True, errors='coerce')
-        
-        if pd.notna(dt):
-            return dt.strftime("%d/%m/%Y")
-        
-        return val_str
-    except Exception:
-        return str(valore)
-
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
     st.write("Visualizza, modifica o aggiorna i dati personali, sanitari, deleghe e i contatti di ciascun iscritto.")
@@ -58,7 +35,6 @@ def mostra_anagrafiche(df_iscritti):
         st.info("Nessun iscritto presente nel database. Carica un file per abilitare la gestione.")
         return
 
-    df_iscritti = pd.read_excel("iscrizioni.xlsx", dtype=str)
     df_iscritti = df_iscritti.astype(object)
     df_iscritti.fillna("", inplace=True)
 
@@ -340,7 +316,6 @@ def mostra_anagrafiche(df_iscritti):
                     # --- BOX 1: DATI ANAGRAFICI E RESIDENZA ---
                     with box_anagrafica:
                         st.markdown("#### 👤 Dati anagrafici")
-                        data_nascita_formatted = formatta_data_ita(riga_bambino[col_nascita])
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
