@@ -53,8 +53,6 @@ def mostra_anagrafiche(df_iscritti):
     mapping = config.get("mappatura_colonne", {})
     colonne_reali = list(df_iscritti.columns)
     
-    id_colonna = colonne_reali[0]
-
     # Helper recupero sicuro colonne
     def recupera_colonna_valida(nome_cercato, indice_fallback):
         if nome_cercato in colonne_reali:
@@ -139,6 +137,292 @@ def mostra_anagrafiche(df_iscritti):
             )
 
         st.markdown("---")
+
+        # =========================================================================
+        # VISUALIZZAZIONE DELLA SCHEDA ISCRITTO (DEVE STARE INTERAMENTE DENTRO TAB 1)
+        # =========================================================================
+        if st.session_state.id_bambino_corrente is not None and st.session_state.id_bambino_corrente in df_iscritti.index:
+            riga_index = st.session_state.id_bambino_corrente
+            riga_bambino = df_iscritti.loc[riga_index]
+
+            nome_completo_bambino = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
+            nome_completo_genitore = f"{riga_bambino[col_g_cognome]} {riga_bambino[col_g_nome]}".upper()
+
+            cf_genitore_corrente = riga_bambino[col_g_cf]
+            email_genitore_corrente = riga_bambino[col_g_email]
+            
+            fratelli = df_iscritti[
+                ((df_iscritti[col_g_cf] == cf_genitore_corrente) & (pd.notnull(df_iscritti[col_g_cf]) & (df_iscritti[col_g_cf] != ""))) |
+                ((df_iscritti[col_g_email] == email_genitore_corrente) & (pd.notnull(df_iscritti[col_g_email]) & (df_iscritti[col_g_email] != "")))
+            ].drop(riga_index, errors='ignore')
+
+            # Header Fisso
+            st.markdown(
+                f"""
+                <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 25px; border-radius: 10px; margin-bottom: 25px;">
+                    <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
+                        Scheda Anagrafica Iscritto
+                    </span>
+                    <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0;">
+                        👦 {nome_completo_bambino}
+                    </h2>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # Menu Navigazione
+            col_tab1, col_tab2, col_tab3 = st.columns(3)
+            with col_tab1:
+                if st.button("👦 Dati Bambino", type="primary" if st.session_state.scheda_attiva == "bambino" else "secondary", use_container_width=True):
+                    st.session_state.scheda_attiva = "bambino"
+                    st.session_state.modalita_modifica = False
+                    st.rerun()
+            with col_tab2:
+                if st.button("👨‍👩‍👧 Contatti Genitore", type="primary" if st.session_state.scheda_attiva == "genitore" else "secondary", use_container_width=True):
+                    st.session_state.scheda_attiva = "genitore"
+                    st.session_state.modalita_modifica = False
+                    st.rerun()
+            with col_tab3:
+                if st.button("📅 Settimane Iscrizione", type="primary" if st.session_state.scheda_attiva == "settimane" else "secondary", use_container_width=True):
+                    st.session_state.scheda_attiva = "settimane"
+                    st.session_state.modalita_modifica = False
+                    st.rerun()
+
+            # --- SUB-TAB 1: BAMBINO ---
+            if st.session_state.scheda_attiva == "bambino":
+                if st.session_state.modalita_modifica:
+                    with st.form("form_modifica_bambino"):
+                        st.markdown("#### 📝 Modifica Scheda Anagrafica")
+                        col_sinistra_bambino, col_destra_genitore = st.columns(2)
+
+                        with col_sinistra_bambino:
+                            st.markdown("##### 👦 Dati Bambino")
+                            e_cognome = st.text_input("Cognome", value=str(riga_bambino[col_cognome]))
+                            e_nome = st.text_input("Nome", value=str(riga_bambino[col_nome]))
+                            e_cf = st.text_input("Codice Fiscale", value=str(riga_bambino[col_cf]).upper())
+
+                            c_nasc1, c_nasc2 = st.columns(2)
+                            with c_nasc1:
+                                e_luogo = st.text_input("Luogo di Nascita", value=str(riga_bambino[col_luogo]))
+                            with c_nasc2:
+                                e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA)", value=str(riga_bambino[col_nascita]))
+
+                            c_res1, c_res2 = st.columns([3, 1])
+                            with c_res1:
+                                e_via = st.text_input("Via/Strada/Piazza", value=str(riga_bambino[col_via]))
+                            with c_res2:
+                                e_civico = st.text_input("Civico", value=str(riga_bambino[col_civico]))
+
+                            c_res3, c_res4 = st.columns([1, 2])
+                            with c_res3:
+                                e_cap = st.text_input("CAP", value=str(riga_bambino[col_cap]))
+                            with c_res4:
+                                e_citta = st.text_input("Città", value=str(riga_bambino[col_citta]))
+
+                            st.markdown("---")
+                            st.markdown("##### 🩺 Informazioni Sanitarie")
+                            e_allergie = st.selectbox("Allergie/Intolleranze?", ["SÌ", "NO"], index=0 if str(riga_bambino[col_allergie]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1)
+                            e_quali = st.text_area("Specificare allergie o farmaci salvavita:", value=str(riga_bambino[col_quali]), height=68)
+
+                        with col_destra_genitore:
+                            st.markdown("##### 👨‍👩‍👧 Dati Genitore")
+                            e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
+                            e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
+                            e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
+                            e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
+
+                            c_gen1, c_gen2 = st.columns(2)
+                            with c_gen1:
+                                e_g_tel = st.text_input("Telefono Genitore", value=str(riga_bambino[col_g_tel]))
+                            with c_gen2:
+                                e_g_email = st.text_input("Email Genitore", value=str(riga_bambino[col_g_email]))
+
+                        salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
+
+                        if salva_bambino:
+                            if not e_cognome.strip() or not e_nome.strip():
+                                st.error("⚠️ Cognome e Nome del bambino sono obbligatori!")
+                            else:
+                                df_iscritti.at[riga_index, col_cognome] = e_cognome.strip().upper()
+                                df_iscritti.at[riga_index, col_nome] = e_nome.strip().title()
+                                df_iscritti.at[riga_index, col_cf] = e_cf.strip().upper()
+                                df_iscritti.at[riga_index, col_luogo] = e_luogo.strip().upper()
+                                df_iscritti.at[riga_index, col_nascita] = e_nascita.strip()
+                                df_iscritti.at[riga_index, col_via] = e_via.strip().title()
+                                df_iscritti.at[riga_index, col_civico] = e_civico.strip().upper()
+                                df_iscritti.at[riga_index, col_cap] = e_cap.strip()
+                                df_iscritti.at[riga_index, col_citta] = e_citta.strip().upper()
+                                df_iscritti.at[riga_index, col_allergie] = e_allergie
+                                df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
+
+                                df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip()
+                                df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip()
+                                df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
+                                df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
+                                df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
+                                df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
+
+                                try:
+                                    df_iscritti.to_excel("gestionale.xlsx", index=False)
+                                    st.success("✅ Dati aggiornati con successo!")
+                                    st.session_state.modalita_modifica = False
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Errore durante il salvataggio: {e}")
+                else:
+                    box_anagrafica, box_residenza, box_sanitario = st.columns(3)
+                    stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; height: 230px; box-sizing: border-box;"
+
+                    with box_anagrafica:
+                        st.markdown("#### 👤 Dati anagrafici")
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
+                                <p style="margin: 0 0 8px 0; font-size: 16px;">Cognome e nome: <b>{nome_completo_bambino}</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 16px;">Data di nascita: <b>{riga_bambino[col_nascita]}</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 16px;">Luogo di nascita: <b>{riga_bambino[col_luogo]}</b></p>
+                                <p style="margin: 0; font-size: 16px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
+
+                    with box_residenza:
+                        st.markdown("#### 📍 Residenza")
+                        st.markdown(
+                            f"""
+                            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
+                                <p style="margin: 0 0 8px 0; font-size: 16px;">Indirizzo: <b>{riga_bambino[col_via]}, {riga_bambino[col_civico]}</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 16px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
+                                <p style="margin: 0; font-size: 16px;">Genitore: <b>{nome_completo_genitore}</b></p>
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
+
+                    with box_sanitario:
+                        st.markdown("#### ⚠️ Sanitario")
+                        ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
+                        is_allergico = ha_allergie in ["SÌ", "SI", "YES", "TRUE"]
+                        colore_sfondo = "#fef2f2" if is_allergico else "#f0fdf4"
+                        colore_bordo = "#fee2e2" if is_allergico else "#dcfce7"
+                        icona = "🚨" if is_allergico else "✅"
+
+                        st.markdown(
+                            f"""
+                            <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_box}">
+                                <p style="margin: 0 0 4px 0; font-size: 15px; font-weight: 600;">ALLERGIE / INTOLLERANZE</p>
+                                <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">{icona} {ha_allergie}</p>
+                                <p style="margin: 0; font-size: 14px;">{riga_bambino[col_quali] if is_allergico else 'Nessuna allergia indicata.'}</p>
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
+
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica"):
+                        st.session_state.modalita_modifica = True
+                        st.rerun()
+
+            # --- SUB-TAB 2: GENITORE ---
+            elif st.session_state.scheda_attiva == "genitore":
+                g_col1, g_col2 = st.columns(2)
+                with g_col1:
+                    st.markdown("#### 👤 Dati genitore")
+                    st.markdown(
+                        f"""
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <p><b>Nome Completo:</b> {nome_completo_genitore}</p>
+                            <p><b>Data Nascita:</b> {riga_bambino[col_g_nascita]}</p>
+                            <p><b>Codice Fiscale:</b> {riga_bambino[col_g_cf]}</p>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
+
+                with g_col2:
+                    st.markdown("#### 📞 Recapiti")
+                    st.markdown(
+                        f"""
+                        <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4;">
+                            <p><b>📞 Telefono:</b> <a href="tel:{riga_bambino[col_g_tel]}">{riga_bambino[col_g_tel]}</a></p>
+                            <p><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}">{riga_bambino[col_g_email]}</a></p>
+                        </div>
+                        """, unsafe_allow_html=True
+                    )
+
+                if not fratelli.empty:
+                    st.markdown("---")
+                    st.markdown("### 👦 Altri figli iscritti:")
+                    for idx_fratello, riga_fratello in fratelli.iterrows():
+                        nome_f = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
+                        btn_col1, btn_col2 = st.columns([3, 1])
+                        with btn_col1:
+                            st.write(f"🧑‍🤝‍🧑 **{nome_f}** (`{riga_fratello[col_cf]}`)")
+                        with btn_col2:
+                            if st.button(f"Scheda 📂", key=f"btn_fratello_{idx_fratello}"):
+                                st.session_state.id_bambino_corrente = idx_fratello
+                                st.session_state.scheda_attiva = "bambino"
+                                st.rerun()
+
+            # --- SUB-TAB 3: SETTIMANE ---
+            elif st.session_state.scheda_attiva == "settimane":
+                st.markdown("### 📅 Gestione Iscrizioni Settimanali")
+
+                if not colonne_settimane:
+                    st.error("⚠️ Nessuna colonna relativa alle settimane/periodi trovata.")
+                else:
+                    opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
+                    nuovi_valori = {}
+
+                    cols = st.columns(4)
+                    for i, col_sett in enumerate(colonne_settimane):
+                        val_str = str(riga_bambino[col_sett]).strip()
+                        idx_def = opzioni_frequenza.index(val_str) if val_str in opzioni_frequenza else 0
+
+                        is_iscritto = idx_def > 0
+                        colore_bordo = "#10b981" if is_iscritto else "#cbd5e1"
+                        colore_sfondo = "#f0fdf4" if is_iscritto else "#f8fafc"
+
+                        with cols[i % 4]:
+                            st.markdown(
+                                f"""
+                                <div style="background-color: {colore_sfondo}; border-top: 4px solid {colore_bordo}; 
+                                            padding: 8px; border-radius: 6px 6px 0 0; text-align: center; margin-bottom: 5px;">
+                                    <div style="font-weight: bold; font-size: 12px;">{col_sett}</div>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                            scelta = st.selectbox(
+                                label=f"Sel_{col_sett}",
+                                options=opzioni_frequenza,
+                                index=idx_def,
+                                key=f"sb_sett_{riga_index}_{i}",
+                                label_visibility="collapsed"
+                            )
+                            nuovi_valori[col_sett] = scelta
+
+                    st.markdown("---")
+
+                    col_btn_salva, col_btn_pagamenti = st.columns([1, 1])
+
+                    with col_btn_salva:
+                        if st.button("💾 Salva Settimane", type="primary", use_container_width=True):
+                            try:
+                                for col_sett, val_scelto in nuovi_valori.items():
+                                    val_finale = "" if val_scelto == "NON ISCRITTO ❌" else str(val_scelto)
+                                    df_iscritti.at[riga_index, col_sett] = val_finale
+
+                                df_iscritti.to_excel("gestionale.xlsx", index=False)
+                                st.success("🎉 Settimane salvate con successo!")
+                                st.rerun()
+                            except Exception as err:
+                                st.error(f"❌ Errore durante il salvataggio: {err}")
+
+                    with col_btn_pagamenti:
+                        if st.button(f"💳 Vai ai Pagamenti", key="btn_vai_a_pagamenti"):
+                            st.session_state["seleziona_iscritto_pagamenti"] = nome_completo_bambino
+                            st.session_state["pagina_corrente"] = "Gestione Pagamenti"
+                            st.rerun()
 
     # -------------------------------------------------------------------------
     # TAB 2: FORM DI CREAZIONE NUOVO ISCRITTO
@@ -231,295 +515,3 @@ def mostra_anagrafiche(df_iscritti):
                 st.session_state.scheda_attiva = "bambino"
                 st.success(f"🎉 **{nuovo_cognome} {nuovo_nome}** aggiunto con successo!")
                 st.rerun()
-
-    # ==========================================
-    # VISUALIZZAZIONE E GESTIONE DELLA SCHEDA
-    # ==========================================
-    if st.session_state.id_bambino_corrente is not None and st.session_state.id_bambino_corrente in df_iscritti.index:
-        riga_index = st.session_state.id_bambino_corrente
-        riga_bambino = df_iscritti.loc[riga_index]
-
-        nome_completo_bambino = f"{riga_bambino[col_cognome]} {riga_bambino[col_nome]}".upper()
-        nome_completo_genitore = f"{riga_bambino[col_g_cognome]} {riga_bambino[col_g_nome]}".upper()
-
-        cf_genitore_corrente = riga_bambino[col_g_cf]
-        email_genitore_corrente = riga_bambino[col_g_email]
-        
-        fratelli = df_iscritti[
-            ((df_iscritti[col_g_cf] == cf_genitore_corrente) & (pd.notnull(df_iscritti[col_g_cf]) & (df_iscritti[col_g_cf] != ""))) |
-            ((df_iscritti[col_g_email] == email_genitore_corrente) & (pd.notnull(df_iscritti[col_g_email]) & (df_iscritti[col_g_email] != "")))
-        ].drop(riga_index, errors='ignore')
-
-        # Header Fisso
-        st.markdown(
-            f"""
-            <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 25px; border-radius: 10px; margin-bottom: 25px;">
-                <span style="color: #38bdf8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px;">
-                    Scheda Anagrafica Iscritto
-                </span>
-                <h2 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; border: none; padding: 0;">
-                    👦 {nome_completo_bambino}
-                </h2>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Menu Navigazione
-        col_tab1, col_tab2, col_tab3 = st.columns(3)
-        with col_tab1:
-            if st.button("👦 Dati Bambino", type="primary" if st.session_state.scheda_attiva == "bambino" else "secondary", use_container_width=True):
-                st.session_state.scheda_attiva = "bambino"
-                st.session_state.modalita_modifica = False
-                st.rerun()
-        with col_tab2:
-            if st.button("👨‍👩‍👧 Contatti Genitore", type="primary" if st.session_state.scheda_attiva == "genitore" else "secondary", use_container_width=True):
-                st.session_state.scheda_attiva = "genitore"
-                st.session_state.modalita_modifica = False
-                st.rerun()
-        with col_tab3:
-            if st.button("📅 Settimane Iscrizione", type="primary" if st.session_state.scheda_attiva == "settimane" else "secondary", use_container_width=True):
-                st.session_state.scheda_attiva = "settimane"
-                st.session_state.modalita_modifica = False
-                st.rerun()
-
-        # -------------------------------------------------------------------------
-        # SCHEDA 1: BAMBINO
-        # -------------------------------------------------------------------------
-        if st.session_state.scheda_attiva == "bambino":
-            if st.session_state.modalita_modifica:
-                with st.form("form_modifica_bambino"):
-                    st.markdown("#### 📝 Modifica Scheda Anagrafica")
-                    col_sinistra_bambino, col_destra_genitore = st.columns(2)
-
-                    with col_sinistra_bambino:
-                        st.markdown("##### 👦 Dati Bambino")
-                        e_cognome = st.text_input("Cognome", value=str(riga_bambino[col_cognome]))
-                        e_nome = st.text_input("Nome", value=str(riga_bambino[col_nome]))
-                        e_cf = st.text_input("Codice Fiscale", value=str(riga_bambino[col_cf]).upper())
-
-                        c_nasc1, c_nasc2 = st.columns(2)
-                        with c_nasc1:
-                            e_luogo = st.text_input("Luogo di Nascita", value=str(riga_bambino[col_luogo]))
-                        with c_nasc2:
-                            e_nascita = st.text_input("Data di Nascita (GG/MM/AAAA)", value=str(riga_bambino[col_nascita]))
-
-                        c_res1, c_res2 = st.columns([3, 1])
-                        with c_res1:
-                            e_via = st.text_input("Via/Strada/Piazza", value=str(riga_bambino[col_via]))
-                        with c_res2:
-                            e_civico = st.text_input("Civico", value=str(riga_bambino[col_civico]))
-
-                        c_res3, c_res4 = st.columns([1, 2])
-                        with c_res3:
-                            e_cap = st.text_input("CAP", value=str(riga_bambino[col_cap]))
-                        with c_res4:
-                            e_citta = st.text_input("Città", value=str(riga_bambino[col_citta]))
-
-                        st.markdown("---")
-                        st.markdown("##### 🩺 Informazioni Sanitarie")
-                        e_allergie = st.selectbox("Allergie/Intolleranze?", ["SÌ", "NO"], index=0 if str(riga_bambino[col_allergie]).strip().upper() in ["SÌ", "SI", "YES", "TRUE"] else 1)
-                        e_quali = st.text_area("Specificare allergie o farmaci salvavita:", value=str(riga_bambino[col_quali]), height=68)
-
-                    with col_destra_genitore:
-                        st.markdown("##### 👨‍👩‍👧 Dati Genitore")
-                        e_g_cognome = st.text_input("Cognome Genitore", value=str(riga_bambino[col_g_cognome]))
-                        e_g_nome = st.text_input("Nome Genitore", value=str(riga_bambino[col_g_nome]))
-                        e_g_cf = st.text_input("Codice Fiscale Genitore", value=str(riga_bambino[col_g_cf]).upper())
-                        e_g_nascita = st.text_input("Data di Nascita Genitore", value=str(riga_bambino[col_g_nascita]))
-
-                        c_gen1, c_gen2 = st.columns(2)
-                        with c_gen1:
-                            e_g_tel = st.text_input("Telefono Genitore", value=str(riga_bambino[col_g_tel]))
-                        with c_gen2:
-                            e_g_email = st.text_input("Email Genitore", value=str(riga_bambino[col_g_email]))
-
-                    salva_bambino = st.form_submit_button("💾 Salva Modifiche Anagrafica", use_container_width=True, type="primary")
-
-                    if salva_bambino:
-                        if not e_cognome.strip() or not e_nome.strip():
-                            st.error("⚠️ Cognome e Nome del bambino sono obbligatori!")
-                        else:
-                            df_iscritti.at[riga_index, col_cognome] = e_cognome.strip().upper()
-                            df_iscritti.at[riga_index, col_nome] = e_nome.strip().title()
-                            df_iscritti.at[riga_index, col_cf] = e_cf.strip().upper()
-                            df_iscritti.at[riga_index, col_luogo] = e_luogo.strip().upper()
-                            df_iscritti.at[riga_index, col_nascita] = e_nascita.strip()
-                            df_iscritti.at[riga_index, col_via] = e_via.strip().title()
-                            df_iscritti.at[riga_index, col_civico] = e_civico.strip().upper()
-                            df_iscritti.at[riga_index, col_cap] = e_cap.strip()
-                            df_iscritti.at[riga_index, col_citta] = e_citta.strip().upper()
-                            df_iscritti.at[riga_index, col_allergie] = e_allergie
-                            df_iscritti.at[riga_index, col_quali] = e_quali.strip().upper() if e_allergie == "SÌ" else ""
-
-                            df_iscritti.at[riga_index, col_g_cognome] = e_g_cognome.strip()
-                            df_iscritti.at[riga_index, col_g_nome] = e_g_nome.strip()
-                            df_iscritti.at[riga_index, col_g_cf] = e_g_cf.strip().upper()
-                            df_iscritti.at[riga_index, col_g_tel] = e_g_tel.strip()
-                            df_iscritti.at[riga_index, col_g_email] = e_g_email.strip()
-                            df_iscritti.at[riga_index, col_g_nascita] = e_g_nascita.strip()
-
-                            try:
-                                df_iscritti.to_excel("gestionale.xlsx", index=False)
-                                st.success("✅ Dati aggiornati con successo!")
-                                st.session_state.modalita_modifica = False
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Errore durante il salvataggio: {e}")
-            else:
-                box_anagrafica, box_residenza, box_sanitario = st.columns(3)
-                stile_box = "display: flex; flex-direction: column; justify-content: flex-start; padding: 18px; border-radius: 8px; height: 230px; box-sizing: border-box;"
-
-                with box_anagrafica:
-                    st.markdown("#### 👤 Dati anagrafici")
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
-                            <p style="margin: 0 0 8px 0; font-size: 16px;">Cognome e nome: <b>{nome_completo_bambino}</b></p>
-                            <p style="margin: 0 0 8px 0; font-size: 16px;">Data di nascita: <b>{riga_bambino[col_nascita]}</b></p>
-                            <p style="margin: 0 0 8px 0; font-size: 16px;">Luogo di nascita: <b>{riga_bambino[col_luogo]}</b></p>
-                            <p style="margin: 0; font-size: 16px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-
-                with box_residenza:
-                    st.markdown("#### 📍 Residenza")
-                    st.markdown(
-                        f"""
-                        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
-                            <p style="margin: 0 0 8px 0; font-size: 16px;">Indirizzo: <b>{riga_bambino[col_via]}, {riga_bambino[col_civico]}</b></p>
-                            <p style="margin: 0 0 8px 0; font-size: 16px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
-                            <p style="margin: 0; font-size: 16px;">Genitore: <b>{nome_completo_genitore}</b></p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-
-                with box_sanitario:
-                    st.markdown("#### ⚠️ Sanitario")
-                    ha_allergie = str(riga_bambino[col_allergie]).strip().upper()
-                    is_allergico = ha_allergie in ["SÌ", "SI", "YES", "TRUE"]
-                    colore_sfondo = "#fef2f2" if is_allergico else "#f0fdf4"
-                    colore_bordo = "#fee2e2" if is_allergico else "#dcfce7"
-                    icona = "🚨" if is_allergico else "✅"
-
-                    st.markdown(
-                        f"""
-                        <div style="background-color: {colore_sfondo}; border: 1px solid {colore_bordo}; {stile_box}">
-                            <p style="margin: 0 0 4px 0; font-size: 15px; font-weight: 600;">ALLERGIE / INTOLLERANZE</p>
-                            <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">{icona} {ha_allergie}</p>
-                            <p style="margin: 0; font-size: 14px;">{riga_bambino[col_quali] if is_allergico else 'Nessuna allergia indicata.'}</p>
-                        </div>
-                        """, unsafe_allow_html=True
-                    )
-
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("✏️ Modifica Anagrafica", key="btn_attiva_modifica"):
-                    st.session_state.modalita_modifica = True
-                    st.rerun()
-
-        # -------------------------------------------------------------------------
-        # SCHEDA 2: GENITORE
-        # -------------------------------------------------------------------------
-        elif st.session_state.scheda_attiva == "genitore":
-            g_col1, g_col2 = st.columns(2)
-            with g_col1:
-                st.markdown("#### 👤 Dati genitore")
-                st.markdown(
-                    f"""
-                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <p><b>Nome Completo:</b> {nome_completo_genitore}</p>
-                        <p><b>Data Nascita:</b> {riga_bambino[col_g_nascita]}</p>
-                        <p><b>Codice Fiscale:</b> {riga_bambino[col_g_cf]}</p>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-
-            with g_col2:
-                st.markdown("#### 📞 Recapiti")
-                st.markdown(
-                    f"""
-                    <div style="background-color: #f0fdfa; padding: 20px; border-radius: 8px; border: 1px solid #99f6e4;">
-                        <p><b>📞 Telefono:</b> <a href="tel:{riga_bambino[col_g_tel]}">{riga_bambino[col_g_tel]}</a></p>
-                        <p><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}">{riga_bambino[col_g_email]}</a></p>
-                    </div>
-                    """, unsafe_allow_html=True
-                )
-
-            if not fratelli.empty:
-                st.markdown("---")
-                st.markdown("### 👦 Altri figli iscritti:")
-                for idx_fratello, riga_fratello in fratelli.iterrows():
-                    nome_f = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
-                    btn_col1, btn_col2 = st.columns([3, 1])
-                    with btn_col1:
-                        st.write(f"🧑‍🤝‍🧑 **{nome_f}** (`{riga_fratello[col_cf]}`)")
-                    with btn_col2:
-                        if st.button(f"Scheda 📂", key=f"btn_fratello_{idx_fratello}"):
-                            st.session_state.id_bambino_corrente = idx_fratello
-                            st.session_state.scheda_attiva = "bambino"
-                            st.rerun()
-
-        # -------------------------------------------------------------------------
-        # SCHEDA 3: SETTIMANE
-        # -------------------------------------------------------------------------
-        elif st.session_state.scheda_attiva == "settimane":
-            st.markdown("### 📅 Gestione Iscrizioni Settimanali")
-
-            if not colonne_settimane:
-                st.error("⚠️ Nessuna colonna relativa alle settimane/periodi trovata.")
-            else:
-                opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
-                nuovi_valori = {}
-
-                cols = st.columns(4)
-                for i, col_sett in enumerate(colonne_settimane):
-                    val_str = str(riga_bambino[col_sett]).strip()
-                    idx_def = opzioni_frequenza.index(val_str) if val_str in opzioni_frequenza else 0
-
-                    is_iscritto = idx_def > 0
-                    colore_bordo = "#10b981" if is_iscritto else "#cbd5e1"
-                    colore_sfondo = "#f0fdf4" if is_iscritto else "#f8fafc"
-
-                    with cols[i % 4]:
-                        st.markdown(
-                            f"""
-                            <div style="background-color: {colore_sfondo}; border-top: 4px solid {colore_bordo}; 
-                                        padding: 8px; border-radius: 6px 6px 0 0; text-align: center; margin-bottom: 5px;">
-                                <div style="font-weight: bold; font-size: 12px;">{col_sett}</div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-
-                        scelta = st.selectbox(
-                            label=f"Sel_{col_sett}",
-                            options=opzioni_frequenza,
-                            index=idx_def,
-                            key=f"sb_sett_{riga_index}_{i}",
-                            label_visibility="collapsed"
-                        )
-                        nuovi_valori[col_sett] = scelta
-
-                st.markdown("---")
-
-                col_btn_salva, col_btn_pagamenti = st.columns([1, 1])
-
-                with col_btn_salva:
-                    if st.button("💾 Salva Settimane", type="primary", use_container_width=True):
-                        try:
-                            for col_sett, val_scelto in nuovi_valori.items():
-                                val_finale = "" if val_scelto == "NON ISCRITTO ❌" else str(val_scelto)
-                                df_iscritti.at[riga_index, col_sett] = val_finale
-
-                            df_iscritti.to_excel("gestionale.xlsx", index=False)
-                            st.success("🎉 Settimane salvate con successo!")
-                            st.rerun()
-                        except Exception as err:
-                            st.error(f"❌ Errore durante il salvataggio: {err}")
-
-                with col_btn_pagamenti:
-                    if st.button(f"💳 Vai ai Pagamenti", key="btn_vai_a_pagamenti"):
-                        st.session_state["seleziona_iscritto_pagamenti"] = nome_completo_bambino
-                        st.session_state["pagina_corrente"] = "Gestione Pagamenti"
-                        st.rerun()
