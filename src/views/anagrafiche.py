@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from src.utils.config_manager import carica_configurazione
+import database_utils as db_utils
 
 # Riduciamo gli spazi verticali nativi di Streamlit per compattare la pagina
 st.markdown(
@@ -118,103 +119,226 @@ def mostra_anagrafiche(df_iscritti):
     ]
 
     # ==========================================
-    # 1. PREPARAZIONE DELLA LISTA DI RICERCA
+    # CREAZIONE TABS PRINCIPALI
     # ==========================================
-    df_iscritti_ordinato = df_iscritti.sort_values(by=[col_cognome, col_nome])
-    
-    opzioni_ricerca = (
-        df_iscritti_ordinato[col_cognome].astype(str).str.upper() + " " + 
-        df_iscritti_ordinato[col_nome].astype(str).str.title() + " (" + 
-        df_iscritti_ordinato[col_cf].astype(str).str.upper() + ")"
-    )
-    
-    mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti_ordinato.index))
-    lista_selectbox = list(opzioni_ricerca)
-    # Mappa inversa: indice -> stringa opzione (utile per sincronizzare la selectbox)
-    mappa_indice_a_opzione = {v: k for k, v in mappa_opzioni.items()}
+    tab_ricerca, tab_nuovo = st.tabs(["🔍 Cerca / Modifica Iscritto", "➕ Nuovo Iscritto"])
 
-    # ==========================================
-    # 2. INTERFACCIA GRAFICA COMPATTA & CSS
-    # ==========================================
-   
-    # CSS per lo stile visivo
-    st.markdown(
-        """
-        <style>
-        div[data-testid="stSelectbox"] p {
-            font-size: 18px !important;
-        }
-        div[data-testid="stSelectbox"] div[role="button"] {
-            font-size: 18px !important;
-            padding: 8px 12px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    # -------------------------------------------------------------------------
+    # TAB 1: RICERCA E SCHEDA ISCRITTO
+    # -------------------------------------------------------------------------
+    with tab_ricerca:
+        if df_iscritti.empty:
+            st.info("Nessun iscritto presente nel database.")
+        else:
+            # 1. PREPARAZIONE DELLA LISTA DI RICERCA
+            df_iscritti_ordinato = df_iscritti.sort_values(by=[col_cognome, col_nome])
 
-    col_ricerca, col_vuota = st.columns([3, 2])
+            opzioni_ricerca = (
+                df_iscritti_ordinato[col_cognome].astype(str).str.upper() + " " +
+                df_iscritti_ordinato[col_nome].astype(str).str.title() + " (" +
+                df_iscritti_ordinato[col_cf].astype(str).str.upper() + ")"
+            )
 
-    # Callback quando l'utente cambia la selectbox: sincronizza lo stato corrente
-    def _on_selectbox_change():
-        sel = st.session_state.get("ricerca_dinamica_selectbox")
-        if sel in mappa_opzioni:
-            id_sel = mappa_opzioni.get(sel)
-            st.session_state.id_bambino_corrente = id_sel
-            st.session_state.risultato_ricerca = df_iscritti.loc[[id_sel]]
-            # Assicurarsi di posizionarsi sempre sui Dati Bambino quando si apre una scheda
-            st.session_state.scheda_attiva = "bambino"
+            mappa_opzioni = dict(zip(opzioni_ricerca, df_iscritti_ordinato.index))
+            lista_selectbox = list(opzioni_ricerca)
+            mappa_indice_a_opzione = {v: k for k, v in mappa_opzioni.items()}
 
-    with col_ricerca:
-        scelta_utente = st.selectbox(
-            "Cerca un iscritto:",
-            options=lista_selectbox,
-            index=None,
-            placeholder="🔍 Digita il cognome o nome...",
-            key="ricerca_dinamica_selectbox",
-            on_change=_on_selectbox_change
-        )
-
-    # ==========================================
-    # 💡 L'ASSO NELLA MANICA: JAVASCRIPT INJECTION
-    # ==========================================
-    # Questo script trova l'input di ricerca della selectbox di Streamlit nel DOM del browser
-    # e forza la selezione totale del testo al click, permettendo la sovrascrittura istantanea.
-    st.components.v1.html(
-        """
-        <script>
-        // Funzione che aggancia l'evento di focus all'input di Streamlit
-        function attenuaInput() {
-            // Cerchiamo l'elemento input generato da Streamlit per la selectbox
-            const inputs = window.parent.document.querySelectorAll('div[data-testid="stSelectbox"] input');
-            inputs.forEach(input => {
-                if (!input.dataset.hasAutoSelectListener) {
-                    input.dataset.hasAutoSelectListener = "true";
-                    
-                    // Al click o al focus, selezioniamo tutto il testo contenuto
-                    const selectText = () => {
-                        setTimeout(() => {
-                            input.select();
-                        }, 50); // Piccolo delay per attendere il rendering di Streamlit
-                    };
-                    
-                    input.addEventListener('focus', selectText);
-                    input.addEventListener('click', selectText);
+            # 2. INTERFACCIA GRAFICA & CSS
+            st.markdown(
+                """
+                <style>
+                div[data-testid="stSelectbox"] p {
+                    font-size: 18px !important;
                 }
-            });
-        }
+                div[data-testid="stSelectbox"] div[role="button"] {
+                    font-size: 18px !important;
+                    padding: 8px 12px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
 
-        // Monitoriamo continuamente la pagina (necessario perché Streamlit ridisegna spesso i componenti)
-        setInterval(attenuaInput, 500);
-        </script>
-        """,
-        height=0, # Invisibile all'utente, non occupa spazio a schermo
-    )
+            col_ricerca, col_vuota = st.columns([3, 2])
 
-    # ==========================================
-    # 3. GESTIONE DELLA PERSISTENZA DELLA SCHEDA
-    # ==========================================
-    # Nota: la sincronizzazione dalla selectbox è gestita tramite callback `_on_selectbox_change`
+            def _on_selectbox_change():
+                sel = st.session_state.get("ricerca_dinamica_selectbox")
+                if sel in mappa_opzioni:
+                    id_sel = mappa_opzioni.get(sel)
+                    st.session_state.id_bambino_corrente = id_sel
+                    st.session_state.risultato_ricerca = df_iscritti.loc[[id_sel]]
+                    st.session_state.scheda_attiva = "bambino"
+
+            # Determina l'indice di selezione se è già attivo un bambino
+            index_corrente = None
+            if "id_bambino_corrente" in st.session_state and st.session_state.id_bambino_corrente in mappa_indice_a_opzione:
+                stringa_opzione = mappa_indice_a_opzione[st.session_state.id_bambino_corrente]
+                if stringa_opzione in lista_selectbox:
+                    index_corrente = lista_selectbox.index(stringa_opzione)
+
+            with col_ricerca:
+                scelta_utente = st.selectbox(
+                    "Cerca un iscritto:",
+                    options=lista_selectbox,
+                    index=index_corrente,
+                    placeholder="🔍 Digita il cognome o nome...",
+                    key="ricerca_dinamica_selectbox",
+                    on_change=_on_selectbox_change
+                )
+
+            # JAVASCRIPT INJECTION
+            st.components.v1.html(
+                """
+                <script>
+                function attenuaInput() {
+                    const inputs = window.parent.document.querySelectorAll('div[data-testid="stSelectbox"] input');
+                    inputs.forEach(input => {
+                        if (!input.dataset.hasAutoSelectListener) {
+                            input.dataset.hasAutoSelectListener = "true";
+                            const selectText = () => {
+                                setTimeout(() => {
+                                    input.select();
+                                }, 50);
+                            };
+                            input.addEventListener('focus', selectText);
+                            input.addEventListener('click', selectText);
+                        }
+                    });
+                }
+                setInterval(attenuaInput, 500);
+                </script>
+                """,
+                height=0,
+            )
+
+            st.markdown("---")
+
+            # 3. VISUALIZZAZIONE SCHEDA ISCRITTO SELEZIONATO
+            if "id_bambino_corrente" in st.session_state and st.session_state.id_bambino_corrente in df_iscritti.index:
+                id_curr = st.session_state.id_bambino_corrente
+                iscritto = df_iscritti.loc[id_curr]
+
+                st.subheader(f"📋 Scheda di: {iscritto.get(col_cognome, '')} {iscritto.get(col_nome, '')}")
+
+                # (Qui puoi inserire la visualizzazione completa dei dettagli dell'iscritto,
+                #  i suoi dati anagrafici, le settimane spuntate, le note mediche, ecc.)
+                col_d1, col_d2 = st.columns(2)
+                with col_d1:
+                    st.markdown("##### 👶 Dati Minore")
+                    st.write(f"**Data di Nascita:** {iscritto.get(col_nascita, 'N/D')}")
+                    st.write(f"**Luogo di Nascita:** {iscritto.get(col_luogo, 'N/D')}")
+                    st.write(f"**Codice Fiscale:** {iscritto.get(col_cf, 'N/D')}")
+                    st.write(f"**Indirizzo:** {iscritto.get(col_via, 'N/D')}")
+                    st.write(f"**Allergie/Intolleranze:** {iscritto.get(col_allergie, 'NO')} ({iscritto.get(col_quali, '')})")
+                with col_d2:
+                    st.markdown("##### 👨‍👩‍👧 Dati Genitore")
+                    gen_cognome = iscritto.get(col_g_cognome, '')
+                    gen_nome = iscritto.get(col_g_nome, '')
+                    st.write(f"**Genitore:** {gen_cognome} {gen_nome}")
+                    st.write(f"**Codice Fiscale:** {iscritto.get(col_g_cf, 'N/D')}")
+                    st.write(f"**Telefono:** {iscritto.get(col_g_tel, 'N/D')}")
+                    st.write(f"**Email:** {iscritto.get(col_g_email, 'N/D')}")
+
+    # -------------------------------------------------------------------------
+    # TAB 2: FORM DI CREAZIONE NUOVO ISCRITTO
+    # -------------------------------------------------------------------------
+    with tab_nuovo:
+        st.subheader("➕ Inserimento Rapido Nuovo Iscritto")
+        st.caption("Usa questo modulo per registrare un bambino iscritto in loco o fuori dal modulo online.")
+
+        with st.form(key="form_nuovo_iscritto", clear_on_submit=True):
+            st.markdown("#### 👶 Dati del Minore")
+            col_b1, col_b2, col_b3 = st.columns(3)
+
+            with col_b1:
+                nuovo_cognome = st.text_input("Cognome Minore *").strip().upper()
+            with col_b2:
+                nuovo_nome = st.text_input("Nome Minore *").strip().title()
+            with col_b3:
+                nuova_data_nascita = st.date_input("Data di Nascita", value=None)
+
+            col_cf_in, _ = st.columns([1, 2])
+            with col_cf_in:
+                nuovo_cf = st.text_input("Codice Fiscale Minore").strip().upper()
+
+            st.markdown("---")
+            st.markdown("#### 👨‍👩‍👧 Dati Genitore / Contatti")
+            col_g1, col_g2, col_g3 = st.columns(3)
+
+            with col_g1:
+                nuovo_g_cognome = st.text_input("Cognome Genitore").strip().title()
+                nuovo_g_nome = st.text_input("Nome Genitore").strip().title()
+            with col_g2:
+                nuovo_tel = st.text_input("Telefono Genitore").strip()
+            with col_g3:
+                nuova_email = st.text_input("Email").strip()
+
+            st.markdown("---")
+            st.markdown("#### 🩺 Allergie e Note Mediche")
+            col_a1, col_a2 = st.columns([1, 2])
+            with col_a1:
+                ha_allergie = st.selectbox("Ha Allergie / Intolleranze?", ["NO", "SI"])
+            with col_a2:
+                dettaglio_allergie = st.text_input("Se SI, specifica quali:").strip()
+
+            st.markdown("---")
+            st.markdown("#### 🗓️ Iscrizione Settimane")
+            settimane_selezionate = {}
+
+            if colonne_settimane:
+                cols_sett = st.columns(3)
+                for i, col_s in enumerate(colonne_settimane):
+                    nome_sett_pulito = str(col_s).replace(prefisso, "").strip(" -[]:")
+                    with cols_sett[i % 3]:
+                        settimane_selezionate[col_s] = st.checkbox(nome_sett_pulito, key=f"chk_new_{i}")
+            else:
+                st.info("Nessuna colonna per le settimane trovata nelle impostazioni.")
+
+            btn_salva = st.form_submit_button("💾 Salva e Registra Iscritto", use_container_width=True)
+
+        # LOGICA DI SALVATAGGIO NUOVO ISCRITTO
+        if btn_salva:
+            if not nuovo_cognome or not nuovo_nome:
+                st.error("❌ Nome e Cognome del minore sono obbligatori!")
+            else:
+                # 1. Prepariamo una nuova riga con le stesse colonne del DataFrame originario
+                nuova_riga = {col: "" for col in df_iscritti.columns}
+
+                # 2. Popoliamo i campi mappati
+                nuova_riga[col_cognome] = nuovo_cognome
+                nuova_riga[col_nome] = nuovo_nome
+                if col_nascita in nuova_riga:
+                    nuova_riga[col_nascita] = nuova_data_nascita.strftime("%d/%m/%Y") if nuova_data_nascita else ""
+                if col_cf in nuova_riga:
+                    nuova_riga[col_cf] = nuovo_cf
+                if col_g_cognome in nuova_riga:
+                    nuova_riga[col_g_cognome] = nuovo_g_cognome
+                if col_g_nome in nuova_riga:
+                    nuova_riga[col_g_nome] = nuovo_g_nome
+                if col_g_tel in nuova_riga:
+                    nuova_riga[col_g_tel] = nuovo_tel
+                if col_g_email in nuova_riga:
+                    nuova_riga[col_g_email] = nuova_email
+                if col_allergie in nuova_riga:
+                    nuova_riga[col_allergie] = ha_allergie
+                if col_quali in nuova_riga:
+                    nuova_riga[col_quali] = dettaglio_allergie if ha_allergie == "SI" else ""
+
+                # 3. Assegniamo la tariffa/frequenza di default per le settimane spuntate
+                frequenza_default = list(config.get("tariffe", {}).keys())[0] if config.get("tariffe") else "Tempo Pieno"
+                for col_s, selezionata in settimane_selezionate.items():
+                    if selezionata:
+                        nuova_riga[col_s] = frequenza_default
+
+                # 4. Salva sia nello stato della sessione che su file Excel
+                db_utils.aggiungi_nuovo_iscritto(nuova_riga)
+
+                # 5. Imposta il nuovo bambino come selezionato per aprirlo nel Tab 1
+                st.session_state.id_bambino_corrente = len(st.session_state.df_iscritti) - 1
+                st.session_state.scheda_attiva = "bambino"
+
+                st.success(f"🎉 **{nuovo_cognome} {nuovo_nome}** aggiunto con successo!")
+                st.rerun()
 
     # ==========================================
     # 4. CARICAMENTO E VISUALIZZAZIONE DELLA SCHEDA
