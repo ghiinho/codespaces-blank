@@ -27,6 +27,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+def formatta_data_ita(valore_data):
+    """Converti qualsiasi formato data in GG/MM/AAAA"""
+    if pd.isna(valore_data) or str(valore_data).strip() in ["", "nan", "None", "NaT"]:
+        return "N/D"
+    try:
+        # Convertiamo in oggetto datetime e poi stringa formattata
+        data_dt = pd.to_datetime(valore_data, dayfirst=True)
+        return data_dt.strftime("%d/%m/%Y")
+    except Exception:
+        # Se la conversione fallisce, restituiamo il valore pulito
+        return str(valore_data).split()[0]
+
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
     st.write("Visualizza, modifica o aggiorna i dati personali, sanitari, deleghe e i contatti di ciascun iscritto.")
@@ -344,6 +356,7 @@ def mostra_anagrafiche(df_iscritti):
                     # --- BOX 1: DATI ANAGRAFICI E RESIDENZA ---
                     with box_anagrafica:
                         st.markdown("#### 👤 Dati anagrafici")
+                        data_nascita_formatted = formatta_data_ita(riga_bambino[col_nascita])
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; {stile_box}">
