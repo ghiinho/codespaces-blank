@@ -278,7 +278,7 @@ def mostra_anagrafiche(df_iscritti):
                                 df_iscritti.at[riga_index, col_consenso_privacy] = e_privacy
 
                                 try:
-                                    df_iscritti.to_excel("gestionale.xlsx", index=False)
+                                    df_iscritti.to_excel("iscrizioni.xlsx", index=False)
                                     st.success("✅ Dati aggiornati con successo!")
                                     st.session_state.modalita_modifica = False
                                     st.rerun()
@@ -441,7 +441,7 @@ def mostra_anagrafiche(df_iscritti):
                                     val_finale = "" if val_scelto == "NON ISCRITTO ❌" else str(val_scelto)
                                     df_iscritti.at[riga_index, col_sett] = val_finale
 
-                                df_iscritti.to_excel("gestionale.xlsx", index=False)
+                                df_iscritti.to_excel("iscrizioni.xlsx", index=False)
                                 st.success("🎉 Settimane salvate con successo!")
                                 st.rerun()
                             except Exception as err:
