@@ -382,6 +382,21 @@ def mostra_anagrafiche(df_iscritti):
                     if st.button("✏️ Modifica Scheda Iscritto", key="btn_attiva_modifica"):
                         st.session_state.modalita_modifica = True
                         st.rerun()
+                        
+            # --- FRATELLI ISCRITTI ---
+                if not fratelli.empty:
+                    st.markdown("---")
+                    st.markdown("### 👦 Altri figli iscritti nel sistema:")
+                    for idx_fratello, riga_fratello in fratelli.iterrows():
+                        nome_f = f"{riga_fratello[col_cognome]} {riga_fratello[col_nome]}".upper()
+                        btn_col1, btn_col2 = st.columns([3, 1])
+                        with btn_col1:
+                            st.write(f"🧑‍🤝‍🧑 **{nome_f}** (`{riga_fratello[col_cf]}`)")
+                        with btn_col2:
+                            if st.button(f"Scheda 📂", key=f"btn_fratello_{idx_fratello}"):
+                                st.session_state.id_bambino_corrente = idx_fratello
+                                st.session_state.scheda_attiva = "bambino"
+                                st.rerun()
 
             # --- SUB-TAB 2: GENITORE E FRATELLI ISCRITTI ---
             elif st.session_state.scheda_attiva == "genitore":
