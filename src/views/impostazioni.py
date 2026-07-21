@@ -142,9 +142,6 @@ def mostra_impostazioni():
                         st.rerun()
 
     # =====================================================================
-    # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (NUOVO!)
-    # =====================================================================
-    # =====================================================================
     # TAB 4: LISTINO TARIFFE, SCONTI E PACCHETTI (PULITO / SENZA DEFAULT)
     # =====================================================================
     with tab_tariffe:
@@ -221,7 +218,7 @@ def mostra_impostazioni():
                     help="Seleziona 'Tutte' per applicare lo sconto sul totale oppure una frequenza specifica."
                 )
 
-                tipo_sconto = st.selectbox("Tipo Sconto:", ["Percentuale (%)", "Fisso (€)"])
+                tipo_sconto = st.selectbox("Tipo Sconto:", ["Fisso (€)", "Percentuale (%)"])
                 valore_sconto = st.number_input("Valore Sconto:", min_value=0.0, step=1.0)
                 btn_add_sconto = st.form_submit_button("➕ Aggiungi Sconto", use_container_width=True)
 

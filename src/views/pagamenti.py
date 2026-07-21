@@ -10,15 +10,10 @@ def mostra_pagamenti(df_iscritti):
 
     config = carica_configurazione()
     
-    # 💡 Lettura dinamica di tariffe, pacchetti e sconti dal config
+    # 💡 Lettura dinamica di tariffe, pacchetti e sconti dal config (Default Sconti = Vuoto)
     tariffe = config.get("tariffe", {})
     pacchetti = config.get("pacchetti", [])
-    catalogo_sconti = config.get("catalogo_sconti", [
-        {"id": "sconto_fratelli", "nome": "Sconto Fratelli (-15%)", "tipo": "percentuale", "valore": 15.0},
-        {"id": "sconto_convenzione", "nome": "Sconto Convenzione (-10%)", "tipo": "percentuale", "valore": 10.0},
-        {"id": "sconto_fisso_10", "nome": "Sconto Promo Speciale (-10€)", "tipo": "fisso", "valore": 10.0},
-        {"id": "sconto_borsa_studio", "nome": "Borsa di Studio (-50€)", "tipo": "fisso", "valore": 50.0},
-    ])
+    catalogo_sconti = config.get("catalogo_sconti", [])  # Nessuno sconto predefinito!
 
     if not tariffe:
         st.warning("⚠️ Non hai ancora configurato le tariffe nel pannello Impostazioni!")
@@ -256,11 +251,11 @@ def mostra_pagamenti(df_iscritti):
             with col_head1:
                 st.markdown(f"## 👤 {iscritto['cognome']} {iscritto['nome']}")
                 st.write(f"🗓️ **Frequenze ({iscritto['num_settimane']} sett.):** {iscritto['frequenze_str']}")
-                st.write(f"🏷️ **Tariffa/Sconti Applicati:** {iscritto['descrizione_sconto']}")
+                st.write(f"🏷️ **Dettaglio Sconti:** {iscritto['descrizione_sconto']}")
             with col_head2:
                 st.markdown(f"### Status:\n### {iscritto['stato']}")
                 
-                # 🔗 PULSANTE DI RITORNO ALL'ANAGRAFICA
+                # PULSANTE DI RITORNO ALL'ANAGRAFICA
                 if st.button(f"👤 Apri Anagrafica di {iscritto['nome']}", use_container_width=True, key=f"btn_vai_anag_{chiave_iscritto}"):
                     st.session_state["id_bambino_corrente"] = iscritto["index_df"]
                     st.session_state["scheda_attiva"] = "bambino"
@@ -269,9 +264,13 @@ def mostra_pagamenti(df_iscritti):
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # --- SEZIONE GESTIONE SCONTI PERSONALIZZATI / MANUALI ---
-            with st.expander("🎟️ **Gestisci Sconti Personalizzati e Promozioni**", expanded=False):
-                st.markdown("Seleziona uno o più sconti da applicare al totale di questo iscritto:")
+            # --- SEZIONE GESTIONE SCONTI PERSONALIZZATI (VISIBILE APERTA) ---
+            st.markdown("### 🎟️ Sconti Personalizzati e Promozioni")
+            
+            if not catalogo_sconti:
+                st.info("ℹ️ Nessuno sconto o convenzione presente nel catalogo. Puoi crearne di nuovi nella sezione *Impostazioni*.")
+            else:
+                col_sc1, col_sc2 = st.columns([3, 1])
                 
                 mappa_nomi_sconti = {s["nome"]: s["id"] for s in catalogo_sconti}
                 nomi_opzioni_sconti = list(mappa_nomi_sconti.keys())
@@ -282,27 +281,31 @@ def mostra_pagamenti(df_iscritti):
                     s["nome"] for s in catalogo_sconti if s["id"] in sconti_selezionati_ids
                 ]
 
-                sconti_scelti_nomi = st.multiselect(
-                    "Sconti applicabili:",
-                    options=nomi_opzioni_sconti,
-                    default=nomi_selezionati_default,
-                    key=f"ms_sconti_{chiave_iscritto}",
-                    help="Puoi aggiungere o rimuovere sconti personalizzati. Gli importi e i saldi verranno ricalcolati automaticamente."
-                )
+                with col_sc1:
+                    sconti_scelti_nomi = st.multiselect(
+                        "Seleziona sconti da applicare a questo iscritto:",
+                        options=nomi_opzioni_sconti,
+                        default=nomi_selezionati_default,
+                        key=f"ms_sconti_{chiave_iscritto}"
+                    )
 
-                # Pulsante di salvataggio modifiche sconti
-                if st.button("💾 Salva e Aggiorna Sconti Applicati", key=f"btn_salva_sconti_{chiave_iscritto}", type="primary"):
-                    nuovi_ids_sconti = [mappa_nomi_sconti[nome] for nome in sconti_scelti_nomi]
-                    
-                    if chiave_iscritto not in st.session_state.registro_pagamenti:
-                        st.session_state.registro_pagamenti[chiave_iscritto] = {"transazioni": []}
-                    
-                    st.session_state.registro_pagamenti[chiave_iscritto]["sconti_manuali"] = nuovi_ids_sconti
-                    
-                    config["registro_pagamenti"] = st.session_state.registro_pagamenti
-                    salva_configurazione(config)
-                    st.success("✅ Sconti aggiornati con successo!")
-                    st.rerun()
+                with col_sc2:
+                    st.write("") # Spaziatore verticale
+                    st.write("") 
+                    if st.button("💾 Applica Sconti", key=f"btn_salva_sconti_{chiave_iscritto}", type="primary", use_container_width=True):
+                        nuovi_ids_sconti = [mappa_nomi_sconti[nome] for nome in sconti_scelti_nomi]
+                        
+                        if chiave_iscritto not in st.session_state.registro_pagamenti:
+                            st.session_state.registro_pagamenti[chiave_iscritto] = {"transazioni": []}
+                        
+                        st.session_state.registro_pagamenti[chiave_iscritto]["sconti_manuali"] = nuovi_ids_sconti
+                        
+                        config["registro_pagamenti"] = st.session_state.registro_pagamenti
+                        salva_configurazione(config)
+                        st.success("✅ Sconti aggiornati!")
+                        st.rerun()
+
+            st.markdown("<br>", unsafe_allow_html=True)
 
             # Card metriche ricalcolate
             c1, c2, c3, c4 = st.columns(4)
