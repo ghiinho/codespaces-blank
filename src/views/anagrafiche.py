@@ -192,6 +192,34 @@ def mostra_anagrafiche(df_iscritti):
                     st.session_state.modalita_modifica = False
                     st.rerun()
 
+            # =========================================================
+            # 🐞 BLOCCO DEBUG (Rimuovilo o nascondilo dopo le verifiche)
+            # =========================================================
+            with st.expander("🐞 TRACCIAMENTO ED ISPEZIONE DATI (Debug)", expanded=False):
+                st.markdown("#### 1. Mappatura Variabile ➡️ Nome Colonna")
+                mappatura_corrente = {
+                    "col_cognome": col_cognome,
+                    "col_nome": col_nome,
+                    "col_cf": col_cf,
+                    "col_nascita": col_nascita,
+                    "col_luogo": col_luogo,
+                    "col_has_fratelli": col_has_fratelli,
+                    "col_deleghe": col_deleghe,
+                    "col_note_segnalazioni": col_note_segnalazioni,
+                    "col_consenso_privacy": col_consenso_privacy,
+                    "col_allergie": col_allergie,
+                    "col_quali": col_quali,
+                }
+                st.json(mappatura_corrente)
+
+                st.markdown("#### 2. Dati letti per questa riga (`riga_bambino`)")
+                # Mostriamo solo le colonne mappate e i relativi valori letti
+                dati_estratti = {var: riga_bambino.get(col_nome, "⚠️ NON TROVATO") for var, col_nome in mappatura_corrente.items()}
+                st.json(dati_estratti)
+
+                st.markdown("#### 3. Tutte le colonne presenti nel file Excel")
+                st.write(list(df_iscritti.columns))
+
             # --- SUB-TAB 1: BAMBINO ---
             if st.session_state.scheda_attiva == "bambino":
                 if st.session_state.modalita_modifica:
