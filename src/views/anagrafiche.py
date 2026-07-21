@@ -200,7 +200,7 @@ def mostra_anagrafiche(df_iscritti):
                     st.session_state.modalita_modifica = False
                     st.rerun()
             with col_tab2:
-                if st.button("👨‍👩‍👧 Contatti & Deleghe", type="primary" if st.session_state.scheda_attiva == "genitore" else "secondary", use_container_width=True):
+                if st.button("👨‍👩‍👧 Dati Genitore", type="primary" if st.session_state.scheda_attiva == "genitore" else "secondary", use_container_width=True):
                     st.session_state.scheda_attiva = "genitore"
                     st.session_state.modalita_modifica = False
                     st.rerun()
@@ -351,6 +351,7 @@ def mostra_anagrafiche(df_iscritti):
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Nato/a il: <b>{riga_bambino[col_nascita]}</b> a <b>{riga_bambino[col_luogo]}</b></p>
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
                                 <hr style="margin: 8px 0 !important;">
+                                <p style="margin: 0 0 4px 0; font-size: 16px;"><b>Dati residenza</b></p>
                                 <p style="margin: 0 0 4px 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}</b></p>
                                 <p style="margin: 0; font-size: 14px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
                             </div>
@@ -411,7 +412,6 @@ def mostra_anagrafiche(df_iscritti):
                         st.rerun()
 
             # --- SUB-TAB 2: GENITORE E FRATELLI ISCRITTI ---
-            # --- SUB-TAB 2: GENITORE ---
             elif st.session_state.scheda_attiva == "genitore":
                 if st.session_state.modalita_modifica:
                     with st.form("form_modifica_genitore"):
@@ -448,11 +448,11 @@ def mostra_anagrafiche(df_iscritti):
                     # Visualizzazione pulita dei dati del genitore
                     g_col_main, _ = st.columns([2, 1])
                     with g_col_main:
-                        st.markdown("#### 👤 Dati Referente / Genitore")
+                        st.markdown("#### 👤 Dati Genitore")
                         st.markdown(
                             f"""
                             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <p style="margin: 0 0 8px 0; font-size: 15px;">Nome Completo: <b style="font-size: 16px;">{nome_completo_genitore}</b></p>
+                                <p style="margin: 0 0 8px 0; font-size: 15px;">Cognome e nome: <b style="font-size: 16px;">{nome_completo_genitore}</b></p>
                                 <p style="margin: 0 0 8px 0; font-size: 15px;">Codice Fiscale: <b>{riga_bambino[col_g_cf]}</b></p>
                                 <hr style="margin: 12px 0 !important;">
                                 <p style="margin: 0 0 8px 0; font-size: 15px;">📞 Telefono: <a href="tel:{riga_bambino[col_g_tel]}" style="font-weight: bold; color: #0284c7;">{riga_bambino[col_g_tel]}</a></p>
