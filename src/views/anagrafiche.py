@@ -81,24 +81,23 @@ def mostra_anagrafiche(df_iscritti):
         return nome_cercato
 
     # Mappatura Dati Genitore
-    col_g_email = recupera_colonna_valida(mapping.get("email_genitore", "INDIRIZZO EMAIL"), 1)
-    col_g_cognome = recupera_colonna_valida(mapping.get("cognome_genitore", "COGNOME GENITORE"), 2)
-    col_g_nome = recupera_colonna_valida(mapping.get("nome_genitore", "NOME GENITORE"), 3)
-    col_g_tel = recupera_colonna_valida(mapping.get("recapito", "TELEFONO GENITORE"), 4)
-    col_g_nascita = recupera_colonna_valida(mapping.get("data_nascita_genitore", "DATA DI NASCITA GENITORE"), 5)
-    col_g_cf = recupera_colonna_valida(mapping.get("cf_genitore", "CODICE FISCALE GENITORE"), 6)
+    col_g_email = recupera_colonna_valida(mapping.get("email_genitore", "Indirizzo email"), 2)
+    col_g_cognome = recupera_colonna_valida(mapping.get("cognome_genitore", "COGNOME GENITORE"), 3)
+    col_g_nome = recupera_colonna_valida(mapping.get("nome_genitore", "NOME GENITORE"), 4)
+    col_g_tel = recupera_colonna_valida(mapping.get("recapito", "TELEFONO GENITORE"), 6)
+    col_g_cf = recupera_colonna_valida(mapping.get("cf_genitore", "CODICE FISCALE GENITORE"), 5)
 
     # Mappatura Dati Bambino
     col_cognome = recupera_colonna_valida(mapping.get("cognome", "COGNOME MINORE"), 7)
     col_nome = recupera_colonna_valida(mapping.get("nome", "NOME MINORE"), 8)
     col_nascita = recupera_colonna_valida(mapping.get("data_nascita", "DATA DI NASCITA MINORE"), 9)
     col_luogo = recupera_colonna_valida(mapping.get("luogo_nascita", "LUOGO DI NASCITA MINORE"), 10)
-    col_via = recupera_colonna_valida(mapping.get("indirizzo", "INDIRIZZO DI RESIDENZA (VIA/STRADA/PIAZZA)"), 11)
-    col_cap = recupera_colonna_valida(mapping.get("cap", "CAP DI RESIDENZA"), 13)
-    col_citta = recupera_colonna_valida(mapping.get("citta", "COMUNE DI RESIDENZA'"), 14)
-    col_cf = recupera_colonna_valida(mapping.get("codice_fiscale", "CODICE FISCALE MINORE"), 15)
-    col_allergie = recupera_colonna_valida(mapping.get("allergie", "ALLERGIE O INTOLLERANZE?"), 16)
-    col_quali = recupera_colonna_valida(mapping.get("note_allergie", "SE SI, INDICA QUALI"), 17)
+    col_via = recupera_colonna_valida(mapping.get("indirizzo", "INDIRIZZO DI RESIDENZA (VIA/STRADA/PIAZZA)"), 13)
+    col_cap = recupera_colonna_valida(mapping.get("cap", "CAP DI RESIDENZA"), 14)
+    col_citta = recupera_colonna_valida(mapping.get("citta", "COMUNE DI RESIDENZA"), 12)
+    col_cf = recupera_colonna_valida(mapping.get("codice_fiscale", "CODICE FISCALE MINORE"), 11)
+    col_allergie = recupera_colonna_valida(mapping.get("allergie", "ALLERGIE O INTOLLERANZE?"), 15)
+    col_quali = recupera_colonna_valida(mapping.get("note_allergie", "SE SI, INDICA QUALI"), 16)
 
     # NUOVI CAMPI RICHIESTI
     col_has_fratelli = recupera_colonna_valida(mapping.get("ha_fratelli", "QUOTA AGEVOLATA FRATELLI"), 18)
@@ -303,7 +302,6 @@ def mostra_anagrafiche(df_iscritti):
                         e_g_cognome = riga_bambino[col_g_cognome]
                         e_g_nome = riga_bambino[col_g_nome]
                         e_g_cf = riga_bambino[col_g_cf]
-                        e_g_nascita = riga_bambino[col_g_nascita]
                         e_g_tel = riga_bambino[col_g_tel]
                         e_g_email = riga_bambino[col_g_email]
 
@@ -421,7 +419,6 @@ def mostra_anagrafiche(df_iscritti):
                         f"""
                         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
                             <p><b>Nome Completo:</b> {nome_completo_genitore}</p>
-                            <p><b>Data Nascita:</b> {riga_bambino[col_g_nascita]}</p>
                             <p><b>Codice Fiscale:</b> {riga_bambino[col_g_cf]}</p>
                             <p><b>📞 Telefono:</b> <a href="tel:{riga_bambino[col_g_tel]}">{riga_bambino[col_g_tel]}</a></p>
                             <p><b>✉️ Email:</b> <a href="mailto:{riga_bambino[col_g_email]}">{riga_bambino[col_g_email]}</a></p>
