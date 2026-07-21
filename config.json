@@ -29,9 +29,22 @@
         "cognome": "COGNOME MINORE",
         "nome": "NOME MINORE",
         "data_nascita": "DATA DI NASCITA MINORE",
+        "luogo_nascita": "LUOGO DI NASCITA MINORE",
+        "codice_fiscale": "CODICE FISCALE MINORE",
+        "citta": "COMUNE DI RESIDENZA",
+        "indirizzo": "INDIRIZZO DI RESIDENZA (VIA/STRADA/PIAZZA)",
+        "cap": "CAP DI RESIDENZA",
         "allergie": "ALLERGIE O INTOLLERANZE?",
         "note_allergie": "SE SI, INDICA QUALI",
-        "recapito": "TELEFONO GENITORE"
+        "cognome_genitore": "COGNOME GENITORE",
+        "nome_genitore": "NOME GENITORE",
+        "cf_genitore": "CODICE FISCALE GENITORE",
+        "email_genitore": "Indirizzo email",
+        "recapito": "TELEFONO GENITORE",
+        "ha_fratelli": "QUOTA AGEVOLATA FRATELLI",
+        "deleghe_ritiro": "DELEGATI AL RITIRO DEL MINORE",
+        "note_segnalazioni": "ALTRE SEGNALAZIONI",
+        "consenso_privacy": "CONSENSO AL TRATTAMENTO DEI DATI PERSONALI"
     },
     "prefisso_settimane": "PERIODI DISPONIBILI",
     "general": {
