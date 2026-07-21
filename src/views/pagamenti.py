@@ -352,10 +352,10 @@ def mostra_pagamenti(df_iscritti):
         tot_incassato = df_gen["totale_incassato"].sum()
         tot_rimanente = df_gen["rimanente"].sum()
 
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Totale Atteso", f"{tot_dovuto:.2f} €")
-        m2.metric("Totale Incassato", f"{tot_incassato:.2f} €", delta=f"{(tot_incassato/tot_dovuto*100 if tot_dovuto>0 else 0):.1f}%")
-        m3.metric("Rimanente Da Incassare", f"{tot_rimanente:.2f} €", delta_color="inverse")
+        # m1, m2, m3 = st.columns(3)
+        # m1.metric("Totale Atteso", f"{tot_dovuto:.2f} €")
+        # m2.metric("Totale Incassato", f"{tot_incassato:.2f} €", delta=f"{(tot_incassato/tot_dovuto*100 if tot_dovuto>0 else 0):.1f}%")
+        # m3.metric("Rimanente Da Incassare", f"{tot_rimanente:.2f} €", delta_color="inverse")
 
         st.markdown("---")
 
