@@ -93,19 +93,18 @@ def mostra_anagrafiche(df_iscritti):
     col_nome = recupera_colonna_valida(mapping.get("nome", "NOME MINORE"), 8)
     col_nascita = recupera_colonna_valida(mapping.get("data_nascita", "DATA DI NASCITA MINORE"), 9)
     col_luogo = recupera_colonna_valida(mapping.get("luogo_nascita", "LUOGO DI NASCITA MINORE"), 10)
-    col_via = recupera_colonna_valida(mapping.get("indirizzo", "INDIRIZZO DI RESIDENZA"), 11)
-    col_civico = recupera_colonna_valida(mapping.get("civico", "N. CIVICO"), 12)
-    col_cap = recupera_colonna_valida(mapping.get("cap", "CAP"), 13)
-    col_citta = recupera_colonna_valida(mapping.get("citta", "CITTA'"), 14)
+    col_via = recupera_colonna_valida(mapping.get("indirizzo", "INDIRIZZO DI RESIDENZA (VIA/STRADA/PIAZZA)"), 11)
+    col_cap = recupera_colonna_valida(mapping.get("cap", "CAP DI RESIDENZA"), 13)
+    col_citta = recupera_colonna_valida(mapping.get("citta", "COMUNE DI RESIDENZA'"), 14)
     col_cf = recupera_colonna_valida(mapping.get("codice_fiscale", "CODICE FISCALE MINORE"), 15)
     col_allergie = recupera_colonna_valida(mapping.get("allergie", "ALLERGIE O INTOLLERANZE?"), 16)
     col_quali = recupera_colonna_valida(mapping.get("note_allergie", "SE SI, INDICA QUALI"), 17)
 
     # NUOVI CAMPI RICHIESTI
-    col_has_fratelli = recupera_colonna_valida(mapping.get("ha_fratelli", "ALTRI FRATELLI ISCRITTI"), 18)
-    col_deleghe = recupera_colonna_valida(mapping.get("deleghe_ritiro", "PERSONE AUTORIZZATE AL RITIRO"), 19)
-    col_note_segnalazioni = recupera_colonna_valida(mapping.get("note_segnalazioni", "EVENTUALI SEGNALAZIONI"), 20)
-    col_consenso_privacy = recupera_colonna_valida(mapping.get("consenso_privacy", "CONSENSO PRIVACY E FOTO"), 21)
+    col_has_fratelli = recupera_colonna_valida(mapping.get("ha_fratelli", "QUOTA AGEVOLATA FRATELLI"), 18)
+    col_deleghe = recupera_colonna_valida(mapping.get("deleghe_ritiro", "DELEGATI AL RITIRO DEL MINORE"), 19)
+    col_note_segnalazioni = recupera_colonna_valida(mapping.get("note_segnalazioni", "ALTRE SEGNALAZIONI"), 20)
+    col_consenso_privacy = recupera_colonna_valida(mapping.get("consenso_privacy", "CONSENSO AL TRATTAMENTO DEI DATI PERSONALI"), 21)
 
     # Rilevamento Settimane
     prefisso = str(config.get("prefisso_settimane", "PERIODI DISPONIBILI")).strip().lower()
@@ -264,8 +263,6 @@ def mostra_anagrafiche(df_iscritti):
                             c_res1, c_res2 = st.columns([3, 1])
                             with c_res1:
                                 e_via = st.text_input("Via/Strada/Piazza", value=str(riga_bambino[col_via]))
-                            with c_res2:
-                                e_civico = st.text_input("Civico", value=str(riga_bambino[col_civico]))
 
                             c_res3, c_res4 = st.columns([1, 2])
                             with c_res3:
@@ -322,7 +319,6 @@ def mostra_anagrafiche(df_iscritti):
                                 df_iscritti.at[riga_index, col_luogo] = e_luogo.strip().upper()
                                 df_iscritti.at[riga_index, col_nascita] = e_nascita.strip()
                                 df_iscritti.at[riga_index, col_via] = e_via.strip().title()
-                                df_iscritti.at[riga_index, col_civico] = e_civico.strip().upper()
                                 df_iscritti.at[riga_index, col_cap] = e_cap.strip()
                                 df_iscritti.at[riga_index, col_citta] = e_citta.strip().upper()
                                 df_iscritti.at[riga_index, col_allergie] = e_allergie
@@ -357,7 +353,7 @@ def mostra_anagrafiche(df_iscritti):
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Nato/a il: <b>{riga_bambino[col_nascita]}</b> a <b>{riga_bambino[col_luogo]}</b></p>
                                 <p style="margin: 0 0 6px 0; font-size: 14px;">Codice Fiscale: <b>{riga_bambino[col_cf]}</b></p>
                                 <hr style="margin: 8px 0 !important;">
-                                <p style="margin: 0 0 4px 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}, {riga_bambino[col_civico]}</b></p>
+                                <p style="margin: 0 0 4px 0; font-size: 14px;">Indirizzo: <b>{riga_bambino[col_via]}</b></p>
                                 <p style="margin: 0; font-size: 14px;">Città: <b>{riga_bambino[col_citta]} ({riga_bambino[col_cap]})</b></p>
                             </div>
                             """, unsafe_allow_html=True
