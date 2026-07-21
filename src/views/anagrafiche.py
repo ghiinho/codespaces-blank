@@ -418,12 +418,13 @@ def mostra_anagrafiche(df_iscritti):
 
                 else:
                     # Visualizzazione pulita dei dati del genitore
-                    g_col_main, _ = st.columns([2, 1])
-                    with g_col_main:
+                    _, g_col_center, _ = st.columns([1, 2, 1])
+
+                    with g_col_center:
                         st.markdown("#### 👤 Dati Genitore")
                         st.markdown(
                             f"""
-                            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; max-width: 100%;">
                                 <p style="margin: 0 0 8px 0; font-size: 15px;">Cognome e nome: <b style="font-size: 16px;">{nome_completo_genitore}</b></p>
                                 <p style="margin: 0 0 8px 0; font-size: 15px;">Codice Fiscale: <b>{riga_bambino[col_g_cf]}</b></p>
                                 <hr style="margin: 12px 0 !important;">
