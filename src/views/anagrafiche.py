@@ -29,7 +29,7 @@ st.markdown(
 
 def mostra_anagrafiche(df_iscritti):
     st.title("👤 Ricerca e Gestione Anagrafiche")
-    st.write("Visualizza, modifica o aggiorna i dati personali, sanitari, deleghe e i contatti di ciascun iscritto.")
+    st.write("Visualizza, modifica o aggiorna i dati di ciascun iscritto.")
     
     if df_iscritti.empty:
         st.info("Nessun iscritto presente nel database. Carica un file per abilitare la gestione.")
@@ -535,8 +535,8 @@ def mostra_anagrafiche(df_iscritti):
     # TAB 2: FORM DI CREAZIONE NUOVO ISCRITTO (AGGIORNATO)
     # -------------------------------------------------------------------------
     with tab_nuovo:
-        st.subheader("➕ Inserimento Rapido Nuovo Iscritto")
-        st.caption("Usa questo modulo per registrare un bambino iscritto in loco o fuori dal modulo online.")
+        st.subheader("➕ Creazione Nuovo Iscritto")
+        st.caption("Usa questo modulo per registrare un bambino manualmente.")
 
         with st.form(key="form_nuovo_iscritto", clear_on_submit=True):
             st.markdown("#### 👶 Dati del Minore")
@@ -547,13 +547,13 @@ def mostra_anagrafiche(df_iscritti):
             with col_b2:
                 nuovo_nome = st.text_input("Nome Minore *").strip().title()
             with col_b3:
-                nuova_data_nascita = st.date_input("Data di nascita", value=None)
+                nuova_data_nascita = st.date_input("Data di nascita *", value=None)
 
             col_b4, col_cf_in, col_frat_in = st.columns(3)
             with col_b4:
                 nuovo_luogo_nascita = st.text_input("Luogo di nascita *").strip().upper()
             with col_cf_in:
-                nuovo_cf = st.text_input("Codice Fiscale Minore").strip().upper()
+                nuovo_cf = st.text_input("Codice Fiscale Minore *").strip().upper()
             with col_frat_in:
                 nuovo_ha_fratelli = st.selectbox("Ha altri fratelli iscritti? (Per accedere ad evenutali sconti)", ["NO", "SÌ"])
 
@@ -562,20 +562,20 @@ def mostra_anagrafiche(df_iscritti):
             col_g1, col_g2, col_g3 = st.columns(3)
 
             with col_g1:
-                nuovo_g_cognome = st.text_input("Cognome Genitore").strip().title()
-                nuovo_g_nome = st.text_input("Nome Genitore").strip().title()
+                nuovo_g_cognome = st.text_input("Cognome Genitore *").strip().title()
+                nuovo_g_nome = st.text_input("Nome Genitore *").strip().title()
             with col_g2:
-                nuovo_tel = st.text_input("Telefono Genitore").strip()
+                nuovo_tel = st.text_input("Telefono Genitore *").strip()
             with col_g3:
-                nuova_email = st.text_input("Email Genitore").strip()
+                nuova_email = st.text_input("Email Genitore *").strip()
 
-            nuove_deleghe = st.text_area("Persone Autorizzate al Ritiro (Nome, Cognome, Ruolo, Tel):", height=60, placeholder="Es: Mario Rossi (Nono) - 333123456")
+            nuove_deleghe = st.text_area("Persone Autorizzate al Ritiro:", height=60, placeholder="Es: Mario Rossi (Nono) - 333123456")
 
             st.markdown("---")
             st.markdown("#### 🩺 Allergie, Note e Privacy")
             col_a1, col_a2 = st.columns([1, 2])
             with col_a1:
-                ha_allergie = st.selectbox("Ha Allergie / Intolleranze?", ["NO", "SI"])
+                ha_allergie = st.selectbox("Ha Allergie / Intolleranze? *", ["NO", "SI"])
             with col_a2:
                 dettaglio_allergie = st.text_input("Se SI, specifica quali:").strip()
 
@@ -583,7 +583,7 @@ def mostra_anagrafiche(df_iscritti):
             with col_note_in:
                 nuove_note = st.text_input("Eventuali segnalazioni / note generali:").strip()
             with col_priv_in:
-                nuova_privacy = st.selectbox("Consenso Privacy & Utilizzo Foto", ["ACCONSENTE", "NON ACCONSENTE"])
+                nuova_privacy = st.selectbox("Consenso Privacy & Utilizzo Foto *", ["ACCONSENTE", "NON ACCONSENTE"])
 
             st.markdown("---")
             st.markdown("#### 🗓️ Iscrizione Settimane")
@@ -595,12 +595,13 @@ def mostra_anagrafiche(df_iscritti):
                     nome_sett_pulito = str(col_s).replace(prefisso, "").strip(" -[]:")
                     with cols_sett[i % 3]:
                         settimane_selezionate[col_s] = st.checkbox(nome_sett_pulito, key=f"chk_new_{i}")
-
+            
+            st.caption("I campi contraddistinti dall'asteriscono sono obbligatori.")
             btn_salva = st.form_submit_button("💾 Salva e Registra Iscritto", use_container_width=True)
 
         if btn_salva:
-            if not nuovo_cognome or not nuovo_nome:
-                st.error("❌ Nome e Cognome del minore sono obbligatori!")
+            if not nuovo_cognome or not nuovo_nome or not nuova_data_nascita or not nuovo_luogo_nascita or not nuovo_cf or not nuovo_g_cognome or not nuovo_g_nome or not nuovo_tel or not nuova_email or not ha_allergie or not nuova_privacy:
+                st.error("❌ Compila tutti i campi obbligatori!")
             else:
                 nuova_riga = {col: "" for col in df_iscritti.columns}
                 nuova_riga[col_cognome] = nuovo_cognome
