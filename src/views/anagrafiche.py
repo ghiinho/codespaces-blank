@@ -547,13 +547,15 @@ def mostra_anagrafiche(df_iscritti):
             with col_b2:
                 nuovo_nome = st.text_input("Nome Minore *").strip().title()
             with col_b3:
-                nuova_data_nascita = st.date_input("Data di Nascita", value=None)
+                nuova_data_nascita = st.date_input("Data di nascita", value=None)
 
-            col_cf_in, col_frat_in = st.columns(2)
+            col_b4, col_cf_in, col_frat_in = st.columns(3)
+            with col_b4:
+                nuovo_luogo_nascita = st.text_input("Luogo di nascita *").strip().upper()
             with col_cf_in:
                 nuovo_cf = st.text_input("Codice Fiscale Minore").strip().upper()
             with col_frat_in:
-                nuovo_ha_fratelli = st.selectbox("Ha altri fratelli iscritti? (Diritto a Sconto)", ["NO", "SÌ"])
+                nuovo_ha_fratelli = st.selectbox("Ha altri fratelli iscritti? (Per accedere ad evenutali sconti)", ["NO", "SÌ"])
 
             st.markdown("---")
             st.markdown("#### 👨‍👩‍👧 Dati Genitore / Contatti / Deleghe")
@@ -605,6 +607,8 @@ def mostra_anagrafiche(df_iscritti):
                 nuova_riga[col_nome] = nuovo_nome
                 if col_nascita in nuova_riga:
                     nuova_riga[col_nascita] = nuova_data_nascita.strftime("%d/%m/%Y") if nuova_data_nascita else ""
+                if col_luogo in nuova_riga:
+                    nuova_riga[col_luogo] = nuovo_luogo_nascita
                 if col_cf in nuova_riga:
                     nuova_riga[col_cf] = nuovo_cf
                 if col_g_cognome in nuova_riga:
