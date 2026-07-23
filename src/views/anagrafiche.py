@@ -239,7 +239,7 @@ def mostra_anagrafiche(df_iscritti):
                             with c_res3:
                                 e_cap = st.text_input("CAP", value=str(riga_bambino[col_cap]))
                             with c_res4:
-                                e_citta = st.text_input("Città", value=str(riga_bambino[col_citta]))
+                                e_citta = st.text_input("Comune", value=str(riga_bambino[col_citta]))
 
                         with col2_mod:
                             st.markdown("##### ℹ️ 2. Informazioni Varie")
@@ -551,25 +551,36 @@ def mostra_anagrafiche(df_iscritti):
 
             col_b4, col_cf_in, col_frat_in = st.columns(3)
             with col_b4:
-                nuovo_luogo_nascita = st.text_input("Luogo di nascita *").strip().upper()
+                nuovo_luogo_nascita = st.text_input("Luogo di nascita *").strip().title()
             with col_cf_in:
                 nuovo_cf = st.text_input("Codice Fiscale Minore *").strip().upper()
             with col_frat_in:
                 nuovo_ha_fratelli = st.selectbox("Ha altri fratelli iscritti? (Per accedere ad evenutali sconti)", ["NO", "SÌ"])
+            
+            col_b5, col_b6, col_b7 = st.columns(3)
+            with col_b5:
+                nuova_residenza = st.text_input("Indirizzo di residenza *").strip().title()
+            with col_b6:
+                nuova_citta = st.text_input("Comune di residenza *").strip().title()
+            with col_b7:
+                nuovo_cap = st.text_input("CAP di residenza *")
 
             st.markdown("---")
             st.markdown("#### 👨‍👩‍👧 Dati Genitore / Contatti / Deleghe")
+            
             col_g1, col_g2, col_g3 = st.columns(3)
-
             with col_g1:
                 nuovo_g_cognome = st.text_input("Cognome Genitore *").strip().title()
-                nuovo_g_nome = st.text_input("Nome Genitore *").strip().title()
             with col_g2:
-                nuovo_tel = st.text_input("Telefono Genitore *").strip()
+                nuovo_g_nome = st.text_input("Nome Genitore *").strip().title()
             with col_g3:
-                nuova_email = st.text_input("Email Genitore *").strip()
+                nuovo_tel = st.text_input("Telefono Genitore *").strip()
 
-            nuove_deleghe = st.text_area("Persone Autorizzate al Ritiro:", height=60, placeholder="Es: Mario Rossi (Nono) - 333123456")
+            col_g4, col_g5 = st.columns(1,2)
+            with col_g4:
+                nuova_email = st.text_input("Email Genitore *").strip()
+            with col_g5:
+                nuove_deleghe = st.text_area("Persone Autorizzate al Ritiro:", height=60, placeholder="Es: Mario Rossi (Nono) - 333123456")
 
             st.markdown("---")
             st.markdown("#### 🩺 Allergie, Note e Privacy")
@@ -596,11 +607,11 @@ def mostra_anagrafiche(df_iscritti):
                     with cols_sett[i % 3]:
                         settimane_selezionate[col_s] = st.checkbox(nome_sett_pulito, key=f"chk_new_{i}")
             
-            st.caption("I campi contraddistinti dall'asteriscono sono obbligatori.")
+            st.caption("I campi contraddistinti dall'asterisco (*) sono obbligatori.")
             btn_salva = st.form_submit_button("💾 Salva e Registra Iscritto", use_container_width=True)
 
         if btn_salva:
-            if not nuovo_cognome or not nuovo_nome or not nuova_data_nascita or not nuovo_luogo_nascita or not nuovo_cf or not nuovo_g_cognome or not nuovo_g_nome or not nuovo_tel or not nuova_email or not ha_allergie or not nuova_privacy:
+            if not nuovo_cognome or not nuovo_nome or not nuova_data_nascita or not nuovo_luogo_nascita or not nuovo_cf or not nuovo_g_cognome or not nuovo_g_nome or not nuovo_tel or not nuova_email or not ha_allergie or not nuova_privacy or not nuova_residenza or not nuova_citta or not nuovo_cap:
                 st.error("❌ Compila tutti i campi obbligatori!")
             else:
                 nuova_riga = {col: "" for col in df_iscritti.columns}
@@ -612,6 +623,12 @@ def mostra_anagrafiche(df_iscritti):
                     nuova_riga[col_luogo] = nuovo_luogo_nascita
                 if col_cf in nuova_riga:
                     nuova_riga[col_cf] = nuovo_cf
+                if col_via in nuova_riga:
+                    nuova_riga[col_via] = nuova_residenza
+                if col_citta in nuova_riga:
+                    nuova_riga[col_citta] = nuova_citta
+                if col_cap in nuova_riga:
+                    nuova_riga[col_cap] = nuovo_cap
                 if col_g_cognome in nuova_riga:
                     nuova_riga[col_g_cognome] = nuovo_g_cognome
                 if col_g_nome in nuova_riga:
