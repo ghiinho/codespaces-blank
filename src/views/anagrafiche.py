@@ -576,7 +576,7 @@ def mostra_anagrafiche(df_iscritti):
             with col_g3:
                 nuovo_tel = st.text_input("Telefono Genitore *").strip()
 
-            col_g4, col_g5 = st.columns(1,2)
+            col_g4, col_g5 = st.columns([1,2])
             with col_g4:
                 nuova_email = st.text_input("Email Genitore *").strip()
             with col_g5:
