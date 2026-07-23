@@ -600,12 +600,49 @@ def mostra_anagrafiche(df_iscritti):
             st.markdown("#### 🗓️ Iscrizione Settimane")
             settimane_selezionate = {}
 
+            # --- NUOVO INSERIMENTO: Interfaccia Selezione Frequenze per Settimana ---
+            settimane_selezionate = {}  # Conterrà {colonna_settimana: opzione_scelta}
+
             if colonne_settimane:
+                opzioni_frequenza = ["NON ISCRITTO ❌"] + list(config.get("tariffe", {}).keys())
+                if len(opzioni_frequenza) == 1:
+                    # Fallback nel caso in cui non ci siano tariffe caricate nel config
+                    opzioni_frequenza = ["NON ISCRITTO ❌", "GIORNATA INTERA", "MATTINO + PRANZO", "SOLO MATTINO"]
+
                 cols_sett = st.columns(3)
                 for i, col_s in enumerate(colonne_settimane):
                     nome_sett_pulito = str(col_s).replace(prefisso, "").strip(" -[]:")
+                    
                     with cols_sett[i % 3]:
-                        settimane_selezionate[col_s] = st.checkbox(nome_sett_pulito, key=f"chk_new_{i}")
+                        # Recuperiamo la scelta corrente se esiste nel session state, altrimenti default "NON ISCRITTO ❌"
+                        key_select = f"sb_nuovo_{i}"
+                        scelta_attuale = st.session_state.get(key_select, opzioni_frequenza[0])
+                        
+                        # Styling dinamico del box (Verde se iscritto, Grigio se non iscritto)
+                        is_iscritto = scelta_attuale != "NON ISCRITTO ❌"
+                        colore_bordo = "#10b981" if is_iscritto else "#cbd5e1"
+                        colore_sfondo = "#f0fdf4" if is_iscritto else "#f8fafc"
+
+                        st.markdown(
+                            f"""
+                            <div style="background-color: {colore_sfondo}; border-top: 4px solid {colore_bordo}; 
+                                        padding: 8px; border-radius: 6px 6px 0 0; text-align: center; margin-bottom: 5px;">
+                                <div style="font-weight: bold; font-size: 12px;">{nome_sett_pulito}</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        scelta = st.selectbox(
+                            label=f"Sel_{col_s}",
+                            options=opzioni_frequenza,
+                            index=0,
+                            key=key_select,
+                            label_visibility="collapsed"
+                        )
+            
+            # Memorizziamo la scelta per la settimana
+            settimane_selezionate[col_s] = scelta
             
             st.caption("I campi contraddistinti dall'asterisco (*) sono obbligatori.")
             btn_salva = st.form_submit_button("💾 Salva e Registra Iscritto", use_container_width=True)
@@ -652,10 +689,12 @@ def mostra_anagrafiche(df_iscritti):
                 if col_consenso_privacy in nuova_riga:
                     nuova_riga[col_consenso_privacy] = nuova_privacy
 
-                frequenza_default = list(config.get("tariffe", {}).keys())[0] if config.get("tariffe") else "GIORNATA INTERA"
-                for col_s, selezionata in settimane_selezionate.items():
-                    if selezionata:
-                        nuova_riga[col_s] = frequenza_default
+                # --- NUOVO SALVATAGGIO: Scrittura delle frequenze selezionate ---
+                for col_s, frequenza_scelta in settimane_selezionate.items():
+                    if frequenza_scelta and frequenza_scelta != "NON ISCRITTO ❌":
+                        nuova_riga[col_s] = frequenza_scelta
+                    else:
+                        nuova_riga[col_s] = ""  # O campo vuoto per chi non frequenta quella settimana
 
                 db_utils.aggiungi_nuovo_iscritto(nuova_riga)
                 st.session_state.id_bambino_corrente = len(df_iscritti)
